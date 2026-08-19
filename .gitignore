@@ -1,0 +1,7 @@
+.freebuff/
+.playwright-mcp/
+architecture and phases/
+node_modules/
+.env
+.env.local
+.next/
