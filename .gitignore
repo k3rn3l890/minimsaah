@@ -47,3 +47,6 @@ architecture and phases/
 docs_replacement.html
 coverage/
 .nyc_output/
+
+# Local helper - keep hidden from git
+start.bat
