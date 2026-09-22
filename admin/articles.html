@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Articles — MINIMSAAH Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>*:focus-visible{outline:2px solid #E63946;outline-offset:2px}</style>
+</head>
+<body class="bg-[#050505] text-white font-['Inter',sans-serif] min-h-screen">
+<nav class="sticky top-0 z-40 bg-[#050505]/90 backdrop-blur-md border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between">
+  <a href="../index.html" class="font-['Space_Grotesk',sans-serif] text-lg tracking-[0.2em] uppercase">MINIMSAAH</a>
+  <div class="flex items-center gap-2">
+    <a href="article-form.html" class="bg-[#E63946] hover:bg-[#c53030] text-white text-[11px] font-mono tracking-widest uppercase px-4 py-2 rounded-sm">+ New Article</a>
+    <button onclick="Admin.logout()" class="text-[11px] font-mono border border-white/10 px-3 py-2 uppercase">Logout</button>
+  </div>
+</nav>
+<div class="flex min-h-[calc(100vh-56px)]">
+  <aside class="hidden md:block w-56 shrink-0 border-r border-white/5 bg-[#0A0A0A] p-4">
+    <nav class="space-y-1">
+      <a href="index.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Dashboard</a>
+      <a data-nav="articles.html" href="articles.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase bg-white/5 text-white">Articles</a>
+      <a href="videos.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Videos</a>
+      <a href="documentaries.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Documentaries</a>
+      <a href="events.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Events</a>
+      <a href="ticker.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Ticker</a>
+      <a href="media.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Media</a>
+    </nav>
+  </aside>
+  <main class="flex-1 p-4 md:p-6 max-w-[1100px] w-full">
+    <div class="md:hidden flex gap-2 mb-4 overflow-auto snap-x scrollbar-hide -mx-4 px-4">
+      <a href="articles.html" class="text-[11px] font-mono tracking-widest bg-white/5 text-white border border-white/10 px-3.5 py-2 uppercase shrink-0">Articles</a>
+      <a href="videos.html" class="text-[11px] font-mono tracking-widest border border-white/10 px-3.5 py-2 uppercase shrink-0">Videos</a>
+      <a href="documentaries.html" class="text-[11px] font-mono tracking-widest border border-white/10 px-3.5 py-2 uppercase shrink-0">Docs</a>
+      <a href="events.html" class="text-[11px] font-mono tracking-widest border border-white/10 px-3.5 py-2 uppercase shrink-0">Events</a>
+      <a href="ticker.html" class="text-[11px] font-mono tracking-widest border border-white/10 px-3.5 py-2 uppercase shrink-0">Ticker</a>
+      <a href="media.html" class="text-[11px] font-mono tracking-widest border border-white/10 px-3.5 py-2 uppercase shrink-0">Media</a>
+    </div>
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+      <h1 class="font-['Space_Grotesk',sans-serif] text-xl md:text-2xl font-medium tracking-tight">Articles</h1>
+      <div class="flex gap-2">
+        <input id="search" placeholder="Search title…" class="bg-white/5 border border-white/10 rounded-sm px-3 py-3 sm:py-2 text-xs flex-1 sm:w-48 placeholder:text-gray-600 focus:border-[#E63946]/50 focus:outline-none">
+        <select id="status" class="bg-[#0A0A0A] border border-white/10 rounded-sm px-2 py-3 sm:py-2 text-xs touch-manipulation">
+          <option value="">All status</option><option value="PUBLISHED">Published</option><option value="DRAFT">Draft</option><option value="REVIEW">Review</option><option value="ARCHIVED">Archived</option>
+        </select>
+      </div>
+    </div>
+    <div id="list" class="space-y-2"></div>
+    <div id="pager" class="flex justify-between items-center mt-4 text-xs font-mono text-gray-500"></div>
+  </main>
+</div>
+<script src="js/admin.js"></script>
+<script>
+(function(){
+  Admin.requireAuth();
+  var page=1, limit=10;
+  var searchEl=document.getElementById('search');
+  var statusEl=document.getElementById('status');
+  function q(){
+    var p='?page='+page+'&limit='+limit;
+    if(searchEl.value.trim()) p+='&search='+encodeURIComponent(searchEl.value.trim());
+    if(statusEl.value) p+='&status='+statusEl.value;
+    return p;
+  }
+  async function load(){
+    try{
+      var data=await Admin.request('/articles'+q());
+      var items=data.items||[];
+      var el=document.getElementById('list');
+      el.innerHTML='';
+      if(!items.length){ el.innerHTML='<p class="text-sm text-gray-600 py-8 text-center">No articles.</p>'; document.getElementById('pager').innerHTML=''; return; }
+      items.forEach(function(it){
+        var row=document.createElement('div');
+        row.className='bg-[#0A0A0A] border border-white/5 rounded-sm p-3 md:p-4 flex gap-3 items-center flex-wrap sm:flex-nowrap';
+        var cover=it.coverImage? '<img src="'+it.coverImage+'" class="w-20 h-14 object-cover rounded-sm shrink-0 bg-[#111]">' : '<div class="w-20 h-14 bg-[#111] rounded-sm shrink-0 flex items-center justify-center text-[10px] font-mono text-gray-600">NO IMG</div>';
+        row.innerHTML=cover+'<div class="flex-1 min-w-0"><a href="article-form.html?id='+encodeURIComponent(it.id)+'" class="text-sm font-medium hover:text-[#E63946] line-clamp-1">'+it.title+'</a><div class="text-[11px] font-mono text-gray-500 mt-1 flex gap-2 flex-wrap"><span class="'+(it.status==='PUBLISHED'?'text-green-400':'text-yellow-500')+'">'+it.status+'</span><span>•</span><span>'+(it.category||'').replace(/_/g,' ')+'</span><span>•</span><span>'+Admin.fmtDate(it.publishedAt||it.createdAt)+'</span><span>•</span><a href="../article.html?slug='+encodeURIComponent(it.slug)+'" target="_blank" class="hover:text-white underline">View →</a></div></div><div class="flex gap-1 shrink-0 w-full sm:w-auto justify-end"><a href="article-form.html?id='+encodeURIComponent(it.id)+'" class="text-[11px] font-mono border border-white/10 px-3 py-2 hover:border-white/20 touch-manipulation active:bg-white/5">Edit</a><button data-del="'+it.id+'" class="text-[11px] font-mono border border-[#E63946]/30 text-[#E63946] px-3 py-2 hover:bg-[#E63946] hover:text-white touch-manipulation active:bg-[#E63946]">Delete</button></div>';
+        el.appendChild(row);
+      });
+      el.querySelectorAll('[data-del]').forEach(function(b){
+        b.onclick=async function(){
+          if(!confirm('Delete this article?')) return;
+          try{ await Admin.request('/articles/'+b.getAttribute('data-del'),{method:'DELETE'}); Admin.toast('Deleted'); load(); }catch(e){ Admin.toast(e.message,'error'); }
+        };
+      });
+      var meta=data.meta||{};
+      var pager=document.getElementById('pager');
+      pager.innerHTML='<span>'+(meta.total||items.length)+' total • page '+page+'/'+(meta.totalPages||1)+'</span><div class="flex gap-2"><button id="prev" class="border border-white/10 px-3.5 py-2 hover:bg-white/5 disabled:opacity-30 touch-manipulation">Prev</button><button id="next" class="border border-white/10 px-3.5 py-2 hover:bg-white/5 disabled:opacity-30 touch-manipulation">Next</button></div>';
+      document.getElementById('prev').disabled=page<=1;
+      document.getElementById('next').disabled=page>=(meta.totalPages||1);
+      document.getElementById('prev').onclick=function(){ if(page>1){page--; load();} };
+      document.getElementById('next').onclick=function(){ if(page<(meta.totalPages||1)){page++; load();} };
+    }catch(e){ Admin.toast(e.message,'error'); }
+  }
+  var t; searchEl.addEventListener('input', function(){ clearTimeout(t); t=setTimeout(function(){page=1; load();},400); });
+  statusEl.addEventListener('change', function(){page=1; load();});
+  load();
+})();
+</script>
+</body>
+</html>

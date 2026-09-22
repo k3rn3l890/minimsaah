@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" class="antialiased">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Event | MINIMSAAH</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>*:focus-visible{outline:2px solid #E63946;outline-offset:2px;border-radius:4px}</style>
+</head>
+<body class="bg-[#050505] text-white font-['Inter',sans-serif] m-0 overflow-x-hidden selection:bg-[#E63946] selection:text-white">
+<nav class="fixed top-0 left-0 right-0 px-4 sm:px-6 py-4 md:px-12 md:py-6 flex items-center gap-3 z-50 bg-[#050505]/90 backdrop-blur-md border-b border-white/5" style="padding-top: max(1rem, env(safe-area-inset-top)); box-sizing: border-box;">
+  <button id="menu-toggle-detail" class="md:hidden w-12 h-12 shrink-0 flex items-center justify-center bg-white/[0.08] border border-white/15 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,0,0,0.6)] rounded-sm touch-manipulation active:bg-white/10 active:scale-[0.98] transition-all" aria-label="Open menu"><svg class="w-[22px] h-[22px] sm:w-6 sm:h-6 text-white pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 8h14M5 12h14M5 16h14"/></svg></button>
+  <a href="index.html" class="absolute left-1/2 -translate-x-1/2 md:static md:left-auto md:translate-x-0 md:flex-1 md:min-w-0 flex items-center">
+    <span class="font-['Space_Grotesk',sans-serif] text-[1.05rem] sm:text-lg md:text-2xl font-medium tracking-[0.18em] sm:tracking-[0.25em] text-white uppercase whitespace-nowrap">MINIMSAAH</span>
+  </a>
+  <div class="hidden sm:flex items-center gap-2 ml-auto md:ml-0">
+    <a href="admin/login.html" class="text-[10px] font-mono tracking-widest border border-white/10 px-3 py-1.5 hover:border-[#E63946]/50 hover:text-[#E63946] uppercase">Admin</a>
+  </div>
+  <div class="md:hidden w-12 h-12 shrink-0 ml-auto pointer-events-none" aria-hidden="true"></div>
+</nav>
+<div id="mobile-drawer-detail" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden opacity-0 transition-opacity"><div class="absolute top-0 right-0 w-[85%] sm:w-[380px] h-full bg-[#050505] border-l border-white/5 flex flex-col p-6"><div class="flex items-center justify-center mb-6"><span class="font-['Space_Grotesk',sans-serif] text-lg tracking-[0.2em] uppercase">MINIMSAAH</span></div><nav class="flex flex-col gap-1 text-sm font-mono tracking-widest uppercase"><a href="index.html#events" class="py-3 border-b border-white/5">Events</a><a href="index.html#news" class="py-3 border-b border-white/5">News</a><a href="index.html#videos" class="py-3 border-b border-white/5">Videos</a><a href="admin/login.html" class="py-3 text-[#E63946]">Admin →</a></nav><button id="menu-close-detail" class="w-full mt-6 bg-[#E63946] hover:bg-[#c53030] active:bg-[#b02a35] text-white text-xs font-mono tracking-[0.15em] uppercase py-3.5 rounded-full touch-manipulation active:scale-[0.99] transition-colors" aria-label="Close menu">Close Menu</button></div></div>
+<main class="pt-20">
+  <div class="px-4 sm:px-6 md:px-12 lg:px-20 max-w-[900px] mx-auto py-4 flex flex-wrap items-center gap-2 text-[11px] font-mono text-gray-500 tracking-widest uppercase">
+    <a href="index.html" class="hover:text-white">Home</a><span class="text-gray-700">/</span><a href="index.html#events" class="hover:text-white">Events</a><span class="text-gray-700">/</span><span id="bc-title" class="text-gray-400 truncate">Event</span>
+  </div>
+  <div id="loading" class="py-20 text-center"><div class="inline-block w-6 h-6 border-2 border-white/20 border-t-[#E63946] rounded-full animate-spin"></div><p class="text-xs font-mono text-gray-500 mt-3 tracking-widest">LOADING…</p></div>
+  <article id="content" class="hidden px-4 sm:px-6 md:px-12 lg:px-20 max-w-[900px] mx-auto pb-12 sm:pb-16">
+    <div class="flex gap-3 sm:gap-4 mb-6">
+      <div class="w-16 h-16 sm:w-20 sm:h-20 border border-white/10 bg-[#0A0A0A] flex flex-col items-center justify-center rounded-sm shrink-0">
+        <span id="day" class="text-2xl sm:text-3xl font-['Space_Grotesk',sans-serif] font-medium text-[#E63946] leading-none"></span>
+        <span id="month" class="text-[11px] font-mono tracking-widest text-gray-500"></span>
+      </div>
+      <div class="flex-1 min-w-0">
+        <h1 id="title" class="font-['Space_Grotesk',sans-serif] text-xl sm:text-2xl md:text-4xl font-medium tracking-tight leading-tight"></h1>
+        <p id="meta" class="text-xs font-mono text-gray-500 mt-2"></p>
+      </div>
+    </div>
+    <div id="cover-wrap" class="hidden rounded-sm overflow-hidden border border-white/5 mb-6"><img id="cover" src="" class="w-full h-auto object-cover max-h-[420px]"></div>
+    <p id="desc" class="text-gray-300 leading-relaxed mb-6"></p>
+    <a id="ticket" href="#" target="_blank" rel="noopener" class="hidden inline-flex items-center gap-2 bg-[#E63946] hover:bg-[#c53030] text-white text-xs font-mono tracking-widest uppercase px-5 sm:px-6 py-3.5 rounded-sm touch-manipulation">Get Tickets →</a>
+    <div id="tags" class="flex flex-wrap gap-2 mt-8"></div>
+  </article>
+  <div id="error" class="hidden py-20 text-center"><p class="text-gray-400">Event not found.</p><a href="index.html#events" class="text-xs font-mono text-[#E63946] uppercase">Back to Events</a></div>
+</main>
+<footer class="border-t border-white/5 bg-[#0A0A0A] py-10 px-6 md:px-12 text-center">
+  <a href="index.html" class="font-['Space_Grotesk',sans-serif] text-xl tracking-[0.25em] uppercase">MINIMSAAH</a>
+  <p class="text-xs text-gray-600 mt-2 font-mono">© 2026 MINIMSAAH</p>
+</footer>
+<script>
+// drawer
+(function(){ var t=document.getElementById('menu-toggle-detail'), d=document.getElementById('mobile-drawer-detail'), c=document.getElementById('menu-close-detail'); if(t&&d){ function open(){ d.classList.remove('hidden'); requestAnimationFrame(function(){ d.classList.remove('opacity-0');}); document.body.style.overflow='hidden';} function close(){ d.classList.add('opacity-0'); setTimeout(function(){ d.classList.add('hidden'); document.body.style.overflow='';},200);} t.onclick=open; if(c) c.onclick=close; d.onclick=function(e){ if(e.target===d) close();}; }})();
+</script>
+<script>
+(function(){
+  var API=location.hostname==='localhost'||location.hostname==='127.0.0.1'?'http://localhost:3000/api/v1':(window.__API_BASE__||'http://localhost:3000/api/v1');
+  function getSlug(){return new URLSearchParams(location.search).get('slug');}
+  async function load(){
+    var slug=getSlug();
+    if(!slug){document.getElementById('loading').classList.add('hidden');document.getElementById('error').classList.remove('hidden');return;}
+    try{
+      var res=await fetch(API+'/events/'+encodeURIComponent(slug));
+      if(!res.ok) throw new Error();
+      var e=await res.json();
+      document.title=e.title+' | MINIMSAAH';
+      document.getElementById('bc-title').textContent=e.title;
+      document.getElementById('title').textContent=e.title;
+      var d=new Date(e.date);
+      document.getElementById('day').textContent=d.getDate();
+      document.getElementById('month').textContent=d.toLocaleDateString('en-US',{month:'short'}).toUpperCase();
+      document.getElementById('meta').textContent=(e.location||e.venue||'')+' • '+d.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+(e.endDate? ' — '+new Date(e.endDate).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'');
+      if(e.coverImage){document.getElementById('cover-wrap').classList.remove('hidden');document.getElementById('cover').src=e.coverImage;}
+      document.getElementById('desc').textContent=e.description||'';
+      if(e.ticketUrl){var t=document.getElementById('ticket');t.classList.remove('hidden');t.href=e.ticketUrl;}
+      var tg=document.getElementById('tags');(e.tags||[]).forEach(function(x){var s=document.createElement('span');s.className='text-[10px] font-mono tracking-widest border border-white/10 px-2 py-1 text-gray-500 uppercase';s.textContent='#'+x;tg.appendChild(s);});
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('content').classList.remove('hidden');
+    }catch(err){document.getElementById('loading').classList.add('hidden');document.getElementById('error').classList.remove('hidden');}
+  }
+  load();
+})();
+</script>
+</body>
+</html>

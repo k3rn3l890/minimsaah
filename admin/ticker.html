@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ticker — MINIMSAAH Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>*:focus-visible{outline:2px solid #E63946;outline-offset:2px}</style>
+</head>
+<body class="bg-[#050505] text-white font-['Inter',sans-serif] min-h-screen">
+<nav class="sticky top-0 z-40 bg-[#050505]/90 backdrop-blur-md border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between">
+  <a href="../index.html" class="font-['Space_Grotesk',sans-serif] text-lg tracking-[0.2em] uppercase">MINIMSAAH</a>
+  <button onclick="Admin.logout()" class="text-xs font-mono border border-white/10 px-3 py-3 min-h-[44px] inline-flex items-center uppercase">Logout</button>
+</nav>
+<div class="flex min-h-[calc(100vh-56px)]">
+  <aside class="hidden md:block w-56 shrink-0 border-r border-white/5 bg-[#0A0A0A] p-4">
+    <nav class="space-y-1">
+      <a href="index.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Dashboard</a>
+      <a href="articles.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Articles</a>
+      <a href="videos.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Videos</a>
+      <a href="documentaries.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Documentaries</a>
+      <a href="events.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Events</a>
+      <a data-nav="ticker.html" href="ticker.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase bg-white/5 text-white">Ticker</a>
+      <a href="media.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Media</a>
+    </nav>
+  </aside>
+  <main class="flex-1 p-4 md:p-6 max-w-[800px] w-full">
+    <div class="md:hidden flex gap-2 mb-4 overflow-auto snap-x scrollbar-hide -mx-4 px-4">
+      <a href="articles.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Articles</a>
+      <a href="videos.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Videos</a>
+      <a href="documentaries.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Docs</a>
+      <a href="events.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Events</a>
+      <a href="ticker.html" class="text-xs font-mono tracking-widest bg-white/5 text-white border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0 snap-start">Ticker</a>
+      <a href="media.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Media</a>
+    </div>
+    <h1 class="font-['Space_Grotesk',sans-serif] text-xl md:text-2xl font-medium tracking-tight mb-2">News Ticker</h1>
+    <p class="text-xs font-mono text-gray-500 mb-4">Headlines that scroll on the home page.</p>
+    <form id="form" class="bg-[#0A0A0A] border border-white/5 rounded-sm p-4 flex flex-col sm:flex-row gap-2 mb-6">
+      <input id="text" required placeholder="Headline text…" class="flex-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm touch-manipulation">
+      <input id="priority" type="number" value="0" class="w-full sm:w-20 bg-white/5 border border-white/10 rounded-sm px-2 py-3 min-h-[44px] text-sm touch-manipulation" title="Priority">
+      <button type="submit" class="bg-[#E63946] hover:bg-[#c53030] text-white text-xs font-mono tracking-widest uppercase px-4 py-3 min-h-[44px] rounded-sm touch-manipulation">Add</button>
+    </form>
+    <div id="list" class="space-y-2"></div>
+  </main>
+</div>
+<script src="js/admin.js"></script>
+<script>
+(function(){Admin.requireAuth();
+  async function load(){
+    try{
+      var items=await Admin.request('/ticker');
+      var el=document.getElementById('list');
+      el.innerHTML='';
+      if(!items.length){ el.innerHTML='<p class="text-sm text-gray-600 py-8 text-center">No ticker headlines.</p>'; return; }
+      items.forEach(function(it){
+        var row=document.createElement('div');
+        row.className='bg-[#0A0A0A] border border-white/5 rounded-sm p-3 flex gap-3 items-center '+(it.active?'':'opacity-50');
+        row.innerHTML='<div class="flex-1 min-w-0"><p class="text-sm">'+it.text+'</p><p class="text-xs font-mono text-gray-400 mt-1">Priority '+it.priority+' • '+(it.active?'Active':'Hidden')+'</p></div><div class="flex gap-2 shrink-0"><button data-toggle="'+it.id+'" class="text-xs font-mono border border-white/10 px-3 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-white/5">'+(it.active?'Hide':'Show')+'</button><button data-del="'+it.id+'" class="text-xs font-mono border border-[#E63946]/30 text-[#E63946] px-3 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-[#E63946] hover:text-white">Delete</button></div>';
+        el.appendChild(row);
+      });
+      el.querySelectorAll('[data-toggle]').forEach(function(b){ b.onclick=async function(){ try{ await Admin.request('/ticker/'+b.getAttribute('data-toggle')+'/toggle',{method:'PATCH'}); load(); }catch(e){Admin.toast(e.message,'error');} }; });
+      el.querySelectorAll('[data-del]').forEach(function(b){ b.onclick=async function(){ if(!confirm('Delete ticker?'))return; try{ await Admin.request('/ticker/'+b.getAttribute('data-del'),{method:'DELETE'}); Admin.toast('Deleted'); load(); }catch(e){Admin.toast(e.message,'error');} }; });
+    }catch(e){Admin.toast(e.message,'error');}
+  }
+  document.getElementById('form').addEventListener('submit', async function(e){
+    e.preventDefault();
+    var text=document.getElementById('text').value.trim();
+    var priority=parseInt(document.getElementById('priority').value,10)||0;
+    if(!text) return;
+    try{ await Admin.request('/ticker',{method:'POST', body: JSON.stringify({ text:text, priority:priority })}); document.getElementById('text').value=''; Admin.toast('Added'); load(); }catch(ex){Admin.toast(ex.message,'error');}
+  });
+  load();
+})();
+</script>
+</body>
+</html>

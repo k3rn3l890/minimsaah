@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — MINIMSAAH Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+<style>*:focus-visible{outline:2px solid #E63946;outline-offset:2px}</style>
+</head>
+<body class="bg-[#050505] text-white font-['Inter',sans-serif] min-h-screen">
+<nav class="sticky top-0 z-40 bg-[#050505]/90 backdrop-blur-md border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between">
+  <div class="flex items-center gap-4">
+    <a href="../index.html" class="font-['Space_Grotesk',sans-serif] text-lg tracking-[0.2em] uppercase">MINIMSAAH</a>
+    <span class="hidden md:inline text-[10px] font-mono tracking-widest bg-[#E63946] text-white px-2 py-0.5 uppercase">Admin</span>
+  </div>
+  <div class="flex items-center gap-3">
+    <a href="../index.html" class="hidden md:inline text-xs font-mono tracking-widest text-gray-500 hover:text-white">View Site →</a>
+    <span id="user-name" class="text-xs font-mono text-gray-400"></span>
+    <button onclick="Admin.logout()" class="text-[11px] font-mono tracking-widest border border-white/10 px-3 py-1.5 hover:border-[#E63946]/50 hover:text-[#E63946] uppercase">Logout</button>
+  </div>
+</nav>
+
+<div class="flex min-h-[calc(100vh-56px)]">
+  <aside class="hidden md:block w-56 shrink-0 border-r border-white/5 bg-[#0A0A0A] p-4 sticky top-[56px] h-[calc(100vh-56px)] overflow-auto">
+    <nav class="space-y-1">
+      <a data-nav="index.html" href="index.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Dashboard</a>
+      <a data-nav="articles.html" href="articles.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Articles</a>
+      <a data-nav="videos.html" href="videos.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Videos</a>
+      <a data-nav="documentaries.html" href="documentaries.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Documentaries</a>
+      <a data-nav="events.html" href="events.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Events</a>
+      <a data-nav="ticker.html" href="ticker.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Ticker</a>
+      <a data-nav="media.html" href="media.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Media</a>
+    </nav>
+    <div class="mt-6 border-t border-white/5 pt-4">
+      <p class="text-[10px] font-mono tracking-widest text-gray-600 uppercase mb-2">Storage</p>
+      <p class="text-[11px] font-mono text-gray-500">All files in</p>
+      <p class="text-[11px] font-mono text-gray-400 break-all">minimsaah_v1/backend/uploads</p>
+    </div>
+  </aside>
+
+  <main class="flex-1 p-4 md:p-8 max-w-[1100px] w-full">
+    <div class="md:hidden flex gap-2 mb-4 overflow-auto snap-x scrollbar-hide -mx-4 px-4">
+      <a href="articles.html" class="text-[11px] font-mono tracking-widest border border-white/10 px-3.5 py-2 uppercase shrink-0 touch-manipulation active:bg-white/5">Articles</a>
+      <a href="videos.html" class="text-[11px] font-mono tracking-widest border border-white/10 px-3.5 py-2 uppercase shrink-0 touch-manipulation active:bg-white/5">Videos</a>
+      <a href="documentaries.html" class="text-[11px] font-mono tracking-widest border border-white/10 px-3.5 py-2 uppercase shrink-0 touch-manipulation active:bg-white/5">Docs</a>
+      <a href="events.html" class="text-[11px] font-mono tracking-widest border border-white/10 px-3.5 py-2 uppercase shrink-0 touch-manipulation active:bg-white/5">Events</a>
+      <a href="ticker.html" class="text-[11px] font-mono tracking-widest border border-white/10 px-3.5 py-2 uppercase shrink-0 touch-manipulation active:bg-white/5">Ticker</a>
+      <a href="media.html" class="text-[11px] font-mono tracking-widest border border-white/10 px-3.5 py-2 uppercase shrink-0 touch-manipulation active:bg-white/5">Media</a>
+    </div>
+
+    <h1 class="font-['Space_Grotesk',sans-serif] text-2xl md:text-3xl font-medium tracking-tight mb-2">Dashboard</h1>
+    <p class="text-sm text-gray-500 mb-6">Welcome back. Manage stories and video stories from here. All data lives on your computer at <span class="text-gray-300">C:\Users\BREEZY\Desktop\PXL_INC\minimsaah_v1</span></p>
+
+    <div id="stats" class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+      <div class="bg-[#0A0A0A] border border-white/5 rounded-sm p-4">
+        <p class="text-[11px] font-mono tracking-widest text-gray-500 uppercase">Articles</p>
+        <p id="stat-articles" class="text-2xl font-['Space_Grotesk',sans-serif] font-medium mt-1">—</p>
+        <p class="text-[11px] font-mono text-gray-600 mt-1">Total</p>
+      </div>
+      <div class="bg-[#0A0A0A] border border-white/5 rounded-sm p-4">
+        <p class="text-[11px] font-mono tracking-widest text-gray-500 uppercase">Videos</p>
+        <p id="stat-videos" class="text-2xl font-['Space_Grotesk',sans-serif] font-medium mt-1">—</p>
+        <p class="text-[11px] font-mono text-gray-600 mt-1">YouTube / TikTok / FB / IG</p>
+      </div>
+      <div class="bg-[#0A0A0A] border border-white/5 rounded-sm p-4">
+        <p class="text-[11px] font-mono tracking-widest text-gray-500 uppercase">Documentaries</p>
+        <p id="stat-docs" class="text-2xl font-['Space_Grotesk',sans-serif] font-medium mt-1">—</p>
+        <p class="text-[11px] font-mono text-gray-600 mt-1">Long-form</p>
+      </div>
+      <div class="bg-[#0A0A0A] border border-white/5 rounded-sm p-4">
+        <p class="text-[11px] font-mono tracking-widest text-gray-500 uppercase">Media Files</p>
+        <p id="stat-media" class="text-2xl font-['Space_Grotesk',sans-serif] font-medium mt-1">—</p>
+        <p class="text-[11px] font-mono text-gray-600 mt-1">In /backend/uploads</p>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4 mb-8">
+      <div class="bg-[#0A0A0A] border border-white/5 rounded-sm p-5">
+        <h3 class="text-xs font-mono tracking-widest uppercase text-white mb-3">Quick Actions</h3>
+        <div class="grid grid-cols-2 gap-2">
+          <a href="article-form.html" class="bg-[#E63946] hover:bg-[#c53030] text-white text-xs font-mono tracking-widest uppercase py-2.5 rounded-sm text-center">+ New Article</a>
+          <a href="video-form.html" class="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-mono tracking-widest uppercase py-2.5 rounded-sm text-center">+ New Video</a>
+          <a href="documentary-form.html" class="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-mono tracking-widest uppercase py-2.5 rounded-sm text-center">+ Documentary</a>
+          <a href="event-form.html" class="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-mono tracking-widest uppercase py-2.5 rounded-sm text-center">+ Event</a>
+        </div>
+      </div>
+      <div class="bg-[#0A0A0A] border border-white/5 rounded-sm p-5">
+        <h3 class="text-xs font-mono tracking-widest uppercase text-white mb-3">How Video Works</h3>
+        <ul class="text-xs text-gray-400 space-y-1.5 leading-relaxed">
+          <li>• Paste any YouTube / TikTok / Facebook / Instagram link</li>
+          <li>• System makes thumbnail + embed (no redirect)</li>
+          <li>• User clicks thumbnail → plays inside your site</li>
+          <li>• If thumbnail fails, upload custom image</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="bg-[#0A0A0A] border border-white/5 rounded-sm p-5">
+      <h3 class="text-xs font-mono tracking-widest uppercase text-white mb-3">Recent Activity</h3>
+      <div id="recent" class="space-y-2 text-sm text-gray-400"><p class="text-xs font-mono text-gray-600">Loading…</p></div>
+    </div>
+  </main>
+</div>
+
+<script src="js/admin.js"></script>
+<script>
+(function(){
+  Admin.requireAuth();
+  Admin.setActiveNav();
+  var u=Admin.getUser();
+  if(u) document.getElementById('user-name').textContent=u.firstName+' '+u.lastName+' ('+u.role+')';
+
+  async function loadStats(){
+    try{
+      var [arts, vids, docs, media] = await Promise.all([
+        Admin.request('/articles?limit=1').catch(()=>({meta:{total:0}})),
+        Admin.request('/videos?limit=1').catch(()=>({meta:{total:0}})),
+        Admin.request('/documentaries?limit=1').catch(()=>({meta:{total:0}})),
+        Admin.request('/media?limit=1').catch(()=>({meta:{total:0}})),
+      ]);
+      document.getElementById('stat-articles').textContent=(arts.meta&&arts.meta.total)|| (arts.items? arts.items.length:0);
+      document.getElementById('stat-videos').textContent=(vids.meta&&vids.meta.total)||0;
+      document.getElementById('stat-docs').textContent=(docs.meta&&docs.meta.total)||0;
+      document.getElementById('stat-media').textContent=(media.meta&&media.meta.total)||0;
+    }catch(e){
+      console.warn(e);
+    }
+    // recent articles
+    try{
+      var data=await Admin.request('/articles?limit=5');
+      var items=data.items||[];
+      var el=document.getElementById('recent');
+      if(!items.length){ el.innerHTML='<p class="text-xs font-mono text-gray-600">No stories yet. Create your first article.</p>'; return; }
+      el.innerHTML='';
+      items.forEach(function(it){
+        var row=document.createElement('a');
+        row.href='article-form.html?id='+encodeURIComponent(it.id);
+        row.className='flex justify-between items-center py-2 border-b border-white/5 hover:text-white';
+        row.innerHTML='<span class="truncate pr-4">'+it.title+'</span><span class="text-[11px] font-mono shrink-0 '+(it.status==='PUBLISHED'?'text-green-400':'text-gray-500')+'">'+it.status+'</span>';
+        el.appendChild(row);
+      });
+    }catch{}
+  }
+  loadStats();
+})();
+</script>
+</body>
+</html>

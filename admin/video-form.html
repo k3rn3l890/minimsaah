@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Video Form — MINIMSAAH Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>*:focus-visible{outline:2px solid #E63946;outline-offset:2px}</style>
+</head>
+<body class="bg-[#050505] text-white font-['Inter',sans-serif] min-h-screen">
+<nav class="sticky top-0 z-40 bg-[#050505]/90 backdrop-blur-md border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between">
+  <a href="index.html" class="font-['Space_Grotesk',sans-serif] text-lg tracking-[0.2em] uppercase">MINIMSAAH</a>
+  <div class="flex gap-2"><a href="videos.html" class="text-xs font-mono border border-white/10 px-3 py-1.5">← Videos</a><button onclick="Admin.logout()" class="text-[11px] font-mono border border-white/10 px-3 py-1.5 uppercase">Logout</button></div>
+</nav>
+<main class="max-w-[800px] mx-auto p-4 md:p-6">
+  <h1 id="heading" class="font-['Space_Grotesk',sans-serif] text-xl md:text-2xl font-medium tracking-tight mb-1">New Video</h1>
+  <p class="text-xs font-mono text-gray-500 mb-4">Paste YouTube / TikTok / Facebook / Instagram link. Thumbnail auto + in-site player (no redirect).</p>
+
+  <form id="form" class="space-y-4 bg-[#0A0A0A] border border-white/5 rounded-sm p-4 md:p-6">
+    <div>
+      <label class="text-[11px] font-mono tracking-widest uppercase text-gray-400">Title *</label>
+      <input id="title" required class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-2.5 text-sm focus:border-[#E63946]/50 focus:outline-none">
+    </div>
+    <div>
+      <label class="text-[11px] font-mono tracking-widest uppercase text-gray-400">Video Link * (any platform)</label>
+      <input id="videoUrl" required placeholder="https://www.youtube.com/watch?v=... or https://www.tiktok.com/... or https://www.facebook.com/... or https://www.instagram.com/p/..." class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-2.5 text-sm focus:border-[#E63946]/50 focus:outline-none">
+      <p id="provider" class="text-[11px] font-mono text-gray-600 mt-1"></p>
+    </div>
+    <div>
+      <label class="text-[11px] font-mono tracking-widest uppercase text-gray-400">Thumbnail (auto if empty, or upload custom)</label>
+      <div class="flex gap-2 mt-1">
+        <input id="thumbnail" placeholder="auto or https:// or /uploads/thumb.jpg" class="flex-1 bg-white/5 border border-white/10 rounded-sm px-3 py-2.5 text-sm">
+        <label class="bg-white/5 border border-white/10 px-4 py-2.5 text-xs font-mono tracking-widest uppercase cursor-pointer hover:bg-white/10">Upload<input id="file" type="file" accept="image/*" class="hidden"></label>
+      </div>
+      <div id="thumb-preview" class="hidden mt-2 relative w-full aspect-video bg-[#111] rounded-sm overflow-hidden border border-white/10"><img id="thumb-img" src="" class="w-full h-full object-cover"><div class="absolute inset-0 flex items-center justify-center"><div class="w-10 h-10 rounded-full bg-[#E63946]/90 flex items-center justify-center"><svg class="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div></div>
+      <p class="text-[11px] font-mono text-gray-600 mt-1">You can leave empty — system will try to fetch thumbnail for YouTube/TikTok/FB/IG. If it fails, upload one.</p>
+    </div>
+    <div class="grid md:grid-cols-2 gap-3">
+      <div>
+        <label class="text-[11px] font-mono tracking-widest uppercase text-gray-400">Category</label>
+        <select id="category" class="w-full mt-1 bg-[#0A0A0A] border border-white/10 rounded-sm px-3 py-2.5 text-sm"><option value="HIGHLIGHT">Highlight</option><option value="INTERVIEW">Interview</option><option value="DOCUMENTARY">Documentary</option><option value="BEHIND_SCENES">Behind Scenes</option><option value="TUTORIAL">Tutorial</option></select>
+      </div>
+      <div>
+        <label class="text-[11px] font-mono tracking-widest uppercase text-gray-400">Duration (seconds, optional)</label>
+        <input id="duration" type="number" placeholder="e.g. 312" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-2.5 text-sm">
+      </div>
+    </div>
+    <div>
+      <label class="text-[11px] font-mono tracking-widest uppercase text-gray-400">Description</label>
+      <textarea id="description" rows="3" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-2.5 text-sm"></textarea>
+    </div>
+    <div class="grid md:grid-cols-3 gap-3">
+      <div><label class="text-[11px] font-mono tracking-widest uppercase text-gray-400">Tags</label><input id="tags" placeholder="goal, accra" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-2.5 text-sm"></div>
+      <div><label class="text-[11px] font-mono tracking-widest uppercase text-gray-400">Status</label><select id="status" class="w-full mt-1 bg-[#0A0A0A] border border-white/10 rounded-sm px-3 py-2.5 text-sm"><option value="DRAFT">Draft</option><option value="PUBLISHED">Published</option></select></div>
+      <div class="flex items-center gap-2 mt-5"><input id="featured" type="checkbox" class="w-4 h-4 accent-[#E63946]"><label for="featured" class="text-xs font-mono tracking-widest uppercase">Featured</label></div>
+    </div>
+    <!-- Preview player (no redirect) -->
+    <div class="border border-white/5 rounded-sm p-3 bg-black">
+      <p class="text-[11px] font-mono tracking-widest text-gray-500 uppercase mb-2">Preview — plays inside your site</p>
+      <div id="preview-wrap" class="aspect-video bg-[#111] rounded-sm overflow-hidden relative">
+        <div id="preview-placeholder" class="w-full h-full flex items-center justify-center text-xs font-mono text-gray-600">Paste a link to preview</div>
+        <iframe id="preview-iframe" class="hidden w-full h-full border-0" allowfullscreen allow="autoplay; fullscreen; encrypted-media"></iframe>
+      </div>
+    </div>
+    <div class="flex gap-2 pt-2">
+      <button type="submit" id="btn" class="flex-1 bg-[#E63946] hover:bg-[#c53030] text-white text-xs font-mono tracking-widest uppercase py-3 rounded-sm">Save Video</button>
+      <a href="videos.html" class="px-6 py-3 border border-white/10 text-xs font-mono tracking-widest uppercase rounded-sm hover:bg-white/5">Cancel</a>
+    </div>
+    <p id="err" class="hidden text-xs text-[#E63946] bg-[#E63946]/10 border border-[#E63946]/20 rounded-sm px-3 py-2"></p>
+    <p id="ok" class="hidden text-xs text-green-400 bg-green-900/20 border border-green-800 rounded-sm px-3 py-2"></p>
+  </form>
+</main>
+<script src="../assets/js/embeds.js"></script>
+<script src="js/admin.js"></script>
+<script>
+(function(){
+  Admin.requireAuth();
+  var id=new URLSearchParams(location.search).get('id');
+  var isEdit=!!id;
+  if(isEdit) document.getElementById('heading').textContent='Edit Video';
+  var videoUrlEl=document.getElementById('videoUrl');
+  var thumbEl=document.getElementById('thumbnail');
+  var thumbPreview=document.getElementById('thumb-preview');
+  var thumbImg=document.getElementById('thumb-img');
+  var providerEl=document.getElementById('provider');
+
+  function updateProvider(){
+    var v=videoUrlEl.value.trim();
+    if(!v){ providerEl.textContent=''; return; }
+    var p=window.MinimsaahEmbeds? window.MinimsaahEmbeds.detectProvider(v):'unknown';
+    providerEl.textContent='Detected: '+p+(p==='unknown'?' — paste YouTube/TikTok/Facebook/Instagram link':'');
+    updatePreview();
+  }
+  function updatePreview(){
+    var v=videoUrlEl.value.trim();
+    if(!v){ document.getElementById('preview-placeholder').style.display='flex'; document.getElementById('preview-iframe').classList.add('hidden'); return; }
+    var embed=window.MinimsaahEmbeds? window.MinimsaahEmbeds.toEmbedUrl(v, ''):'';
+    if(!embed){ document.getElementById('preview-placeholder').textContent='Invalid link'; return; }
+    document.getElementById('preview-placeholder').style.display='none';
+    var iframe=document.getElementById('preview-iframe');
+    iframe.classList.remove('hidden');
+    // don't autoplay in preview
+    iframe.src=embed.replace('autoplay=1','autoplay=0');
+  }
+  function updateThumbPreview(){
+    var v=thumbEl.value.trim();
+    if(v){ thumbImg.src=v; thumbPreview.classList.remove('hidden'); }
+    else if(videoUrlEl.value.trim()){
+      // try youtube thumb
+      var m=videoUrlEl.value.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+      if(m){ thumbImg.src='https://img.youtube.com/vi/'+m[1]+'/hqdefault.jpg'; thumbPreview.classList.remove('hidden'); }
+      else thumbPreview.classList.add('hidden');
+    } else thumbPreview.classList.add('hidden');
+  }
+  videoUrlEl.addEventListener('input', function(){ updateProvider(); updateThumbPreview(); });
+  thumbEl.addEventListener('input', updateThumbPreview);
+
+  document.getElementById('file').addEventListener('change', async function(e){
+    var f=e.target.files[0]; if(!f) return;
+    var fd=new FormData(); fd.append('file', f);
+    try{ Admin.toast('Uploading…'); var data=await Admin.request('/media/upload',{method:'POST', body:fd}); thumbEl.value=data.url; updateThumbPreview(); Admin.toast('Uploaded '+data.url); }catch(ex){ Admin.toast(ex.message,'error'); }
+  });
+
+  if(isEdit){
+    (async function(){
+      try{
+        var it=await Admin.request('/videos/'+encodeURIComponent(id));
+        document.getElementById('title').value=it.title||'';
+        videoUrlEl.value=it.videoUrl||'';
+        thumbEl.value=it.thumbnail||'';
+        document.getElementById('category').value=it.category||'HIGHLIGHT';
+        document.getElementById('duration').value=it.duration||'';
+        document.getElementById('description').value=it.description||'';
+        document.getElementById('tags').value=(it.tags||[]).join(', ');
+        document.getElementById('status').value=it.status||'DRAFT';
+        document.getElementById('featured').checked=!!it.featured;
+        updateProvider(); updateThumbPreview();
+      }catch(e){ Admin.toast(e.message,'error'); }
+    })();
+  }
+
+  document.getElementById('form').addEventListener('submit', async function(e){
+    e.preventDefault();
+    var err=document.getElementById('err'), ok=document.getElementById('ok');
+    err.classList.add('hidden'); ok.classList.add('hidden');
+    var btn=document.getElementById('btn'); btn.textContent='Saving…'; btn.disabled=true;
+    var payload={
+      title: document.getElementById('title').value.trim(),
+      videoUrl: videoUrlEl.value.trim(),
+      thumbnail: thumbEl.value.trim()||undefined,
+      category: document.getElementById('category').value,
+      duration: document.getElementById('duration').value? parseInt(document.getElementById('duration').value,10):undefined,
+      description: document.getElementById('description').value.trim()||undefined,
+      tags: document.getElementById('tags').value.split(',').map(function(s){return s.trim();}).filter(Boolean),
+      status: document.getElementById('status').value,
+      featured: document.getElementById('featured').checked,
+    };
+    try{
+      if(isEdit) await Admin.request('/videos/'+encodeURIComponent(id),{method:'PUT', body: JSON.stringify(payload)});
+      else await Admin.request('/videos',{method:'POST', body: JSON.stringify(payload)});
+      ok.textContent=isEdit?'Updated!':'Created! Redirecting…'; ok.classList.remove('hidden');
+      setTimeout(function(){ location.href='videos.html'; },700);
+    }catch(ex){ err.textContent=ex.message; err.classList.remove('hidden'); btn.textContent='Save Video'; btn.disabled=false; }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" class="antialiased">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Video | MINIMSAAH</title>
+<meta name="description" content="Watch video stories from Accra, Ghana — stays on MINIMSAAH, no redirect.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+<style>*:focus-visible{outline:2px solid #E63946;outline-offset:2px;border-radius:4px}</style>
+</head>
+<body class="bg-[#050505] text-white font-['Inter',sans-serif] m-0 overflow-x-hidden selection:bg-[#E63946] selection:text-white">
+<div style="position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:0.04;background-image:url('data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E');"></div>
+<nav class="fixed top-0 left-0 right-0 px-4 sm:px-6 py-4 md:px-12 md:py-6 flex items-center gap-3 z-50 bg-[#050505]/90 backdrop-blur-md border-b border-white/5" style="padding-top: max(1rem, env(safe-area-inset-top)); box-sizing: border-box;">
+  <button id="menu-toggle-detail" class="md:hidden w-12 h-12 shrink-0 flex items-center justify-center bg-white/[0.08] border border-white/15 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,0,0,0.6)] rounded-sm touch-manipulation active:bg-white/10 active:scale-[0.98] transition-all" aria-label="Open menu"><svg class="w-[22px] h-[22px] sm:w-6 sm:h-6 text-white pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 8h14M5 12h14M5 16h14"/></svg></button>
+  <a href="index.html" class="absolute left-1/2 -translate-x-1/2 md:static md:left-auto md:translate-x-0 md:flex-1 md:min-w-0 flex items-center">
+    <span class="font-['Space_Grotesk',sans-serif] text-[1.05rem] sm:text-lg md:text-2xl font-medium tracking-[0.18em] sm:tracking-[0.25em] text-white uppercase whitespace-nowrap">MINIMSAAH</span>
+  </a>
+  <div class="hidden md:flex gap-6 text-xs font-medium tracking-widest uppercase opacity-80 ml-auto">
+    <a href="index.html#videos" class="hover:text-[#E63946]">Video Stories</a>
+    <a href="index.html#news" class="hover:text-[#E63946]">News</a>
+    <a href="index.html#docs" class="hover:text-[#E63946]">Documentaries</a>
+  </div>
+  <div class="hidden sm:flex items-center gap-2 ml-auto md:ml-0">
+    <a href="admin/login.html" class="text-[10px] font-mono tracking-widest border border-white/10 px-3 py-1.5 hover:border-[#E63946]/50 hover:text-[#E63946] uppercase">Admin</a>
+  </div>
+  <div class="md:hidden w-12 h-12 shrink-0 ml-auto pointer-events-none" aria-hidden="true"></div>
+</nav>
+<div id="mobile-drawer-detail" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden opacity-0 transition-opacity"><div class="absolute top-0 right-0 w-[85%] sm:w-[380px] h-full bg-[#050505] border-l border-white/5 flex flex-col p-6"><div class="flex items-center justify-center mb-6"><span class="font-['Space_Grotesk',sans-serif] text-lg tracking-[0.2em] uppercase">MINIMSAAH</span></div><nav class="flex flex-col gap-1 text-sm font-mono tracking-widest uppercase"><a href="index.html#videos" class="py-3 border-b border-white/5">Video Stories</a><a href="index.html#news" class="py-3 border-b border-white/5">News</a><a href="index.html#docs" class="py-3 border-b border-white/5">Documentaries</a><a href="admin/login.html" class="py-3 text-[#E63946]">Admin →</a></nav><button id="menu-close-detail" class="w-full mt-6 bg-[#E63946] hover:bg-[#c53030] active:bg-[#b02a35] text-white text-xs font-mono tracking-[0.15em] uppercase py-3.5 rounded-full touch-manipulation active:scale-[0.99] transition-colors" aria-label="Close menu">Close Menu</button></div></div>
+<main class="pt-20">
+  <div class="px-4 sm:px-6 md:px-12 lg:px-20 max-w-[1100px] mx-auto py-4 flex flex-wrap items-center gap-2 text-[11px] font-mono text-gray-500 tracking-widest uppercase">
+    <a href="index.html" class="hover:text-white">Home</a><span class="text-gray-700">/</span><a href="index.html#videos" class="hover:text-white">Videos</a><span class="text-gray-700">/</span><span id="bc-title" class="text-gray-400 truncate">Video</span>
+  </div>
+  <div id="loading" class="py-20 text-center"><div class="inline-block w-6 h-6 border-2 border-white/20 border-t-[#E63946] rounded-full animate-spin"></div><p class="text-xs font-mono text-gray-500 mt-3 tracking-widest">LOADING VIDEO…</p></div>
+  <div id="content" class="hidden px-4 sm:px-6 md:px-12 lg:px-20 max-w-[1100px] mx-auto pb-12 sm:pb-16">
+    <div class="flex flex-wrap items-center gap-2 mb-3">
+      <span id="cat" class="text-[10px] font-mono tracking-widest border border-[#E63946]/30 px-2 py-1 bg-[#E63946]/10 text-[#E63946] uppercase"></span>
+      <span id="dur" class="text-[11px] font-mono text-gray-500"></span>
+      <span id="views" class="text-[11px] font-mono text-gray-600 ml-auto"></span>
+    </div>
+    <h1 id="title" class="font-['Space_Grotesk',sans-serif] text-xl sm:text-2xl md:text-4xl font-medium tracking-tight leading-tight mb-3"></h1>
+    <p id="desc" class="text-gray-400 text-[13px] sm:text-sm md:text-base leading-relaxed mb-6"></p>
+    <!-- In-site player (no redirect) -->
+    <div id="player-wrap" class="relative rounded-sm overflow-hidden bg-black border border-white/10 aspect-video">
+      <div id="player" class="w-full h-full"></div>
+      <div id="thumb-overlay" class="absolute inset-0 cursor-pointer group">
+        <img id="thumb" src="" alt="" class="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition">
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="w-20 h-20 md:w-24 md:h-24 rounded-full bg-[#E63946]/90 flex items-center justify-center group-hover:scale-110 transition shadow-[0_0_30px_rgba(230,57,70,0.4)]">
+            <svg class="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+        <div class="absolute bottom-3 left-3 text-[10px] font-mono tracking-widest bg-black/70 px-2 py-1 rounded text-white">PLAY ON MINIMSAAH — NO REDIRECT</div>
+      </div>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-mono text-gray-500 mt-4 border-y border-white/5 py-3">
+      <span id="author"></span><span class="w-1 h-1 rounded-full bg-[#E63946] hidden sm:block"></span><span id="date"></span>
+      <button id="share-copy" class="ml-auto w-11 h-11 rounded-full border border-white/10 flex items-center justify-center hover:border-[#E63946]/50 touch-manipulation active:bg-white/5"><iconify-icon icon="solar:link-linear" width="14"></iconify-icon></button>
+    </div>
+    <div id="tags" class="flex flex-wrap gap-2 mt-6"></div>
+  </div>
+  <div id="error" class="hidden py-20 text-center"><p class="text-gray-400 mb-2">Video not found.</p><a href="index.html#videos" class="text-xs font-mono tracking-widest text-[#E63946] uppercase">Back to Videos</a></div>
+  <section id="related" class="hidden px-4 sm:px-6 md:px-12 lg:px-20 max-w-[1100px] mx-auto border-t border-white/5 py-8 sm:py-10">
+    <div class="flex justify-between items-end mb-6"><div><span class="text-[11px] font-mono text-[#E63946] tracking-widest">RELATED</span><h2 class="font-['Space_Grotesk',sans-serif] text-xl font-medium mt-1">More Videos</h2></div><a href="index.html#videos" class="text-xs font-mono text-gray-500 hover:text-white">VIEW ALL →</a></div>
+    <div id="related-grid" class="grid md:grid-cols-3 gap-4"></div>
+  </section>
+</main>
+<footer class="border-t border-white/5 bg-[#0A0A0A] py-10 px-6 md:px-12 text-center">
+  <a href="index.html" class="font-['Space_Grotesk',sans-serif] text-xl tracking-[0.25em] uppercase">MINIMSAAH</a>
+  <p class="text-xs text-gray-600 mt-2 font-mono">© 2026 MINIMSAAH — ACCRA, GHANA</p>
+</footer>
+<script src="assets/js/embeds.js"></script>
+<script>
+// drawer for video detail
+(function(){ var t=document.getElementById('menu-toggle-detail'), d=document.getElementById('mobile-drawer-detail'), c=document.getElementById('menu-close-detail'); if(!t||!d) return; function open(){ d.classList.remove('hidden'); requestAnimationFrame(function(){ d.classList.remove('opacity-0'); }); document.body.style.overflow='hidden'; } function close(){ d.classList.add('opacity-0'); setTimeout(function(){ d.classList.add('hidden'); document.body.style.overflow=''; },200);} t.onclick=open; if(c) c.onclick=close; d.onclick=function(e){ if(e.target===d) close(); };})();
+</script>
+<script>
+(function(){
+  var API=location.hostname==='localhost'||location.hostname==='127.0.0.1' ? 'http://localhost:3000/api/v1' : (window.__API_BASE__||'http://localhost:3000/api/v1');
+  function getSlug(){return new URLSearchParams(location.search).get('slug');}
+  function fmt(d){try{return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}catch{return d;}}
+  var current=null;
+  function loadPlayer(v){
+    var wrap=document.getElementById('player');
+    var thumbO=document.getElementById('thumb-overlay');
+    // thumbnail
+    var t= (window.MinimsaahEmbeds? window.MinimsaahEmbeds.thumbnailUrl(v): (v.thumbnail||'')) || '';
+    if(t) document.getElementById('thumb').src=t;
+    function play(){
+      var embed = window.MinimsaahEmbeds? window.MinimsaahEmbeds.toEmbedUrl(v.videoUrl, v.embedUrl): (v.embedUrl||v.videoUrl);
+      var provider= window.MinimsaahEmbeds? window.MinimsaahEmbeds.detectProvider(v.videoUrl):'unknown';
+      var iframe= window.MinimsaahEmbeds? window.MinimsaahEmbeds.createIframe(embed, provider): (function(){var f=document.createElement('iframe');f.src=embed;f.style.width='100%';f.style.height='100%';f.setAttribute('allowfullscreen','true');f.setAttribute('allow','autoplay; fullscreen; encrypted-media');return f;})();
+      wrap.innerHTML=''; wrap.appendChild(iframe);
+      thumbO.style.display='none';
+      // TikTok needs taller wrap — cap to viewport on phone
+      if(provider==='tiktok'){ var pw=document.getElementById('player-wrap'); pw.style.aspectRatio='9/16'; pw.style.maxWidth='min(420px, 90vw)'; pw.style.margin='0 auto'; }
+    }
+    thumbO.onclick=play;
+    // auto-play if ?autoplay=1
+    if(new URLSearchParams(location.search).get('autoplay')==='1') play();
+  }
+  async function load(){
+    var slug=getSlug();
+    if(!slug){document.getElementById('loading').classList.add('hidden');document.getElementById('error').classList.remove('hidden');return;}
+    try{
+      var res=await fetch(API+'/videos/'+encodeURIComponent(slug));
+      if(!res.ok) throw new Error('not found');
+      var v=await res.json(); current=v;
+      document.title=v.title+' | MINIMSAAH';
+      document.getElementById('bc-title').textContent=v.title;
+      document.getElementById('cat').textContent=(v.category||'High­light').replace(/_/g,' ');
+      if(v.duration){ var m=Math.floor(v.duration/60), s=v.duration%60; document.getElementById('dur').textContent=m+':'+String(s).padStart(2,'0'); }
+      document.getElementById('views').textContent=(v.viewCount||0)+' views';
+      document.getElementById('title').textContent=v.title;
+      document.getElementById('desc').textContent=v.description||'';
+      if(!v.description) document.getElementById('desc').style.display='none';
+      document.getElementById('author').textContent='By '+(v.author? (v.author.firstName+' '+v.author.lastName):'MINIMSAAH');
+      document.getElementById('date').textContent=fmt(v.publishedAt||v.createdAt);
+      var tg=document.getElementById('tags'); (v.tags||[]).forEach(function(t){var s=document.createElement('span');s.className='text-[10px] font-mono tracking-widest border border-white/10 px-2 py-1 text-gray-500 uppercase';s.textContent='#'+t;tg.appendChild(s);});
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('content').classList.remove('hidden');
+      document.getElementById('share-copy').onclick=function(){navigator.clipboard.writeText(location.href);this.textContent='✓';setTimeout(()=>this.innerHTML='<iconify-icon icon="solar:link-linear" width="14"></iconify-icon>',1200);};
+      loadPlayer(v);
+      loadRelated(v.category, v.id);
+    }catch(e){document.getElementById('loading').classList.add('hidden');document.getElementById('error').classList.remove('hidden');}
+  }
+  async function loadRelated(cat, excludeId){
+    try{
+      var q=cat? '?category='+encodeURIComponent(cat)+'&limit=3&status=PUBLISHED':'?limit=3&status=PUBLISHED';
+      var res=await fetch(API+'/videos'+q);
+      if(!res.ok) return;
+      var data=await res.json();
+      var items=(data.items||data).filter(function(x){return x.id!==excludeId;}).slice(0,3);
+      if(!items.length) return;
+      var grid=document.getElementById('related-grid');
+      items.forEach(function(it){
+        var t= window.MinimsaahEmbeds? window.MinimsaahEmbeds.thumbnailUrl(it): (it.thumbnail||'');
+        var a=document.createElement('a');
+        a.href='video.html?slug='+encodeURIComponent(it.slug);
+        a.className='group block rounded-sm overflow-hidden border border-white/5 bg-[#0A0A0A]';
+        a.innerHTML='<div class="aspect-[16/9] overflow-hidden bg-[#111] relative">'+(t? '<img src="'+t+'" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">':'')+'<div class="absolute inset-0 flex items-center justify-center"><div class="w-10 h-10 rounded-full bg-[#E63946]/90 flex items-center justify-center"><svg class="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div></div><div class="p-3"><h3 class="text-sm font-medium line-clamp-2 group-hover:text-[#E63946]">'+it.title+'</h3><span class="text-[11px] font-mono text-gray-600">'+fmt(it.publishedAt||it.createdAt)+'</span></div>';
+        grid.appendChild(a);
+      });
+      document.getElementById('related').classList.remove('hidden');
+    }catch{}
+  }
+  load();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build output
+dist/
+backend/dist/
+.next/
+out/
+frontend/.next/
+frontend/out/
+build/
+
+# Env & secrets - NEVER push
+.env
+.env.local
+.env.development
+.env.production
+DATABASE_URL
+
+# Uploads & generated media
+uploads/
+**/uploads/
+backend/uploads/
+public/uploads/
+
+# Logs & OS
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+.DS_Store
+Thumbs.db
+
+# Prisma (keep schema + migrations)
+# keep prisma/migrations
+
+# Credentials / docs that leak passwords
+husers.txt
+users_credentials.txt
+how to run.txt
+
+# Misc
+.freebuff/
+.playwright-mcp/
+architecture and phases/
+docs_replacement.html
+coverage/
+.nyc_output/

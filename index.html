@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en" class="antialiased"><head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MINIMSAAH | Sports Journalist</title>
+<meta name="description" content="MINIMSAAH — Sports journalist covering grassroots football, player profiles, match analysis, and documentary storytelling from Accra, Ghana.">
+<meta property="og:title" content="MINIMSAAH | Sports Journalist">
+<meta property="og:description" content="In-depth sports journalism — features, documentaries, and analysis from the heart of grassroots football.">
+<meta property="og:image" content="assets/images/hero-bg.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="MINIMSAAH | Sports Journalist">
+<meta name="twitter:description" content="In-depth sports journalism — features, documentaries, and analysis from the heart of grassroots football.">
+<meta name="twitter:image" content="assets/images/hero-bg.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
+
+<style>
+/* ===== Focus Ring Styles (Keyboard Accessibility) ===== */
+*:focus-visible {
+  outline: 2px solid #E63946;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #E63946;
+  outline-offset: 2px;
+}
+
+/* ===== Reduced Motion Support ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .parallax-col {
+    transform: none !important;
+  }
+  #hero-img {
+    transform: none !important;
+  }
+  .ticker-track {
+    animation: none !important;
+  }
+}
+
+/* ===== Hero Extras ===== */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ===== News Ticker ===== */
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: ticker-scroll 40s linear infinite;
+}
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+</style>
+</head>
+
+<noscript><style>body{opacity:1!important;overflow:auto!important}#loader{display:none!important}</style></noscript>
+  <body class="bg-[#050505] text-[#FFFFFF] font-['Inter',sans-serif] m-0 overflow-x-hidden cursor-default selection:bg-[#E63946] selection:text-white text-sm sm:text-base leading-relaxed" style="opacity: 0; overflow-y: auto;">
+
+  <!-- NOISE OVERLAY -->
+  <div style="position: fixed; inset: 0; pointer-events: none; z-index: 9999; opacity: 0.04; background-image: url('data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E');"></div>
+
+  <!-- PRELOADER -->
+  <div id="loader" class="fixed inset-0 bg-[#050505] z-[10000] flex justify-center items-center text-white">
+    <div class="overflow-hidden mb-6">
+      <div id="loader-counter" class="font-['Space_Grotesk',sans-serif] text-8xl md:text-9xl font-medium tracking-tighter leading-none translate-y-full pb-2">0</div>
+    </div>
+    <div class="absolute bottom-0 left-0 w-full h-[2px] bg-white/10 overflow-hidden">
+      <div id="loader-progress" class="w-0 h-full bg-[#E63946]"></div>
+    </div>
+  </div>
+
+  <!-- NAVIGATION -->
+  <!-- NAV: hamburger LEFT, MINIMSAAH CENTER -->
+  <nav class="fixed top-0 left-0 right-0 px-4 sm:px-6 py-4 md:px-12 md:py-8 flex items-center gap-3 z-50 text-white bg-[#050505]/90 backdrop-blur-md border-b border-white/5" style="padding-top: max(1rem, env(safe-area-inset-top)); box-sizing: border-box;">
+    <button id="menu-toggle" class="md:hidden group flex items-center justify-center w-12 h-12 shrink-0 relative bg-white/[0.08] border border-white/15 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,0,0,0.6)] rounded-sm touch-manipulation active:bg-white/10 active:scale-[0.98] transition-all" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-drawer">
+      <svg id="menu-icon-open" class="absolute w-[22px] h-[22px] sm:w-6 sm:h-6 text-white pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 8h14M5 12h14M5 16h14"/></svg>
+      <svg id="menu-icon-close" class="absolute w-[22px] h-[22px] sm:w-6 sm:h-6 text-[#E63946] opacity-0 pointer-events-none transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <a href="#hero" class="absolute left-1/2 -translate-x-1/2 md:static md:left-auto md:translate-x-0 md:flex-1 md:min-w-0 flex items-center">
+      <span class="font-['Space_Grotesk',sans-serif] text-[1.05rem] sm:text-lg md:text-2xl font-medium tracking-[0.18em] sm:tracking-[0.25em] text-white uppercase hover:opacity-80 transition-opacity whitespace-nowrap md:truncate">MINIMSAAH</span>
+    </a>
+    <div class="hidden md:flex gap-8 text-xs font-medium tracking-widest uppercase opacity-80 ml-auto">
+      <a href="#about" class="hover:text-[#E63946] transition-colors">About Me</a>
+      <a href="#videos" class="hover:text-[#E63946] transition-colors">Video Stories</a>
+      <a href="#news" class="hover:text-[#E63946] transition-colors">News &amp; Articles</a>
+      <a href="#docs" class="hover:text-[#E63946] transition-colors">Documentaries</a>
+      <a href="#events" class="hover:text-[#E63946] transition-colors">Events &amp; Promos</a>
+    </div>
+    <!-- right spacer on mobile to keep logo truly centered (matches hamburger width) -->
+    <div class="md:hidden w-12 h-12 shrink-0 ml-auto pointer-events-none" aria-hidden="true"></div>
+  </nav>
+
+  <!-- MOBILE DRAWER OVERLAY -->
+  <div id="mobile-drawer-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9998] opacity-0 pointer-events-none" aria-hidden="true"></div>
+
+  <!-- MOBILE DRAWER -->
+  <div id="mobile-drawer" class="fixed top-0 right-0 h-full w-full sm:w-[380px] bg-[#050505] z-[9999] translate-x-full pointer-events-none flex flex-col border-l border-white/5" style="padding-bottom: env(safe-area-inset-bottom);" role="dialog" aria-modal="true" aria-label="Navigation menu">
+    <div class="flex items-center justify-center px-6 py-4 md:px-12 md:py-8 border-b border-white/5">
+      <span class="font-['Space_Grotesk',sans-serif] text-xl font-medium tracking-[0.25em] text-white uppercase">MINIMSAAH</span>
+    </div>
+
+    <div class="flex flex-col px-6 md:px-12 gap-1 mt-4">
+      <a href="#about" class="drawer-link group flex items-center gap-4 py-4 border-b border-white/5 text-white no-underline opacity-0 translate-y-4 touch-manipulation active:bg-white/5">
+        <span class="text-xs font-mono text-[#E63946] tracking-widest w-8">01</span>
+        <span class="font-['Space_Grotesk',sans-serif] text-2xl font-medium tracking-tight group-hover:text-[#E63946] transition-colors">About Me</span>
+      </a>
+      <a href="#videos" class="drawer-link group flex items-center gap-4 py-4 border-b border-white/5 text-white no-underline opacity-0 translate-y-4 touch-manipulation active:bg-white/5">
+        <span class="text-xs font-mono text-[#E63946] tracking-widest w-8">02</span>
+        <span class="font-['Space_Grotesk',sans-serif] text-2xl font-medium tracking-tight group-hover:text-[#E63946] transition-colors">Video Stories</span>
+      </a>
+      <a href="#news" class="drawer-link group flex items-center gap-4 py-4 border-b border-white/5 text-white no-underline opacity-0 translate-y-4 touch-manipulation active:bg-white/5">
+        <span class="text-xs font-mono text-[#E63946] tracking-widest w-8">03</span>
+        <span class="font-['Space_Grotesk',sans-serif] text-2xl font-medium tracking-tight group-hover:text-[#E63946] transition-colors">News &amp; Articles</span>
+      </a>
+      <a href="#docs" class="drawer-link group flex items-center gap-4 py-4 border-b border-white/5 text-white no-underline opacity-0 translate-y-4 touch-manipulation active:bg-white/5">
+        <span class="text-xs font-mono text-[#E63946] tracking-widest w-8">04</span>
+        <span class="font-['Space_Grotesk',sans-serif] text-2xl font-medium tracking-tight group-hover:text-[#E63946] transition-colors">Documentaries</span>
+      </a>
+      <a href="#events" class="drawer-link group flex items-center gap-4 py-4 border-b border-white/5 text-white no-underline opacity-0 translate-y-4 touch-manipulation active:bg-white/5">
+        <span class="text-xs font-mono text-[#E63946] tracking-widest w-8">05</span>
+        <span class="font-['Space_Grotesk',sans-serif] text-2xl font-medium tracking-tight group-hover:text-[#E63946] transition-colors">Events &amp; Promos</span>
+      </a>
+    </div>
+
+    <div class="px-6 md:px-12 mt-6">
+      <button id="menu-close" class="w-full bg-[#E63946] hover:bg-[#c53030] active:bg-[#b02a35] text-white text-xs font-mono tracking-[0.15em] uppercase py-3.5 rounded-full touch-manipulation active:scale-[0.99] transition-colors" aria-label="Close menu">Close Menu</button>
+    </div>
+
+    <div class="mt-auto px-6 md:px-12 pb-8 opacity-0 drawer-footer">
+      <div class="border-t border-white/10 pt-6">
+        <span class="text-[10px] font-mono text-[#E63946] tracking-widest block mb-3">CONNECT</span>
+        <div class="flex gap-4">
+          <a href="#" class="text-xs text-gray-500 hover:text-white transition-colors">Instagram</a>
+          <a href="#" class="text-xs text-gray-500 hover:text-white transition-colors">Twitter / X</a>
+          <a href="#" class="text-xs text-gray-500 hover:text-white transition-colors">YouTube</a>
+        </div>
+        <p class="text-[10px] text-gray-600 mt-4 font-mono tracking-widest">ACCRA, GHANA</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- WRAPPER -->
+  <div id="wrapper" class="relative z-10 bg-[#050505] shadow-[0_50px_100px_rgba(0,0,0,0.8)] rounded-b-[1.2rem] sm:rounded-b-[2rem]">
+
+        <!-- HERO - Editorial Sports Layout -->
+    <section class="relative bg-[#050505] pt-20 md:pt-24" id="hero">
+      <!-- Full-width image banner -->
+      <div class="relative w-full h-[42vh] sm:h-[45vh] md:h-[55vh] lg:h-[65vh] overflow-hidden">
+        <img id="hero-img" src="assets/images/hero-bg.jpg" class="w-full h-full object-cover grayscale-[30%] hover:grayscale-0 transition-all duration-700" alt="Football stadium">
+        <div class="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/40 to-transparent"></div>
+      </div>
+      <!-- Story content below image -->
+      <div class="relative px-4 sm:px-6 md:px-12 lg:px-20 py-8 sm:py-10 md:py-14 lg:py-16">
+        <div class="max-w-3xl mx-auto lg:mx-0">
+          <div class="flex items-center gap-3 mb-4 sm:mb-5" id="hero-badge">
+            <span class="text-[10px] md:text-xs font-mono text-[#E63946] tracking-widest border border-[#E63946]/30 px-2.5 py-1 bg-[#E63946]/10 uppercase">Exclusive</span>
+            <span class="text-[10px] md:text-xs font-mono text-gray-500 tracking-widest">3 hours ago</span>
+          </div>
+          <h1 class="font-['Space_Grotesk',sans-serif] text-[1.75rem] sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-medium tracking-tight text-white leading-[1.05] mb-4 sm:mb-5" id="hero-title">Inside Ghana's Rise to Football Prominence</h1>
+          <p class="text-gray-400 text-[13px] sm:text-sm md:text-lg leading-relaxed max-w-2xl mb-5 sm:mb-6" id="hero-deck">How grassroots academies in Accra are producing the next generation of world-class talent and why scouts are paying attention.</p>
+          <div class="flex items-center gap-3 mb-6 sm:mb-8" id="hero-meta">
+            <span class="text-xs font-mono text-gray-400">By <span class="text-white">[Your Name]</span></span>
+            <span class="w-1 h-1 rounded-full bg-[#E63946]"></span>
+            <span class="text-xs font-mono text-gray-500">8 min read</span>
+          </div>
+          <a href="#featured" class="inline-flex items-center gap-3 group/cta bg-[#E63946] hover:bg-[#c53030] text-white text-xs font-mono tracking-widest uppercase px-5 sm:px-6 py-3 sm:py-3.5 transition-all duration-300 rounded-sm touch-manipulation active:bg-[#c53030]" id="hero-cta">Read Story <svg class="w-4 h-4 group-hover/cta:translate-x-1 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></a>
+          <div class="mt-8 pt-6 border-t border-white/5" id="hero-secondary">
+            <a href="#" class="group/secgroup flex gap-4 items-start">
+              <div class="w-16 h-16 md:w-20 md:h-16 shrink-0 rounded-sm overflow-hidden bg-[#0A0A0A]">
+                <img src="https://images.pexels.com/photos/8941612/pexels-photo-8941612.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Training session" loading="lazy" width="200" height="200" class="w-full h-full object-cover grayscale opacity-60 group-hover/secgroup:grayscale-0 group-hover/secgroup:opacity-100 transition-all duration-500">
+              </div>
+              <div class="min-w-0">
+                <span class="text-[9px] font-mono text-[#E63946] tracking-widest uppercase">Analysis</span>
+                <h3 class="font-['Space_Grotesk',sans-serif] text-sm md:text-base font-medium text-white mt-0.5 group-hover/secgroup:text-[#E63946] transition-colors leading-snug">The Academy Pipeline: Where Champions Are Made</h3>
+                <span class="text-[10px] font-mono text-gray-600 mt-1 block">5 min read</span>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURED STORY -->
+    <section id="featured" class="py-12 sm:py-20 md:py-32 px-4 sm:px-6 md:px-20 max-w-[1600px] mx-auto relative z-20 bg-[#050505]">
+      <div class="mb-8 sm:mb-12 md:mb-16 flex justify-between items-end">
+        <div>
+          <span class="text-xs font-mono text-[#E63946] tracking-widest block mb-3">STORY</span>
+          <h2 class="font-['Space_Grotesk',sans-serif] text-2xl sm:text-3xl md:text-5xl font-medium tracking-tight text-white">FEATURED STORY</h2>
+        </div>
+        <span class="text-xs font-mono text-gray-500 hidden md:block">LATEST COVERAGE</span>
+      </div>
+
+      <div class="grid lg:grid-cols-12 gap-6 lg:gap-10 reveal-item">
+        <!-- Large Image -->
+        <div class="lg:col-span-7 relative overflow-hidden rounded-sm group/card cursor-pointer">
+          <div class="aspect-[16/10] overflow-hidden">
+            <img src="https://images.pexels.com/photos/8060016/pexels-photo-8060016.jpeg?auto=compress&cs=tinysrgb&w=1600" alt="Grassroots football match in progress" loading="lazy" width="1600" height="1000" class="w-full h-full object-cover grayscale mix-blend-luminosity group-hover/card:grayscale-0 group-hover/card:mix-blend-normal group-hover/card:scale-105 transition-all duration-700">
+          </div>
+          <div class="absolute inset-0 bg-gradient-to-t from-[#050505]/90 via-transparent to-transparent"></div>
+          <div class="absolute bottom-0 left-0 p-6 md:p-8">
+            <span class="text-[10px] md:text-xs font-mono text-[#E63946] tracking-widest border border-[#E63946]/30 px-2 py-1 bg-[#E63946]/10 mb-3 inline-block uppercase">Exclusive</span>
+            <h3 class="font-['Space_Grotesk',sans-serif] text-2xl sm:text-3xl md:text-4xl font-medium tracking-tight text-white mb-2 group-hover/card:text-[#E63946] transition-colors duration-300">From Dusty Pitches to Global Radar</h3>
+            <p class="text-sm text-gray-400 max-w-lg leading-relaxed hidden sm:block">An in-depth look at how unmarked fields across Accra are producing players who catch the eye of international scouts.</p>
+          </div>
+          <div class="absolute bottom-0 left-0 w-0 h-[2px] bg-[#E63946] group-hover/card:w-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"></div>
+        </div>
+
+        <!-- Side Stories -->
+        <div class="lg:col-span-5 flex flex-col gap-4">
+          <a href="#" class="group/card block relative overflow-hidden rounded-sm flex-1 border border-white/5 bg-[#0A0A0A]">
+            <div class="aspect-[16/9] overflow-hidden">
+              <img src="https://images.pexels.com/photos/8941612/pexels-photo-8941612.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Training session" loading="lazy" width="800" height="450" class="w-full h-full object-cover grayscale opacity-60 group-hover/card:grayscale-0 group-hover/card:opacity-100 group-hover/card:scale-105 transition-all duration-700">
+            </div>
+            <div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/60 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 p-5">
+              <span class="text-[10px] font-mono text-[#E63946] tracking-widest uppercase">Analysis</span>
+              <h4 class="font-['Space_Grotesk',sans-serif] text-lg md:text-xl font-medium tracking-tight text-white mt-1 group-hover/card:text-[#E63946] transition-colors duration-300">The Academy Pipeline: Where Champions Are Made</h4>
+              <p class="text-xs text-gray-500 mt-2">5 min read</p>
+            </div>
+          </a>
+
+          <a href="#" class="group/card block relative overflow-hidden rounded-sm flex-1 border border-white/5 bg-[#0A0A0A]">
+            <div class="aspect-[16/9] overflow-hidden">
+              <img src="https://images.pexels.com/photos/38454989/pexels-photo-38454989.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Match highlights" loading="lazy" width="800" height="450" class="w-full h-full object-cover grayscale opacity-60 group-hover/card:grayscale-0 group-hover/card:opacity-100 group-hover/card:scale-105 transition-all duration-700">
+            </div>
+            <div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/60 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 p-5">
+              <span class="text-[10px] font-mono text-[#E63946] tracking-widest uppercase">Match Report</span>
+              <h4 class="font-['Space_Grotesk',sans-serif] text-lg md:text-xl font-medium tracking-tight text-white mt-1 group-hover/card:text-[#E63946] transition-colors duration-300">GPL Week 14: Drama, Goals, and Surprises</h4>
+              <p class="text-xs text-gray-500 mt-2">3 min read</p>
+            </div>
+          </a>
+
+          <a href="#" class="group/card block relative overflow-hidden rounded-sm flex-1 border border-white/5 bg-[#0A0A0A]">
+            <div class="aspect-[16/9] overflow-hidden">
+              <img src="https://images.pexels.com/photos/1369490/pexels-photo-1369490.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Interview setting" loading="lazy" width="800" height="450" class="w-full h-full object-cover grayscale opacity-60 group-hover/card:grayscale-0 group-hover/card:opacity-100 group-hover/card:scale-105 transition-all duration-700">
+            </div>
+            <div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/60 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 p-5">
+              <span class="text-[10px] font-mono text-[#E63946] tracking-widest uppercase">Interview</span>
+              <h4 class="font-['Space_Grotesk',sans-serif] text-lg md:text-xl font-medium tracking-tight text-white mt-1 group-hover/card:text-[#E63946] transition-colors duration-300">Coach Asante: "We Build Character First"</h4>
+              <p class="text-xs text-gray-500 mt-2">7 min read</p>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIDEO STORIES — Horizontal Scroll (kept on phone+tablet) -->
+    <section id="videos" class="overflow-hidden h-[100vh] supports-[height:100dvh]:h-[100dvh] border-white/10 border-t relative bg-[#050505] z-20 w-full" style="touch-action: pan-y;">
+      <div class="px-4 sm:px-6 md:px-20 py-5 sm:py-6 md:py-8 absolute top-0 left-0 right-0 z-30 flex justify-between items-end">
+        <div>
+          <span class="text-[10px] md:text-xs font-mono text-[#E63946] tracking-widest block mb-2">VIDEOS</span>
+          <h2 class="font-['Space_Grotesk',sans-serif] text-2xl md:text-3xl font-medium tracking-tight text-white">VIDEO STORIES</h2>
+        </div>
+        <div class="hidden md:flex items-center gap-2">
+          <span class="text-[10px] font-mono text-gray-500 tracking-widest">SCROLL</span>
+          <iconify-icon icon="solar:arrow-right-linear" class="w-4 h-4 text-[#E63946]" style="stroke-width: 1.5px;"></iconify-icon>
+        </div>
+      </div>
+
+      <div id="horiz-wrap" class="flex w-[300%] h-full will-change-transform pt-24 md:pt-20">
+
+        <!-- Video 1 — Feature -->
+        <div class="relative w-1/3 h-full flex flex-col md:flex-row items-center justify-evenly md:justify-between px-4 sm:px-6 md:px-20 bg-[#050505] border-r border-white/10 overflow-hidden shrink-0">
+          <div class="absolute inset-0 z-0 pointer-events-none">
+            <img src="https://images.pexels.com/photos/31471420/pexels-photo-31471420.jpeg?auto=compress&cs=tinysrgb&w=3840" alt="Football feature story" loading="lazy" width="3840" height="2160" class="w-full h-full object-cover opacity-30 grayscale mix-blend-luminosity">
+            <div class="absolute inset-0 bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-[#050505]/40"></div>
+          </div>
+
+          <div class="relative z-10 w-full md:w-[45%] flex flex-col justify-center">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="text-[10px] md:text-xs font-mono text-[#E63946] tracking-widest border border-[#E63946]/30 px-2 py-1 bg-[#E63946]/10 uppercase">Feature</span>
+              <span class="text-[10px] md:text-xs font-mono text-gray-500 tracking-widest">12:34</span>
+            </div>
+            <h2 class="font-['Space_Grotesk',sans-serif] text-[2rem] sm:text-4xl md:text-7xl font-medium tracking-tight text-white mb-3 sm:mb-4 leading-none">
+              THE MAKING OF A PRO
+            </h2>
+            <div class="max-w-full sm:max-w-lg border-l-2 border-[#E63946] pl-4 sm:pl-5">
+              <p class="font-['Space_Grotesk',sans-serif] text-gray-300 text-[13px] sm:text-base md:text-xl leading-snug tracking-tight">
+                <strong class="text-white font-medium">A day in the life of Accra's finest grassroots prospect.</strong> From 5AM training to evening analysis sessions — the grind behind the talent.
+              </p>
+            </div>
+            <div class="flex items-center gap-3 mt-6">
+              <span class="text-xs font-mono text-gray-500">24K views • 2 weeks ago</span>
+            </div>
+          </div>
+
+          <div class="relative z-10 w-full md:w-[45%] shrink-0 flex items-center justify-center">
+            <div class="relative group cursor-pointer">
+              <div class="w-20 h-20 sm:w-24 md:w-32 md:h-32 rounded-full bg-[#E63946]/90 flex items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-transform duration-300 shadow-[0_0_40px_rgba(230,57,70,0.3)]">
+                <svg class="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white ml-2" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              </div>
+              <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] font-mono text-gray-500 tracking-widest">WATCH</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Video 2 — Documentary Preview -->
+        <div class="relative w-1/3 h-full flex flex-col md:flex-row items-center justify-evenly md:justify-between px-4 sm:px-6 md:px-20 bg-[#111111] border-r border-white/10 overflow-hidden shrink-0">
+          <div class="absolute inset-0 z-0 pointer-events-none">
+            <img src="https://images.pexels.com/photos/1375152/pexels-photo-1375152.jpeg?auto=compress&cs=tinysrgb&w=3840" alt="Documentary preview" loading="lazy" width="3840" height="2160" class="w-full h-full object-cover opacity-30 grayscale mix-blend-luminosity">
+            <div class="absolute inset-0 bg-gradient-to-r from-[#111111] via-[#111111]/80 to-transparent"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-[#111111] via-transparent to-[#111111]/40"></div>
+          </div>
+
+          <div class="relative z-10 w-full md:w-[45%] flex flex-col justify-center">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="text-[10px] md:text-xs font-mono text-[#E63946] tracking-widest border border-[#E63946]/30 px-2 py-1 bg-[#E63946]/10 uppercase">Documentary</span>
+              <span class="text-[10px] md:text-xs font-mono text-gray-500 tracking-widest">48:12</span>
+            </div>
+            <h2 class="font-['Space_Grotesk',sans-serif] text-[2rem] sm:text-4xl md:text-7xl font-medium tracking-tight text-white mb-3 sm:mb-4 leading-none">
+              BEYOND THE PITCH
+            </h2>
+            <div class="max-w-full sm:max-w-lg border-l-2 border-[#E63946] pl-4 sm:pl-5">
+              <p class="font-['Space_Grotesk',sans-serif] text-gray-300 text-[13px] sm:text-base md:text-xl leading-snug tracking-tight">
+                <strong class="text-white font-medium">The untold stories of Ghana's football culture.</strong> Three communities, three pitches, one shared dream — told through the voices of the players themselves.
+              </p>
+            </div>
+            <div class="flex items-center gap-3 mt-6">
+              <span class="text-xs font-mono text-gray-500">56K views • 1 month ago</span>
+            </div>
+          </div>
+
+          <div class="relative z-10 w-full md:w-[45%] shrink-0 flex items-center justify-center">
+            <div class="relative group cursor-pointer">
+              <div class="w-20 h-20 sm:w-24 md:w-32 md:h-32 rounded-full bg-[#E63946]/90 flex items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-transform duration-300 shadow-[0_0_40px_rgba(230,57,70,0.3)]">
+                <svg class="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white ml-2" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              </div>
+              <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] font-mono text-gray-500 tracking-widest">TRAILER</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Video 3 — Interview -->
+        <div class="relative w-1/3 h-full flex flex-col md:flex-row items-center justify-evenly md:justify-between px-4 sm:px-6 md:px-20 bg-[#0A0A0A] overflow-hidden shrink-0">
+          <div class="absolute inset-0 z-0 pointer-events-none">
+            <img src="https://images.pexels.com/photos/28582037/pexels-photo-28582037.jpeg?auto=compress&cs=tinysrgb&w=3840" alt="Interview footage" loading="lazy" width="3840" height="2160" class="w-full h-full object-cover opacity-30 grayscale mix-blend-luminosity">
+            <div class="absolute inset-0 bg-gradient-to-r from-[#0A0A0A] via-[#0A0A0A]/80 to-transparent"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-[#0A0A0A]/40"></div>
+          </div>
+
+          <div class="relative z-10 w-full md:w-[45%] flex flex-col justify-center">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="text-[10px] md:text-xs font-mono text-[#E63946] tracking-widest border border-[#E63946]/30 px-2 py-1 bg-[#E63946]/10 uppercase">Interview</span>
+              <span class="text-[10px] md:text-xs font-mono text-gray-500 tracking-widest">18:45</span>
+            </div>
+            <h2 class="font-['Space_Grotesk',sans-serif] text-[2rem] sm:text-4xl md:text-7xl font-medium tracking-tight text-white mb-3 sm:mb-4 leading-none">
+              THE COACH'S VOICE
+            </h2>
+            <div class="max-w-full sm:max-w-lg border-l-2 border-[#E63946] pl-4 sm:pl-5">
+              <p class="font-['Space_Grotesk',sans-serif] text-gray-300 text-[13px] sm:text-base md:text-xl leading-snug tracking-tight">
+                <strong class="text-white font-medium">One-on-one with Coach Kwame Asante.</strong> His philosophy on youth development, the state of Ghanaian football, and what it takes to go from local to global.
+              </p>
+            </div>
+            <div class="flex items-center gap-3 mt-6">
+              <span class="text-xs font-mono text-gray-500">18K views • 3 weeks ago</span>
+            </div>
+          </div>
+
+          <div class="relative z-10 w-full md:w-[45%] shrink-0 flex items-center justify-center">
+            <div class="relative group cursor-pointer">
+              <div class="w-20 h-20 sm:w-24 md:w-32 md:h-32 rounded-full bg-[#E63946]/90 flex items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-transform duration-300 shadow-[0_0_40px_rgba(230,57,70,0.3)]">
+                <svg class="w-10 h-10 md:w-12 md:h-12 text-white ml-2" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              </div>
+              <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] font-mono text-gray-500 tracking-widest">WATCH</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ABOUT ME -->
+    <section id="about" class="py-12 sm:py-20 md:py-32 px-4 sm:px-6 md:px-20 max-w-[1600px] mx-auto bg-[#050505] overflow-hidden border-t border-white/5 relative z-20">
+      <div class="grid lg:grid-cols-12 gap-8 lg:gap-16 items-center">
+        <!-- Portrait -->
+        <div class="lg:col-span-5 reveal-item">
+          <div class="relative overflow-hidden rounded-sm">
+            <img src="https://images.unsplash.com/photo-1542909168-82c3e7fdca5c?w=800&auto=format&fit=crop" alt="Sports journalist at work — pitchside reporting" loading="lazy" width="800" height="1000" class="w-full aspect-[3/4] object-cover grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all duration-700">
+            <div class="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-[#050505] to-transparent"></div>
+            <div class="absolute bottom-4 left-4">
+              <span class="text-[10px] font-mono text-[#E63946] tracking-widest bg-[#050505]/80 px-2 py-1 backdrop-blur-sm">ACCRA, GHANA</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bio -->
+        <div class="lg:col-span-7 reveal-item">
+          <span class="text-xs font-mono text-[#E63946] tracking-widest block mb-4">01 — ABOUT ME</span>
+          <h2 class="font-['Space_Grotesk',sans-serif] text-3xl sm:text-4xl md:text-6xl font-medium tracking-tight text-white mb-6 leading-[1.1]">
+            [Your Name]
+          </h2>
+          <p class="text-gray-300 text-base sm:text-lg md:text-xl leading-relaxed mb-6 max-w-2xl">
+            Sports journalist and documentary filmmaker based in Accra, Ghana. I cover grassroots football across West Africa — the stories, the players, the communities that make the beautiful game beautiful.
+          </p>
+          <p class="text-gray-500 text-sm sm:text-base leading-relaxed mb-8 max-w-2xl">
+            With over a decade of experience reporting from local pitches to international tournaments, my work has been featured in leading sports publications and broadcast networks. I believe every player has a story worth telling — and every story deserves to be told with integrity.
+          </p>
+
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-8">
+            <div>
+              <span class="block text-2xl md:text-3xl font-['Space_Grotesk',sans-serif] font-medium text-white">10+</span>
+              <span class="text-[10px] font-mono text-[#E63946] tracking-widest uppercase">Years Reporting</span>
+            </div>
+            <div>
+              <span class="block text-2xl md:text-3xl font-['Space_Grotesk',sans-serif] font-medium text-white">50+</span>
+              <span class="text-[10px] font-mono text-[#E63946] tracking-widest uppercase">Documentaries</span>
+            </div>
+            <div>
+              <span class="block text-2xl md:text-3xl font-['Space_Grotesk',sans-serif] font-medium text-white">12</span>
+              <span class="text-[10px] font-mono text-[#E63946] tracking-widest uppercase">Countries Covered</span>
+            </div>
+            <div>
+              <span class="block text-2xl md:text-3xl font-['Space_Grotesk',sans-serif] font-medium text-white">3</span>
+              <span class="text-[10px] font-mono text-[#E63946] tracking-widest uppercase">Awards Won</span>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-3">
+            <span class="text-[10px] font-mono text-gray-500 border border-white/10 px-3 py-1.5 tracking-wider uppercase">Grassroots Football</span>
+            <span class="text-[10px] font-mono text-gray-500 border border-white/10 px-3 py-1.5 tracking-wider uppercase">Player Profiles</span>
+            <span class="text-[10px] font-mono text-gray-500 border border-white/10 px-3 py-1.5 tracking-wider uppercase">Match Analysis</span>
+            <span class="text-[10px] font-mono text-gray-500 border border-white/10 px-3 py-1.5 tracking-wider uppercase">Documentary Film</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DOCUMENTARIES -->
+    <section id="docs" class="py-12 sm:py-20 md:py-32 px-4 sm:px-6 md:px-20 max-w-[1600px] mx-auto bg-[#050505] relative z-20 border-t border-white/5">
+      <div class="mb-8 sm:mb-12 md:mb-16 flex justify-between items-end">
+        <div>
+          <span class="text-xs font-mono text-[#E63946] tracking-widest block mb-3">LONG-FORM</span>
+          <h2 class="font-['Space_Grotesk',sans-serif] text-2xl sm:text-3xl md:text-5xl font-medium tracking-tight text-white">DOCUMENTARIES</h2>
+        </div>
+        <span class="text-xs font-mono text-gray-500 hidden md:block">STORYTELLING</span>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-4 md:gap-6">
+        <!-- Doc 1 — Large -->
+        <a href="#" class="md:row-span-2 relative overflow-hidden rounded-sm group/card cursor-pointer border border-white/5 bg-[#0A0A0A] block min-h-[300px] md:min-h-0">
+          <div class="absolute inset-[-10%] scale-[1.05] group-hover/card:scale-[1.1] transition-transform duration-700 ease-out">
+            <img src="https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1600&auto=format&fit=crop" alt="Documentary — grassroots football" loading="lazy" width="1600" height="1200" class="w-full h-full object-cover opacity-60 group-hover/card:opacity-70 group-hover/card:mix-blend-normal transition-all duration-700">
+          </div>
+          <div class="absolute inset-0 bg-gradient-to-t from-[#050505]/90 via-[#050505]/40 to-transparent"></div>
+          <div class="absolute inset-0 flex items-center justify-center z-20">
+            <div class="w-16 h-16 rounded-full bg-[#E63946]/90 flex items-center justify-center backdrop-blur-sm shadow-[0_0_25px_rgba(230,57,70,0.3)]">
+              <svg class="w-7 h-7 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 p-6 md:p-8 z-10">
+            <span class="text-[10px] font-mono text-[#E63946] tracking-widest uppercase">Documentary • 52 min</span>
+            <h3 class="font-['Space_Grotesk',sans-serif] text-2xl md:text-4xl font-medium tracking-tight text-white mt-2 mb-2 group-hover/card:text-[#E63946] transition-colors duration-300">Grassroots: The Soul of Ghanaian Football</h3>
+            <p class="text-sm text-gray-400 max-w-md leading-relaxed hidden md:block">A deep dive into the communities, coaches, and pitches that form the backbone of West African football.</p>
+            <div class="flex items-center gap-2 mt-4 text-[#E63946] text-xs font-mono tracking-widest uppercase group-hover/card:gap-3 transition-all duration-300"><span>Watch Now</span> <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div>
+          </div>
+          <div class="absolute bottom-0 left-0 w-0 h-[2px] bg-[#E63946] group-hover/card:w-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"></div>
+        </a>
+
+        <!-- Doc 2 -->
+        <a href="#" class="relative overflow-hidden rounded-sm group/card cursor-pointer border border-white/5 bg-[#0A0A0A] block min-h-[250px]">
+          <div class="absolute inset-[-10%] scale-[1.05] group-hover/card:scale-[1.1] transition-transform duration-700 ease-out">
+            <img src="https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=1600&auto=format&fit=crop" alt="Documentary — player journey" loading="lazy" width="1600" height="1200" class="w-full aspect-[16/9] object-cover opacity-60 group-hover/card:opacity-70 group-hover/card:mix-blend-normal transition-all duration-700">
+          </div>
+          <div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/90 via-[#0A0A0A]/40 to-transparent"></div>
+          <div class="absolute inset-0 flex items-center justify-center z-20">
+            <div class="w-14 h-14 rounded-full bg-[#E63946]/90 flex items-center justify-center backdrop-blur-sm shadow-[0_0_25px_rgba(230,57,70,0.3)]">
+              <svg class="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 p-5 z-10">
+            <span class="text-[10px] font-mono text-[#E63946] tracking-widest uppercase">Documentary • 38 min</span>
+            <h3 class="font-['Space_Grotesk',sans-serif] text-lg md:text-xl font-medium tracking-tight text-white mt-2 group-hover/card:text-[#E63946] transition-colors duration-300">The Road to Kumasi</h3>
+            <p class="text-xs text-gray-400 mt-1.5">Following three prospects on their journey to the regional finals.</p>
+            <div class="flex items-center gap-2 mt-3 text-[#E63946] text-[10px] font-mono tracking-widest uppercase group-hover/card:gap-3 transition-all duration-300"><span>Watch Now</span> <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div>
+          </div>
+          <div class="absolute bottom-0 left-0 w-0 h-[2px] bg-[#E63946] group-hover/card:w-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"></div>
+        </a>
+
+        <!-- Doc 3 -->
+        <a href="#" class="relative overflow-hidden rounded-sm group/card cursor-pointer border border-white/5 bg-[#0A0A0A] block min-h-[250px]">
+          <div class="absolute inset-[-10%] scale-[1.05] group-hover/card:scale-[1.1] transition-transform duration-700 ease-out">
+            <img src="https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1600&auto=format&fit=crop" alt="Documentary — street football" loading="lazy" width="1600" height="1200" class="w-full aspect-[16/9] object-cover opacity-60 group-hover/card:opacity-70 group-hover/card:mix-blend-normal transition-all duration-700">
+          </div>
+          <div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/90 via-[#0A0A0A]/40 to-transparent"></div>
+          <div class="absolute inset-0 flex items-center justify-center z-20">
+            <div class="w-14 h-14 rounded-full bg-[#E63946]/90 flex items-center justify-center backdrop-blur-sm shadow-[0_0_25px_rgba(230,57,70,0.3)]">
+              <svg class="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 p-5 z-10">
+            <span class="text-[10px] font-mono text-[#E63946] tracking-widest uppercase">Documentary • 28 min</span>
+            <h3 class="font-['Space_Grotesk',sans-serif] text-lg md:text-xl font-medium tracking-tight text-white mt-2 group-hover/card:text-[#E63946] transition-colors duration-300">Street Kings</h3>
+            <p class="text-xs text-gray-500 mt-1">The raw, unfiltered world of Accra's street football scene.</p>
+          </div>
+          <div class="absolute bottom-0 left-0 w-0 h-[2px] bg-[#E63946] group-hover/card:w-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"></div>
+        </a>
+      </div>
+
+      <div class="mt-10 text-center">
+        <a href="#" class="inline-flex items-center gap-2 text-xs font-mono text-[#E63946] tracking-widest uppercase hover:gap-3 transition-all duration-300">
+          View All Documentaries
+          <iconify-icon icon="solar:arrow-right-linear" class="w-4 h-4" style="stroke-width: 1.5px;"></iconify-icon>
+        </a>
+      </div>
+    </section>
+
+    <!-- NEWS & ARTICLES -->
+    <section id="news" class="py-12 sm:py-20 md:py-32 px-4 sm:px-6 md:px-20 max-w-[1600px] mx-auto bg-[#050505] relative z-20 border-t border-white/5">
+      <div class="mb-8 sm:mb-12 md:mb-16 flex justify-between items-end">
+        <div>
+          <span class="text-xs font-mono text-[#E63946] tracking-widest block mb-3">JOURNALISM</span>
+          <h2 class="font-['Space_Grotesk',sans-serif] text-2xl sm:text-3xl md:text-5xl font-medium tracking-tight text-white">NEWS &amp; ARTICLES</h2>
+        </div>
+        <span class="text-xs font-mono text-gray-500 hidden md:block">LATEST COVERAGE</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+        <!-- Article 1 — Featured (spans 2 cols) -->
+        <a href="#" class="group/card md:col-span-2 relative overflow-hidden rounded-sm border border-white/5 bg-[#0A0A0A]">
+          <div class="absolute inset-[-10%] scale-[1.05] group-hover/card:scale-[1.1] transition-transform duration-700 ease-out">
+            <img src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1600&auto=format&fit=crop" alt="Stadium panorama" loading="lazy" width="1600" height="900" class="w-full h-full object-cover opacity-40 mix-blend-luminosity group-hover/card:opacity-70 group-hover/card:mix-blend-normal transition-all duration-700">
+          </div>
+          <div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/95 via-[#0A0A0A]/40 to-transparent"></div>
+          <div class="relative z-10 p-6 md:p-8 flex flex-col h-full justify-end min-h-[300px] md:min-h-[400px]">
+            <span class="text-[10px] font-mono text-[#E63946] tracking-widest uppercase mb-2">Feature</span>
+            <h3 class="font-['Space_Grotesk',sans-serif] text-2xl md:text-3xl font-medium tracking-tight text-white mb-2 group-hover/card:text-[#E63946] transition-colors duration-300">The State of Ghanaian Football in 2026</h3>
+            <p class="text-sm text-gray-400 max-w-lg leading-relaxed mb-3">A comprehensive analysis of where Ghanaian football stands today — the opportunities, the challenges, and the players shaping the future.</p>
+            <span class="text-xs font-mono text-gray-500">12 min read • Jan 15, 2026</span>
+          </div>
+          <div class="absolute bottom-0 left-0 w-0 h-[2px] bg-[#E63946] group-hover/card:w-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"></div>
+        </a>
+
+        <!-- Article 2 -->
+        <a href="#" class="group/card relative overflow-hidden rounded-sm border border-white/5 bg-[#0A0A0A]">
+          <div class="absolute inset-[-10%] scale-[1.05] group-hover/card:scale-[1.1] transition-transform duration-700 ease-out">
+            <img src="https://images.pexels.com/photos/9519537/pexels-photo-9519537.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Match analysis" loading="lazy" width="800" height="600" class="w-full aspect-[4/3] object-cover opacity-40 mix-blend-luminosity group-hover/card:opacity-70 group-hover/card:mix-blend-normal transition-all duration-700">
+          </div>
+          <div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/95 via-[#0A0A0A]/40 to-transparent"></div>
+          <div class="relative z-10 p-5 flex flex-col h-full justify-end min-h-[240px]">
+            <span class="text-[10px] font-mono text-[#E63946] tracking-widest uppercase mb-1">Match Report</span>
+            <h3 class="font-['Space_Grotesk',sans-serif] text-lg font-medium tracking-tight text-white group-hover/card:text-[#E63946] transition-colors duration-300">GPL Week 14: The Results That Matter</h3>
+            <span class="text-[10px] font-mono text-gray-500 mt-2">3 min read • Dec 28, 2025</span>
+          </div>
+          <div class="absolute bottom-0 left-0 w-0 h-[2px] bg-[#E63946] group-hover/card:w-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"></div>
+        </a>
+
+        <!-- Article 3 -->
+        <a href="#" class="group/card relative overflow-hidden rounded-sm border border-white/5 bg-[#0A0A0A]">
+          <div class="absolute inset-[-10%] scale-[1.05] group-hover/card:scale-[1.1] transition-transform duration-700 ease-out">
+            <img src="https://images.pexels.com/photos/1375152/pexels-photo-1375152.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Training ground" loading="lazy" width="800" height="600" class="w-full aspect-[4/3] object-cover opacity-40 mix-blend-luminosity group-hover/card:opacity-70 group-hover/card:mix-blend-normal transition-all duration-700">
+          </div>
+          <div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/95 via-[#0A0A0A]/40 to-transparent"></div>
+          <div class="relative z-10 p-5 flex flex-col h-full justify-end min-h-[240px]">
+            <span class="text-[10px] font-mono text-[#E63946] tracking-widest uppercase mb-1">Analysis</span>
+            <h3 class="font-['Space_Grotesk',sans-serif] text-lg font-medium tracking-tight text-white group-hover/card:text-[#E63946] transition-colors duration-300">Inside the Accra Lions Academy System</h3>
+            <span class="text-[10px] font-mono text-gray-500 mt-2">8 min read • Dec 20, 2025</span>
+          </div>
+          <div class="absolute bottom-0 left-0 w-0 h-[2px] bg-[#E63946] group-hover/card:w-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"></div>
+        </a>
+
+        <!-- Article 4 -->
+        <a href="#" class="group/card relative overflow-hidden rounded-sm border border-white/5 bg-[#0A0A0A]">
+          <div class="absolute inset-[-10%] scale-[1.05] group-hover/card:scale-[1.1] transition-transform duration-700 ease-out">
+            <img src="https://images.pexels.com/photos/1369490/pexels-photo-1369490.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Interview" loading="lazy" width="800" height="600" class="w-full aspect-[4/3] object-cover opacity-40 mix-blend-luminosity group-hover/card:opacity-70 group-hover/card:mix-blend-normal transition-all duration-700">
+          </div>
+          <div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/95 via-[#0A0A0A]/40 to-transparent"></div>
+          <div class="relative z-10 p-5 flex flex-col h-full justify-end min-h-[240px]">
+            <span class="text-[10px] font-mono text-[#E63946] tracking-widest uppercase mb-1">Interview</span>
+            <h3 class="font-['Space_Grotesk',sans-serif] text-lg font-medium tracking-tight text-white group-hover/card:text-[#E63946] transition-colors duration-300">Coach Asante: Building the Next Generation</h3>
+            <span class="text-[10px] font-mono text-gray-500 mt-2">7 min read • Dec 15, 2025</span>
+          </div>
+          <div class="absolute bottom-0 left-0 w-0 h-[2px] bg-[#E63946] group-hover/card:w-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"></div>
+        </a>
+
+        <!-- Article 5 -->
+        <a href="#" class="group/card relative overflow-hidden rounded-sm border border-white/5 bg-[#0A0A0A]">
+          <div class="absolute inset-[-10%] scale-[1.05] group-hover/card:scale-[1.1] transition-transform duration-700 ease-out">
+            <img src="https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=1600&auto=format&fit=crop" alt="Stadium atmosphere" loading="lazy" width="1600" height="1200" class="w-full aspect-[4/3] object-cover opacity-40 mix-blend-luminosity group-hover/card:opacity-70 group-hover/card:mix-blend-normal transition-all duration-700">
+          </div>
+          <div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/95 via-[#0A0A0A]/40 to-transparent"></div>
+          <div class="relative z-10 p-5 flex flex-col h-full justify-end min-h-[240px]">
+            <span class="text-[10px] font-mono text-[#E63946] tracking-widest uppercase mb-1">Opinion</span>
+            <h3 class="font-['Space_Grotesk',sans-serif] text-lg font-medium tracking-tight text-white group-hover/card:text-[#E63946] transition-colors duration-300">Why Grassroots Football Needs More Investment</h3>
+            <span class="text-[10px] font-mono text-gray-500 mt-2">6 min read • Dec 10, 2025</span>
+          </div>
+          <div class="absolute bottom-0 left-0 w-0 h-[2px] bg-[#E63946] group-hover/card:w-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"></div>
+        </a>
+      </div>
+
+      <div class="mt-10 text-center">
+        <a href="#" class="inline-flex items-center gap-2 text-xs font-mono text-[#E63946] tracking-widest uppercase hover:gap-3 transition-all duration-300">
+          View All Articles
+          <iconify-icon icon="solar:arrow-right-linear" class="w-4 h-4" style="stroke-width: 1.5px;"></iconify-icon>
+        </a>
+      </div>
+    </section>
+
+    <!-- EVENTS & PROMOS -->
+    <section id="events" class="py-12 sm:py-20 md:py-32 px-4 sm:px-6 md:px-20 max-w-[1600px] mx-auto bg-[#050505] relative z-20 border-t border-white/5">
+      <div class="mb-8 sm:mb-12 md:mb-16 flex justify-between items-end">
+        <div>
+          <span class="text-xs font-mono text-[#E63946] tracking-widest block mb-3">UPCOMING</span>
+          <h2 class="font-['Space_Grotesk',sans-serif] text-2xl sm:text-3xl md:text-5xl font-medium tracking-tight text-white">EVENTS &amp; PROMOS</h2>
+        </div>
+        <span class="text-xs font-mono text-gray-500 hidden md:block">WHAT'S NEXT</span>
+      </div>
+
+      <div class="flex flex-col">
+        <!-- Event 1 -->
+        <a href="#" class="group block py-5 sm:py-6 md:py-8 border-b border-white/10 hover:pl-2 sm:hover:pl-4 transition-all duration-500 touch-manipulation active:bg-white/[0.03]">
+          <div class="flex items-start justify-between gap-3 sm:gap-6">
+            <div class="flex items-start gap-3 sm:gap-4 md:gap-8 min-w-0">
+              <div class="shrink-0 w-12 sm:w-16 md:w-20 text-center">
+                <span class="block text-xl sm:text-2xl md:text-3xl font-['Space_Grotesk',sans-serif] font-medium text-[#E63946]">15</span>
+                <span class="block text-[10px] font-mono text-gray-500 tracking-widest uppercase">MAR</span>
+              </div>
+              <div class="min-w-0">
+                <h3 class="font-['Space_Grotesk',sans-serif] text-lg sm:text-xl md:text-3xl font-medium tracking-tight text-white leading-none group-hover:text-[#E63946] transition-colors duration-300">Sports Journalism Summit 2026</h3>
+                <p class="text-xs md:text-sm text-gray-500 mt-3 max-w-lg leading-relaxed">Keynote speaker — "The Future of Grassroots Sports Reporting in West Africa"</p>
+                <p class="text-[10px] font-mono text-gray-600 mt-2">Kempinski Hotel, Accra • 9:00 AM</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 shrink-0">
+              <span class="text-[10px] font-mono text-[#E63946] hidden md:block border border-[#E63946]/30 px-3 py-1.5 bg-[#E63946]/10 uppercase tracking-widest">Register</span>
+              <span class="text-white/40 group-hover:text-[#E63946] group-hover:translate-x-1.5 transition-all duration-300 text-xl md:text-2xl">→</span>
+            </div>
+          </div>
+          <div class="h-[1px] w-0 group-hover:w-full bg-[#E63946] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] mt-6"></div>
+        </a>
+
+        <!-- Event 2 -->
+        <a href="#" class="group block py-5 sm:py-6 md:py-8 border-b border-white/10 hover:pl-2 sm:hover:pl-4 transition-all duration-500 touch-manipulation active:bg-white/[0.03]">
+          <div class="flex items-start justify-between gap-3 sm:gap-6">
+            <div class="flex items-start gap-3 sm:gap-4 md:gap-8 min-w-0">
+              <div class="shrink-0 w-12 sm:w-16 md:w-20 text-center">
+                <span class="block text-xl sm:text-2xl md:text-3xl font-['Space_Grotesk',sans-serif] font-medium text-[#E63946]">22</span>
+                <span class="block text-[10px] font-mono text-gray-500 tracking-widest uppercase">APR</span>
+              </div>
+              <div class="min-w-0">
+                <h3 class="font-['Space_Grotesk',sans-serif] text-lg sm:text-xl md:text-3xl font-medium tracking-tight text-white leading-none group-hover:text-[#E63946] transition-colors duration-300">Documentary Premiere: "Grassroots"</h3>
+                <p class="text-xs md:text-sm text-gray-500 mt-3 max-w-lg leading-relaxed">Public screening followed by panel discussion with featured coaches and players.</p>
+                <p class="text-[10px] font-mono text-gray-600 mt-2">National Theatre, Accra • 7:00 PM</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 shrink-0">
+              <span class="text-[10px] font-mono text-[#E63946] hidden md:block border border-[#E63946]/30 px-3 py-1.5 bg-[#E63946]/10 uppercase tracking-widest">RSVP</span>
+              <span class="text-white/40 group-hover:text-[#E63946] group-hover:translate-x-1.5 transition-all duration-300 text-xl md:text-2xl">→</span>
+            </div>
+          </div>
+          <div class="h-[1px] w-0 group-hover:w-full bg-[#E63946] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] mt-6"></div>
+        </a>
+
+        <!-- Event 3 -->
+        <a href="#" class="group block py-5 sm:py-6 md:py-8 border-b border-white/10 hover:pl-2 sm:hover:pl-4 transition-all duration-500 touch-manipulation active:bg-white/[0.03]">
+          <div class="flex items-start justify-between gap-3 sm:gap-6">
+            <div class="flex items-start gap-3 sm:gap-4 md:gap-8 min-w-0">
+              <div class="shrink-0 w-12 sm:w-16 md:w-20 text-center">
+                <span class="block text-xl sm:text-2xl md:text-3xl font-['Space_Grotesk',sans-serif] font-medium text-[#E63946]">10</span>
+                <span class="block text-[10px] font-mono text-gray-500 tracking-widest uppercase">JUN</span>
+              </div>
+              <div class="min-w-0">
+                <h3 class="font-['Space_Grotesk',sans-serif] text-lg sm:text-xl md:text-3xl font-medium tracking-tight text-white leading-none group-hover:text-[#E63946] transition-colors duration-300">Pitch-Side: Live Coverage</h3>
+                <p class="text-xs md:text-sm text-gray-500 mt-3 max-w-lg leading-relaxed">Live reporting from the Ghana Premier League finals — full match coverage and post-game analysis.</p>
+                <p class="text-[10px] font-mono text-gray-600 mt-2">Sports Hotel, Accra • All Day</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 shrink-0">
+              <span class="text-[10px] font-mono text-[#E63946] hidden md:block border border-[#E63946]/30 px-3 py-1.5 bg-[#E63946]/10 uppercase tracking-widest">Follow</span>
+              <span class="text-white/40 group-hover:text-[#E63946] group-hover:translate-x-1.5 transition-all duration-300 text-xl md:text-2xl">→</span>
+            </div>
+          </div>
+          <div class="h-[1px] w-0 group-hover:w-full bg-[#E63946] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] mt-6"></div>
+        </a>
+      </div>
+    </section>
+
+    <div id="apply" class="w-full h-px"></div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="relative z-10 w-full bg-[#0A0A0A] text-white border-t border-white/5">
+    <div class="py-12 sm:py-16 md:py-24 px-4 sm:px-6 md:px-12 lg:px-20 max-w-[1600px] mx-auto" style="padding-bottom: max(3rem, env(safe-area-inset-bottom));">
+
+      <!-- Masthead + Statement -->
+      <div class="footer-el mb-10 sm:mb-12 md:mb-16">
+        <a href="#hero" data-back-to-top class="group block">
+          <span class="font-['Space_Grotesk',sans-serif] text-[12vw] sm:text-[14vw] md:text-[10vw] lg:text-[8vw] leading-[0.85] font-medium tracking-tighter text-white group-hover:text-[#E63946] transition-colors duration-500 block">MINIMSAAH</span>
+        </a>
+        <p class="text-gray-500 text-sm md:text-base max-w-xl mt-6 leading-relaxed">Stories from the pitch. Covering grassroots football, player journeys, and the culture behind the beautiful game across West Africa.</p>
+      </div>
+
+      <!-- Editorial Grid -->
+      <div class="footer-el grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-10 md:gap-12 border-t border-white/10 pt-8 sm:pt-10 md:pt-12">
+
+        <!-- Navigate -->
+        <div>
+          <span class="text-[10px] md:text-[11px] font-mono text-[#E63946] tracking-widest block mb-5">NAVIGATE</span>
+          <nav class="flex flex-col gap-1">
+            <a href="#about" class="group/link text-sm text-gray-400 hover:text-white transition-colors duration-300 touch-manipulation py-2.5 px-1 -mx-1 min-h-[44px] inline-flex items-center">About Me</a>
+            <a href="#videos" class="group/link text-sm text-gray-400 hover:text-white transition-colors duration-300 touch-manipulation py-2.5 px-1 -mx-1 min-h-[44px] inline-flex items-center">Video Stories</a>
+            <a href="#news" class="group/link text-sm text-gray-400 hover:text-white transition-colors duration-300 touch-manipulation py-2.5 px-1 -mx-1 min-h-[44px] inline-flex items-center">News &amp; Articles</a>
+            <a href="#docs" class="group/link text-sm text-gray-400 hover:text-white transition-colors duration-300 touch-manipulation py-2.5 px-1 -mx-1 min-h-[44px] inline-flex items-center">Documentaries</a>
+            <a href="#events" class="group/link text-sm text-gray-400 hover:text-white transition-colors duration-300 touch-manipulation py-2.5 px-1 -mx-1 min-h-[44px] inline-flex items-center">Events &amp; Promos</a>
+          </nav>
+        </div>
+
+        <!-- Follow -->
+        <div>
+          <span class="text-[10px] md:text-[11px] font-mono text-[#E63946] tracking-widest block mb-5">FOLLOW</span>
+          <nav class="flex flex-col gap-3">
+            <a href="#" class="group/link flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors duration-300">
+              <iconify-icon icon="mdi:instagram" class="w-4 h-4 opacity-50 group-hover/link:opacity-100 transition-opacity"></iconify-icon>
+              Instagram
+            </a>
+            <a href="#" class="group/link flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors duration-300">
+              <iconify-icon icon="mdi:twitter" class="w-4 h-4 opacity-50 group-hover/link:opacity-100 transition-opacity"></iconify-icon>
+              Twitter / X
+            </a>
+            <a href="#" class="group/link flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors duration-300">
+              <iconify-icon icon="mdi:youtube" class="w-4 h-4 opacity-50 group-hover/link:opacity-100 transition-opacity"></iconify-icon>
+              YouTube
+            </a>
+            <a href="#" class="group/link flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors duration-300">
+              <iconify-icon icon="mdi:tiktok" class="w-4 h-4 opacity-50 group-hover/link:opacity-100 transition-opacity"></iconify-icon>
+              TikTok
+            </a>
+          </nav>
+        </div>
+
+        <!-- HQ -->
+        <div>
+          <span class="text-[10px] md:text-[11px] font-mono text-[#E63946] tracking-widest block mb-5">HQ</span>
+          <div class="flex flex-col gap-3 text-sm text-gray-400">
+            <p>Accra, Ghana</p>
+            <p>West Africa</p>
+            <div class="flex items-center gap-2 mt-2">
+              <span class="w-2 h-2 rounded-full bg-[#E63946] animate-pulse"></span>
+              <span class="text-[10px] font-mono text-gray-500 tracking-widest">LOCAL TIME GMT+0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact + Newsletter -->
+        <div>
+          <span class="text-[10px] md:text-[11px] font-mono text-[#E63946] tracking-widest block mb-5">GET IN TOUCH</span>
+          <div class="flex flex-col gap-3">
+            <a href="mailto:hello@minimsaah.com" class="text-sm text-gray-400 hover:text-white transition-colors duration-300 py-2.5 px-1 -mx-1 min-h-[44px] inline-flex items-center touch-manipulation">hello@minimsaah.com</a>
+            <a href="tel:+233000000000" class="text-sm text-gray-400 hover:text-white transition-colors duration-300 py-2.5 px-1 -mx-1 min-h-[44px] inline-flex items-center touch-manipulation">+233 XX XXX XXXX</a>
+          </div>
+          <div class="mt-6">
+            <label for="footer-newsletter" class="text-xs font-mono text-gray-400 tracking-widest block mb-2">NEWSLETTER</label>
+            <div class="flex">
+              <input id="footer-newsletter" type="email" aria-label="Newsletter email" placeholder="your@email.com" class="flex-1 bg-white/5 border border-white/10 text-white text-xs px-3 py-3 min-h-[44px] rounded-l-sm placeholder:text-gray-500 focus:outline-none focus:border-[#E63946]/50 transition-colors touch-manipulation">
+              <button class="bg-[#E63946] hover:bg-[#c53030] text-white text-xs font-mono tracking-widest uppercase px-4 py-3 min-h-[44px] rounded-r-sm transition-colors touch-manipulation active:bg-[#b02a35]">Join</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Bar -->
+      <div class="footer-el border-t border-white/10 mt-12 md:mt-16 pt-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div class="flex flex-col gap-2">
+          <span class="text-[10px] md:text-xs font-mono tracking-widest text-gray-600">© 2026 MINIMSAAH — ALL RIGHTS RESERVED</span>
+          <span class="text-[10px] font-mono tracking-widest text-gray-700">BUILT WITH PASSION FOR THE BEAUTIFUL GAME</span>
+        </div>
+        <div class="flex items-center gap-6">
+          <span class="text-[10px] md:text-xs font-mono tracking-widest text-gray-600 hidden md:block">ACCRA / GHANA</span>
+          <a href="#hero" data-back-to-top class="group flex items-center gap-2 text-xs font-mono tracking-widest text-gray-400 hover:text-[#E63946] transition-colors duration-300">
+            <span>BACK TO TOP</span>
+            <svg class="w-4 h-4 group-hover:-translate-y-1 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <script>
+    // Safety: show page after 3s if GSAP/CDN fails
+    setTimeout(() => { const b = document.body; if (b && getComputedStyle(b).opacity === "0") { b.style.opacity = "1"; b.style.overflow = "auto"; const l = document.getElementById("loader"); if (l) l.style.display = "none"; } }, 3000);
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // 1. Initialize Lenis Smooth Scrolling
+      const lenis = new Lenis({
+        duration: 1.2,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        direction: 'vertical',
+        gestureDirection: 'vertical',
+        smooth: true,
+        smoothTouch: false,
+      });
+
+      lenis.stop(); // Stop scroll during preload
+
+      // Sync Lenis with GSAP ScrollTrigger
+      gsap.registerPlugin(ScrollTrigger);
+      lenis.on('scroll', ScrollTrigger.update);
+      gsap.ticker.add((time) => {
+        lenis.raf(time * 1000);
+      });
+      gsap.ticker.lagSmoothing(0, 0);
+
+      // Lock body temporarily
+      gsap.set("body", { opacity: 1 });
+      document.body.style.overflow = "hidden";
+
+      // 10. Reduced Motion — disable GSAP animations if user prefers
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        gsap.globalTimeline.timeScale(100);
+        ScrollTrigger.getAll().forEach(st => st.kill());
+        lenis.destroy();
+        document.body.style.overflow = '';
+        document.body.style.opacity = '1';
+        const loader = document.getElementById('loader');
+        if (loader) loader.style.display = 'none';
+      }
+
+      // 2. Preloader
+      const loaderCounter = document.getElementById("loader-counter");
+      const loaderProgress = document.getElementById("loader-progress");
+
+      const tlLoader = gsap.timeline({
+        onComplete: () => {
+          document.body.style.overflow = "";
+          document.body.style.overflowY = "auto";
+          lenis.start();
+          lenis.scrollTo(0, { immediate: true });
+          ScrollTrigger.refresh();
+        }
+      });
+
+      tlLoader
+        .to(loaderCounter, { y: 0, duration: 1, ease: "power4.out" })
+        .to(loaderProgress, { width: "100%", duration: 1.5, ease: "power2.inOut" }, "-=0.5")
+        .to({ val: 0 }, {
+          val: 100,
+          duration: 1.5,
+          ease: "power2.inOut",
+          onUpdate: function() {
+            loaderCounter.textContent = Math.round(this.targets()[0].val);
+          }
+        }, "-=1.5")
+        .to("#loader", { yPercent: -100, duration: 1, ease: "power4.inOut", delay: 0.2 })
+        .from("#hero-badge", { opacity: 0, y: 20, duration: 0.6, ease: "power3.out" }, "-=0.6")
+        .from("#hero-title", { opacity: 0, y: 30, duration: 0.8, ease: "power3.out" }, "-=0.4")
+        .from("#hero-deck", { opacity: 0, y: 20, duration: 0.6, ease: "power3.out" }, "-=0.4")
+        .from("#hero-meta", { opacity: 0, y: 15, duration: 0.5, ease: "power3.out" }, "-=0.3")
+        .from("#hero-cta", { opacity: 0, y: 15, duration: 0.5, ease: "power3.out" }, "-=0.2")
+        .from("#hero-secondary", { opacity: 0, y: 15, duration: 0.5, ease: "power3.out" }, "-=0.2")
+
+
+      // 3. Reveal items on scroll
+      gsap.utils.toArray(".reveal-item").forEach((el) => {
+        gsap.from(el, {
+          scrollTrigger: {
+            trigger: el,
+            start: "top 85%",
+            toggleActions: "play none none none"
+          },
+          y: 40,
+          opacity: 0,
+          duration: 0.8,
+          ease: "power3.out"
+        });
+      });
+
+      // 4. Horizontal Scroll (Video Stories)
+      const horizWrap = document.getElementById("horiz-wrap");
+      if(horizWrap) {
+        const getScrollAmount = () => horizWrap.scrollWidth - window.innerWidth;
+        const tween = gsap.to(horizWrap, {
+          x: () => -getScrollAmount(),
+          ease: "none",
+        });
+
+        ScrollTrigger.create({
+          trigger: "#videos",
+          start: "top top",
+          end: () => `+=${getScrollAmount()}`,
+          pin: true,
+          animation: tween,
+          scrub: 1,
+          invalidateOnRefresh: true,
+        });
+      }
+
+      // 5. Footer Reveal Elements
+      gsap.from(".footer-el", {
+        scrollTrigger: {
+          trigger: "footer",
+          start: "top 80%",
+          end: "bottom bottom",
+          scrub: 1
+        },
+        y: 30,
+        opacity: 0,
+        stagger: 0.1
+      });
+
+      // 6. Back to Top
+      document.querySelectorAll('[data-back-to-top]').forEach((el) => {
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          lenis.scrollTo(0, { duration: 1.5 });
+        });
+      });
+
+      // 7. Mobile Drawer
+      const menuToggle = document.getElementById("menu-toggle");
+      const menuClose = document.getElementById("menu-close");
+      const drawer = document.getElementById("mobile-drawer");
+      const overlay = document.getElementById("mobile-drawer-overlay");
+      const drawerLinks = document.querySelectorAll(".drawer-link");
+      const iconOpen = document.getElementById("menu-icon-open");
+      const iconClose = document.getElementById("menu-icon-close");
+      const drawerFooter = drawer.querySelector(".drawer-footer");
+      let isMenuOpen = false;
+
+      function openMenu() {
+        if (isMenuOpen) return;
+        isMenuOpen = true;
+
+        lenis.stop();
+        document.body.style.overflow = "hidden";
+
+        menuToggle.setAttribute("aria-expanded", "true");
+        menuToggle.setAttribute("aria-label", "Close menu");
+
+        const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+        // make drawer tappable on phones (was pointer-events-none at index.html:118)
+        drawer.style.pointerEvents = "auto";
+        drawer.classList.remove("pointer-events-none");
+
+        tl.to(overlay, { opacity: 1, duration: 0.3, onStart: () => {
+          overlay.style.pointerEvents = "auto";
+        }})
+        .to(drawer, { x: 0, duration: 0.5 }, "<")
+        .to(iconOpen, { opacity: 0, rotation: -90, duration: 0.25 }, "<")
+        .to(iconClose, { opacity: 1, rotation: 0, duration: 0.25 }, "<0.15")
+        .to(drawerLinks, { opacity: 1, y: 0, stagger: 0.06, duration: 0.4 }, "-=0.2")
+        .to(drawerFooter, { opacity: 1, duration: 0.4 }, "-=0.2");
+
+        setTimeout(() => drawerLinks[0]?.focus(), 400);
+      }
+
+      function closeMenu() {
+        if (!isMenuOpen) return;
+        isMenuOpen = false;
+
+        const tl = gsap.timeline({
+          defaults: { ease: "power3.inOut" },
+          onComplete: () => {
+            document.body.style.overflow = "";
+            try { lenis.start(); } catch {}
+            overlay.style.pointerEvents = "none";
+            drawer.style.pointerEvents = "none";
+            menuToggle.setAttribute("aria-expanded", "false");
+            menuToggle.setAttribute("aria-label", "Open menu");
+            menuToggle.focus();
+          }
+        });
+
+        tl.to(drawerFooter, { opacity: 0, duration: 0.2 })
+        .to(drawerLinks, { opacity: 0, y: 16, stagger: 0.03, duration: 0.25 }, "<")
+        .to(drawer, { x: "100%", duration: 0.4 }, "-=0.1")
+        .to(overlay, { opacity: 0, duration: 0.3 }, "<")
+        .to(iconClose, { opacity: 0, duration: 0.2 }, "<")
+        .to(iconOpen, { opacity: 1, rotation: 0, duration: 0.25 }, "-=0.15");
+      }
+
+      menuToggle.addEventListener("click", () => {
+        isMenuOpen ? closeMenu() : openMenu();
+      });
+
+      menuClose.addEventListener("click", closeMenu);
+      overlay.addEventListener("click", closeMenu);
+
+      drawerLinks.forEach(link => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          const target = link.getAttribute("href");
+          closeMenu();
+          // wait until close animation + lenis.start() (onComplete ~700ms) then scroll
+          setTimeout(() => {
+            const el = document.querySelector(target);
+            if (!el) return;
+            try { lenis.start(); } catch {}
+            const navH = document.querySelector('nav')?.offsetHeight || 72;
+            const top = el.getBoundingClientRect().top + window.scrollY - navH + 2;
+            try {
+              if (lenis && typeof lenis.scrollTo === 'function') {
+                lenis.scrollTo(top, { duration: 1.5 });
+                history.pushState(null, '', target);
+                return;
+              }
+            } catch {}
+            window.scrollTo({ top, behavior: 'smooth' });
+            history.pushState(null, '', target);
+          }, 750);
+        });
+      });
+      // also make desktop nav (hidden on mobile) work with offset
+      document.querySelectorAll('nav a[href^="#"]').forEach(a => {
+        a.addEventListener('click', (e) => {
+          const href = a.getAttribute('href');
+          if (!href || href === '#') return;
+          const el = document.querySelector(href);
+          if (!el) return;
+          e.preventDefault();
+          const navH = document.querySelector('nav')?.offsetHeight || 72;
+          const top = el.getBoundingClientRect().top + window.scrollY - navH + 2;
+          try { lenis.scrollTo(top, { duration: 1.2 }); } catch { window.scrollTo({ top, behavior: 'smooth' }); }
+          history.pushState(null, '', href);
+        });
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && isMenuOpen) closeMenu();
+      });
+
+      drawer.addEventListener("keydown", (e) => {
+        if (e.key !== "Tab" || !isMenuOpen) return;
+        const focusables = drawer.querySelectorAll('button, a[href], [tabindex]:not([tabindex="-1"])');
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      });
+    });
+  </script>
+  <!-- MINIMSAAH Dynamic Layer — keeps design, adds data + in-site video (no redirect) -->
+  <script src="assets/js/embeds.js"></script>
+  <script src="assets/js/player.js"></script>
+  <script src="assets/js/app.js"></script>
+
+</body></html>

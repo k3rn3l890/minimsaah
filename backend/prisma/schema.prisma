@@ -1,0 +1,236 @@
+// MINIMSAAH Editorial Platform — Database Schema
+// Phase 1+2: Auth, Users, Roles, Sessions, Content, Media
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────
+
+enum Role {
+  OWNER
+  EDITOR
+  JOURNALIST
+  VIDEOGRAPHER
+  SUBSCRIBER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum ContentStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ArticleCategory {
+  FEATURE
+  MATCH_REPORT
+  ANALYSIS
+  INTERVIEW
+  OPINION
+  BREAKING
+}
+
+enum VideoCategory {
+  HIGHLIGHT
+  INTERVIEW
+  DOCUMENTARY
+  BEHIND_SCENES
+  TUTORIAL
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+}
+
+// ─── User Models ──────────────────────────────────────
+
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  passwordHash String      @map("password_hash")
+  firstName    String      @map("first_name")
+  lastName     String      @map("last_name")
+  avatarUrl    String?     @map("avatar_url")
+  bio          String?
+  role         Role        @default(SUBSCRIBER)
+  status       UserStatus  @default(ACTIVE)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  sessions       Session[]
+  articles       Article[]
+  videos         Video[]
+  documentaries  Documentary[]
+  events         Event[]
+
+  @@map("users")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  refreshToken String   @map("refresh_token") @unique
+  userAgent    String?  @map("user_agent")
+  ipAddress    String?  @map("ip_address")
+  expiresAt    DateTime @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+// ─── Content Models ───────────────────────────────────
+
+model Article {
+  id            String          @id @default(cuid())
+  title         String
+  slug          String          @unique
+  excerpt       String?
+  body          String          @db.Text
+  coverImage    String?         @map("cover_image")
+  category      ArticleCategory @default(FEATURE)
+  tags          String[]
+  authorId      String          @map("author_id")
+  readingTime   Int             @default(5) @map("reading_time")
+  viewCount     Int             @default(0) @map("view_count")
+  featured      Boolean         @default(false)
+  status        ContentStatus   @default(DRAFT)
+  publishedAt   DateTime?       @map("published_at")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+  @@index([status, publishedAt])
+  @@index([category])
+  @@map("articles")
+}
+
+model Video {
+  id            String        @id @default(cuid())
+  title         String
+  slug          String        @unique
+  description   String?
+  videoUrl      String        @map("video_url")
+  embedUrl      String?       @map("embed_url")
+  thumbnail     String?
+  duration      Int?          // seconds
+  category      VideoCategory @default(HIGHLIGHT)
+  tags          String[]
+  authorId      String        @map("author_id")
+  viewCount     Int           @default(0) @map("view_count")
+  featured      Boolean       @default(false)
+  status        ContentStatus @default(DRAFT)
+  publishedAt   DateTime?     @map("published_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+  @@index([status, publishedAt])
+  @@index([category])
+  @@map("videos")
+}
+
+model Documentary {
+  id            String        @id @default(cuid())
+  title         String
+  slug          String        @unique
+  description   String?
+  coverImage    String?       @map("cover_image")
+  videoUrl      String?       @map("video_url")
+  embedUrl      String?       @map("embed_url")
+  duration      Int?          // seconds
+  chapters      Json?         // [{ title, startTime }]
+  tags          String[]
+  authorId      String        @map("author_id")
+  viewCount     Int           @default(0) @map("view_count")
+  featured      Boolean       @default(false)
+  status        ContentStatus @default(DRAFT)
+  publishedAt   DateTime?     @map("published_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+  @@index([status, publishedAt])
+  @@map("documentaries")
+}
+
+model Event {
+  id            String        @id @default(cuid())
+  title         String
+  slug          String        @unique
+  description   String?
+  coverImage    String?       @map("cover_image")
+  date          DateTime
+  endDate       DateTime?     @map("end_date")
+  location      String?
+  venue         String?
+  ticketUrl     String?       @map("ticket_url")
+  tags          String[]
+  authorId      String        @map("author_id")
+  status        ContentStatus @default(DRAFT)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+  @@index([status, date])
+  @@map("events")
+}
+
+model Ticker {
+  id        String   @id @default(cuid())
+  text      String
+  link      String?
+  priority  Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([active, priority])
+  @@map("tickers")
+}
+
+// ─── Media Model ──────────────────────────────────────
+
+model Media {
+  id          String      @id @default(cuid())
+  filename    String
+  originalName String     @map("original_name")
+  mimeType    String      @map("mime_type")
+  size        Int         // bytes
+  url         String
+  alt         String?
+  caption     String?
+  type        MediaType   @default(IMAGE)
+  width       Int?
+  height      Int?
+  uploaderId  String?     @map("uploader_id")
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  @@index([uploaderId])
+  @@index([type])
+  @@map("media")
+}

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Media — MINIMSAAH Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>*:focus-visible{outline:2px solid #E63946;outline-offset:2px}</style>
+</head>
+<body class="bg-[#050505] text-white font-['Inter',sans-serif] min-h-screen">
+<nav class="sticky top-0 z-40 bg-[#050505]/90 backdrop-blur-md border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between">
+  <a href="../index.html" class="font-['Space_Grotesk',sans-serif] text-lg tracking-[0.2em] uppercase">MINIMSAAH</a>
+  <button onclick="Admin.logout()" class="text-xs font-mono border border-white/10 px-3 py-3 min-h-[44px] inline-flex items-center uppercase">Logout</button>
+</nav>
+<div class="flex min-h-[calc(100vh-56px)]">
+  <aside class="hidden md:block w-56 shrink-0 border-r border-white/5 bg-[#0A0A0A] p-4">
+    <nav class="space-y-1">
+      <a href="index.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Dashboard</a>
+      <a href="articles.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Articles</a>
+      <a href="videos.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Videos</a>
+      <a href="documentaries.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Documentaries</a>
+      <a href="events.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Events</a>
+      <a href="ticker.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Ticker</a>
+      <a data-nav="media.html" href="media.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase bg-white/5 text-white">Media</a>
+    </nav>
+  </aside>
+  <main class="flex-1 p-4 md:p-6 max-w-[1100px] w-full">
+    <div class="md:hidden flex gap-2 mb-4 overflow-auto snap-x scrollbar-hide -mx-4 px-4">
+      <a href="articles.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Articles</a>
+      <a href="videos.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Videos</a>
+      <a href="documentaries.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Docs</a>
+      <a href="events.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Events</a>
+      <a href="ticker.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Ticker</a>
+      <a href="media.html" class="text-xs font-mono tracking-widest bg-white/5 text-white border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0 snap-start">Media</a>
+    </div>
+    <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+      <h1 class="font-['Space_Grotesk',sans-serif] text-xl md:text-2xl font-medium tracking-tight">Media Library</h1>
+      <label class="bg-[#E63946] hover:bg-[#c53030] text-white text-xs font-mono tracking-widest uppercase px-4 py-3 min-h-[44px] inline-flex items-center rounded-sm cursor-pointer touch-manipulation">+ Upload <input id="file" type="file" multiple class="hidden"></label>
+    </div>
+    <p class="text-xs font-mono text-gray-500 mb-4">All files stay in <span class="text-gray-400">minimsaah_v1/backend/uploads</span> on your computer. Use URL like <span class="text-gray-400">http://localhost:3000/uploads/xxx.jpg</span> in articles.</p>
+    <div id="grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+    <div id="pager" class="flex justify-between items-center mt-4 text-xs font-mono text-gray-500"></div>
+  </main>
+</div>
+<script src="js/admin.js"></script>
+<script>
+(function(){Admin.requireAuth();
+  var page=1, limit=12;
+  async function load(){
+    try{
+      var data=await Admin.request('/media?page='+page+'&limit='+limit);
+      var items=data.items||[];
+      var el=document.getElementById('grid');
+      el.innerHTML='';
+      if(!items.length){ el.innerHTML='<p class="text-sm text-gray-600 col-span-full py-8 text-center">No media. Upload images for articles.</p>'; document.getElementById('pager').innerHTML=''; return; }
+      items.forEach(function(it){
+        var isImg=it.mimeType && it.mimeType.indexOf('image')===0;
+        var card=document.createElement('div');
+        card.className='bg-[#0A0A0A] border border-white/5 rounded-sm overflow-hidden';
+        card.innerHTML='<div class="aspect-[4/3] bg-[#111] overflow-hidden min-h-[140px]">'+(isImg? '<img src="'+it.url+'" class="w-full h-full object-cover">':'<div class="w-full h-full flex items-center justify-center text-xs font-mono text-gray-400">'+it.mimeType+'</div>')+'</div><div class="p-2"><p class="text-xs truncate">'+it.originalName+'</p><p class="text-xs font-mono text-gray-400 truncate break-all">'+it.url+'</p><div class="flex gap-2 mt-2"><button data-copy="'+it.url+'" class="flex-1 text-xs font-mono border border-white/10 py-3 min-h-[44px] inline-flex items-center justify-center touch-manipulation hover:bg-white/5">Copy URL</button><button data-del="'+it.id+'" class="text-xs font-mono border border-[#E63946]/30 text-[#E63946] px-3 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-[#E63946] hover:text-white">Del</button></div></div>';
+        el.appendChild(card);
+      });
+      el.querySelectorAll('[data-copy]').forEach(function(b){ b.onclick=function(){ navigator.clipboard.writeText(b.getAttribute('data-copy')); Admin.toast('Copied URL'); }; });
+      el.querySelectorAll('[data-del]').forEach(function(b){ b.onclick=async function(){ if(!confirm('Delete file?'))return; try{ await Admin.request('/media/'+b.getAttribute('data-del'),{method:'DELETE'}); Admin.toast('Deleted'); load(); }catch(e){Admin.toast(e.message,'error');} }; });
+      var meta=data.meta||{}; var pager=document.getElementById('pager');
+      pager.innerHTML='<span>'+(meta.total||items.length)+' files • page '+page+'/'+(meta.totalPages||1)+'</span><div class="flex gap-2"><button id="prev" class="border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-white/5 disabled:opacity-30">Prev</button><button id="next" class="border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-white/5 disabled:opacity-30">Next</button></div>';
+      document.getElementById('prev').disabled=page<=1; document.getElementById('next').disabled=page>=(meta.totalPages||1);
+      document.getElementById('prev').onclick=function(){ if(page>1){page--; load();}};
+      document.getElementById('next').onclick=function(){ if(page<(meta.totalPages||1)){page++; load();}};
+    }catch(e){ Admin.toast(e.message,'error'); }
+  }
+  document.getElementById('file').addEventListener('change', async function(e){
+    var files=e.target.files;
+    for(var i=0;i<files.length;i++){
+      var fd=new FormData(); fd.append('file', files[i]);
+      try{ Admin.toast('Uploading '+files[i].name+'…'); await Admin.request('/media/upload',{method:'POST', body:fd}); }catch(ex){ Admin.toast(ex.message,'error'); }
+    }
+    Admin.toast('Uploaded');
+    page=1; load();
+    e.target.value='';
+  });
+  load();
+})();
+</script>
+</body>
+</html>

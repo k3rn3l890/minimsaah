@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Documentaries — MINIMSAAH Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>*:focus-visible{outline:2px solid #E63946;outline-offset:2px}</style>
+</head>
+<body class="bg-[#050505] text-white font-['Inter',sans-serif] min-h-screen">
+<nav class="sticky top-0 z-40 bg-[#050505]/90 backdrop-blur-md border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between">
+  <a href="../index.html" class="font-['Space_Grotesk',sans-serif] text-lg tracking-[0.2em] uppercase">MINIMSAAH</a>
+  <div class="flex gap-2"><a href="documentary-form.html" class="bg-[#E63946] hover:bg-[#c53030] text-white text-xs font-mono tracking-widest uppercase px-4 py-3 min-h-[44px] inline-flex items-center rounded-sm touch-manipulation">+ New Doc</a><button onclick="Admin.logout()" class="text-xs font-mono border border-white/10 px-3 py-3 min-h-[44px] inline-flex items-center uppercase">Logout</button></div>
+</nav>
+<div class="flex min-h-[calc(100vh-56px)]">
+  <aside class="hidden md:block w-56 shrink-0 border-r border-white/5 bg-[#0A0A0A] p-4">
+    <nav class="space-y-1">
+      <a href="index.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Dashboard</a>
+      <a href="articles.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Articles</a>
+      <a href="videos.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Videos</a>
+      <a data-nav="documentaries.html" href="documentaries.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase bg-white/5 text-white">Documentaries</a>
+      <a href="events.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Events</a>
+      <a href="ticker.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Ticker</a>
+      <a href="media.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Media</a>
+    </nav>
+  </aside>
+  <main class="flex-1 p-4 md:p-6 max-w-[1100px] w-full">
+    <div class="md:hidden flex gap-2 mb-4 overflow-auto snap-x scrollbar-hide -mx-4 px-4">
+      <a href="articles.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Articles</a>
+      <a href="videos.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Videos</a>
+      <a href="documentaries.html" class="text-xs font-mono tracking-widest bg-white/5 text-white border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0 snap-start">Docs</a>
+      <a href="events.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Events</a>
+      <a href="ticker.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Ticker</a>
+      <a href="media.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Media</a>
+    </div>
+    <div class="flex justify-between items-center mb-4"><h1 class="font-['Space_Grotesk',sans-serif] text-xl md:text-2xl font-medium tracking-tight">Documentaries</h1></div>
+    <div id="list" class="space-y-2"></div>
+  </main>
+</div>
+<script src="js/admin.js"></script>
+<script>
+(function(){Admin.requireAuth();
+  async function load(){
+    try{
+      var data=await Admin.request('/documentaries?limit=20');
+      var items=data.items||[];
+      var el=document.getElementById('list');
+      el.innerHTML='';
+      if(!items.length){ el.innerHTML='<p class="text-sm text-gray-600 py-8 text-center">No documentaries.</p>'; return; }
+      items.forEach(function(it){
+        var row=document.createElement('div');
+        row.className='bg-[#0A0A0A] border border-white/5 rounded-sm p-3 flex gap-3 items-center flex-wrap sm:flex-nowrap';
+        var cover=it.coverImage? '<img src="'+it.coverImage+'" class="w-20 h-14 object-cover rounded-sm shrink-0 bg-[#111]">' : '<div class="w-20 h-14 bg-[#111] rounded-sm shrink-0 flex items-center justify-center text-xs font-mono text-gray-500">NO COVER</div>';
+        row.innerHTML=cover+'<div class="flex-1 min-w-0"><a href="documentary-form.html?id='+encodeURIComponent(it.id)+'" class="text-sm font-medium hover:text-[#E63946] line-clamp-1">'+it.title+'</a><div class="text-xs font-mono text-gray-400 mt-1"><span class="'+(it.status==='PUBLISHED'?'text-green-400':'text-yellow-500')+'">'+it.status+'</span> • '+Admin.fmtDate(it.publishedAt||it.createdAt)+' • <a href="../documentary.html?slug='+encodeURIComponent(it.slug)+'" target="_blank" class="underline hover:text-white">View →</a></div></div><div class="flex gap-2 shrink-0 w-full sm:w-auto justify-end"><a href="documentary-form.html?id='+encodeURIComponent(it.id)+'" class="text-xs font-mono border border-white/10 px-3 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:border-white/20">Edit</a><button data-del="'+it.id+'" class="text-xs font-mono border border-[#E63946]/30 text-[#E63946] px-3 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-[#E63946] hover:text-white">Delete</button></div>';
+        el.appendChild(row);
+      });
+      el.querySelectorAll('[data-del]').forEach(function(b){b.onclick=async function(){if(!confirm('Delete documentary?'))return;try{await Admin.request('/documentaries/'+b.getAttribute('data-del'),{method:'DELETE'});Admin.toast('Deleted');load();}catch(e){Admin.toast(e.message,'error');}};});
+    }catch(e){Admin.toast(e.message,'error');}
+  }
+  load();
+})();
+</script>
+</body>
+</html>
