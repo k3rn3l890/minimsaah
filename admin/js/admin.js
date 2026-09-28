@@ -60,18 +60,57 @@
     return json;
   }
 
-  function requireAuth() {
+  function useSupabase() {
+    return window.SupabaseDB && window.SupabaseDB.isEnabled();
+  }
+
+  function supa() {
+    return window.SupabaseDB ? window.SupabaseDB.client() : null;
+  }
+
+  async function requireAuth() {
+    if (useSupabase()) {
+      var sb = supa();
+      if (!sb) { location.href = 'login.html'; throw new Error('Not authenticated'); }
+      var res = await sb.auth.getSession();
+      var session = res.data && res.data.session;
+      if (!session) {
+        // fallback to legacy token for localhost dev
+        if (!getToken()) { location.href = 'login.html'; throw new Error('Not authenticated'); }
+        return;
+      }
+      return;
+    }
     if (!getToken()) {
       location.href = 'login.html';
       throw new Error('Not authenticated');
     }
   }
 
-  function logout() {
+  async function logout() {
+    if (useSupabase()) {
+      try { await supa().auth.signOut(); } catch {}
+    }
     var rt = getRefresh();
     if (rt) fetch(API + '/auth/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }).catch(function(){});
     clearTokens();
     location.href = 'login.html';
+  }
+
+  async function supaDelete(table, id) {
+    // Deletes go via Pages Functions proxy hiding service_role (safety per plan)
+    var sb = supa();
+    var session = sb ? (await sb.auth.getSession()).data.session : null;
+    var res = await fetch('/api/admin/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (session ? session.access_token : getToken()) },
+      body: JSON.stringify({ table: table, id: id }),
+    });
+    if (!res.ok) {
+      var j = await res.json().catch(function(){ return { error: res.statusText }; });
+      throw new Error(j.error || ('HTTP ' + res.status));
+    }
+    return res.json();
   }
 
   function slugify(s) {
@@ -122,5 +161,8 @@
     fmtDate: fmtDate,
     toast: toast,
     setActiveNav: setActiveNav,
+    useSupabase: useSupabase,
+    supa: supa,
+    supaDelete: supaDelete,
   };
 })(window);

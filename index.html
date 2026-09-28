@@ -1060,11 +1060,15 @@ a:focus-visible {
       });
     });
   </script>
-  <!-- MINIMSAAH Dynamic Layer — keeps design, adds data + in-site video (no redirect) -->
-  <!-- Production API base: set to your Render backend URL (keeps localhost for dev) -->
+  <!-- MINIMSAAH Dynamic Layer — Pages + Supabase direct, Nest fallback for localhost -->
+  <!-- Production API base: kept for render-backend return; beta uses Supabase when configured -->
   <script>window.__API_BASE__ = window.__API_BASE__ || 'https://minimsaah-api.onrender.com/api/v1';</script>
+  <!-- Supabase: set in Cloudflare Pages Settings -> Environment variables -->
+  <script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/embeds.js"></script>
   <script src="assets/js/player.js"></script>
+  <script src="assets/js/supabase-client.js"></script>
   <script src="assets/js/app.js"></script>
 
 </body></html>

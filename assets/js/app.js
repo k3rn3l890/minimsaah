@@ -12,6 +12,32 @@
     return (window.__API_BASE__ || 'http://localhost:3000/api/v1');
   })();
 
+  function useSupabase() {
+    return window.SupabaseDB && window.SupabaseDB.isEnabled();
+  }
+
+  async function fetchSupabase(table, opts) {
+    opts = opts || {};
+    try {
+      var sb = window.SupabaseDB.client();
+      if (!sb) return null;
+      var q = sb.from(table).select(opts.select || '*');
+      if (opts.status) q = q.eq('status', opts.status);
+      if (opts.active !== undefined) q = q.eq('active', opts.active);
+      if (opts.category) q = q.eq('category', opts.category);
+      if (opts.orderBy) q = q.order(opts.orderBy, { ascending: false });
+      else if (table !== 'tickers') q = q.order('publishedAt', { ascending: false });
+      else q = q.order('priority', { ascending: false });
+      if (opts.limit) q = q.limit(opts.limit);
+      var res = await q;
+      if (res.error) throw new Error(res.error.message);
+      return { items: res.data || [], meta: { total: (res.data || []).length, page: 1, limit: opts.limit || 10, totalPages: 1 } };
+    } catch (e) {
+      console.warn('[MINIMSAAH] supabase fetch failed', table, e.message);
+      return null;
+    }
+  }
+
   function qs(sel, ctx) { return (ctx || document).querySelector(sel); }
   function qsa(sel, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); }
 
@@ -47,7 +73,9 @@
 
   // ─── Hydrate Hero (featured article) ─────────────────────────────
   async function hydrateHero() {
-    var data = await fetchJSON('/articles?status=PUBLISHED&limit=1');
+    var data = useSupabase()
+      ? await fetchSupabase('articles', { status: 'PUBLISHED', limit: 1, orderBy: 'publishedAt' })
+      : await fetchJSON('/articles?status=PUBLISHED&limit=1');
     if (!data || !data.items || !data.items.length) return;
     var a = data.items[0];
     var heroTitle = qs('#hero-title');
@@ -87,7 +115,9 @@
   async function hydrateFeatured() {
     var section = qs('#featured');
     if (!section) return;
-    var data = await fetchJSON('/articles?status=PUBLISHED&limit=4');
+    var data = useSupabase()
+      ? await fetchSupabase('articles', { status: 'PUBLISHED', limit: 4, orderBy: 'publishedAt' })
+      : await fetchJSON('/articles?status=PUBLISHED&limit=4');
     if (!data || !data.items || data.items.length < 2) return;
     var featured = data.items[0];
     var sides = data.items.slice(1, 4);
@@ -131,7 +161,9 @@
   async function hydrateVideos() {
     var wrap = qs('#horiz-wrap');
     if (!wrap) return;
-    var data = await fetchJSON('/videos?status=PUBLISHED&limit=3');
+    var data = useSupabase()
+      ? await fetchSupabase('videos', { status: 'PUBLISHED', limit: 3, orderBy: 'publishedAt' })
+      : await fetchJSON('/videos?status=PUBLISHED&limit=3');
     if (!data || !data.items || !data.items.length) return;
     // Also fetch ticker? not needed
     var videos = data.items;
@@ -186,7 +218,9 @@
   async function hydrateDocs() {
     var section = qs('#docs');
     if (!section) return;
-    var data = await fetchJSON('/documentaries?status=PUBLISHED&limit=3');
+    var data = useSupabase()
+      ? await fetchSupabase('documentaries', { status: 'PUBLISHED', limit: 3, orderBy: 'publishedAt' })
+      : await fetchJSON('/documentaries?status=PUBLISHED&limit=3');
     if (!data || !data.items || !data.items.length) return;
     var docs = data.items;
     var cards = qsa('#docs .grid > a', document);
@@ -219,7 +253,9 @@
   async function hydrateNews() {
     var section = qs('#news');
     if (!section) return;
-    var data = await fetchJSON('/articles?status=PUBLISHED&limit=6');
+    var data = useSupabase()
+      ? await fetchSupabase('articles', { status: 'PUBLISHED', limit: 6, orderBy: 'publishedAt' })
+      : await fetchJSON('/articles?status=PUBLISHED&limit=6');
     if (!data || !data.items || !data.items.length) return;
     var items = data.items;
     var cards = qsa('#news .grid > a', document);
@@ -247,7 +283,9 @@
   async function hydrateEvents() {
     var section = qs('#events');
     if (!section) return;
-    var data = await fetchJSON('/events?status=PUBLISHED&limit=3');
+    var data = useSupabase()
+      ? await fetchSupabase('events', { status: 'PUBLISHED', limit: 3, orderBy: 'date' })
+      : await fetchJSON('/events?status=PUBLISHED&limit=3');
     if (!data || !data.items || !data.items.length) return;
     var evs = data.items;
     var rows = qsa('#events .flex.flex-col > a', document);

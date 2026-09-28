@@ -51,3 +51,7 @@ _imp_info/
 
 # Local helper - keep hidden from git
 start.bat
+
+# Pages-only main: Nest backend lives in branch render-backend, not deployed to Pages
+# Kept locally for dev + Render return, untracked on main
+backend/
