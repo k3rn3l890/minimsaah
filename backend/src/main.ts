@@ -8,8 +8,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
 
-  // Global prefix
-  app.setGlobalPrefix('api/v1');
+  // Global prefix (exclude health so Render GET /health works)
+  app.setGlobalPrefix('api/v1', { exclude: ['health'] });
 
   // CORS — allow localhost file:// + live domains (comma-separated in .env)
   const corsOrigins = (config.get('CORS_ORIGIN', 'http://localhost:3000') || '')
@@ -39,16 +39,16 @@ async function bootstrap() {
     }),
   );
 
-  // Serve uploaded files statically — keep all files inside minimsaah_v1/backend/uploads
+  // Serve uploaded files statically only when R2 is NOT configured (fallback for localhost)
   const express = require('express');
   const path = require('path');
-  const uploadPath = path.join(process.cwd(), 'uploads');
-  // also support running from minimsaah_v1 root: minimsaah_v1/uploads
-  const altUploadPath = path.join(process.cwd(), '..', 'uploads');
-  app.use('/uploads', express.static(uploadPath));
-  // legacy fallback
-  try { app.use('/uploads', express.static(altUploadPath)); } catch {}
-  // also serve public site statically when backend serves frontend (optional)
+  if (!process.env.R2_BUCKET_NAME) {
+    const uploadPath = path.join(process.cwd(), 'uploads');
+    const altUploadPath = path.join(process.cwd(), '..', 'uploads');
+    app.use('/uploads', express.static(uploadPath));
+    try { app.use('/uploads', express.static(altUploadPath)); } catch {}
+  }
+  // Serve public site statically when backend serves frontend (optional, not for Pages)
   const publicPath = path.join(process.cwd(), '..');
   app.use(express.static(publicPath, { index: false }));
 
@@ -83,7 +83,7 @@ async function bootstrap() {
   SwaggerModule.setup('docs', app, document);
 
   const port = config.get('PORT', 3000);
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   console.log(`🚀 MINIMSAAH API running on http://localhost:${port}`);
   console.log(`📚 Swagger docs at http://localhost:${port}/docs`);
 }
