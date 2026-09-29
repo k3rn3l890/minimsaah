@@ -14,8 +14,8 @@ Single project `minimsaah` holds DB + Storage. Data persists, `pg_dump` ready fo
 - Run: `SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node supabase/auth-migrate.js`
 - Creates 5 users with same passwords, `user_metadata.role`, links `public.users.id = auth.id`.
 
-## 4. RLS + Storage
-- SQL Editor → run `supabase/rls.sql`, then `supabase/storage.sql`.
+## 4. RLS + Storage — run in this order
+- SQL Editor → run `supabase/schema.sql` FIRST (creates tables, fixes 42P01), then `supabase/rls.sql`, then `supabase/storage.sql`.
 - Storage → New bucket `minimsaah-media` → Public ON.
 - Upload `backend/uploads/*` to bucket, rewrite `http://localhost:3000/uploads/...` to `https://<ref>.supabase.co/storage/v1/object/public/minimsaah-media/...`.
 
