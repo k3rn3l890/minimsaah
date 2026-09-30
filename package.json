@@ -1,0 +1,15 @@
+{
+  "name": "minimsaah",
+  "version": "1.0.0",
+  "description": "MINIMSAAH - Sports journalism platform for Ghana",
+  "scripts": {
+    "build": "node scripts/inject-env.js",
+    "dev": "npx vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

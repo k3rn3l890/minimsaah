@@ -5,7 +5,9 @@
 (function (global) {
   var API = 'http://localhost:3000/api/v1';
   if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-    API = (window.__API_BASE__ || 'http://localhost:3000/api/v1');
+    // Render backend is gone (Supabase sole backend) — no dead default.
+    // request() throws an explicit error below when Supabase is not configured.
+    API = (window.__API_BASE__ || '');
   }
 
   function getToken() { return localStorage.getItem('access_token'); }
@@ -30,6 +32,9 @@
   }
 
   async function request(path, opts) {
+    if (!useSupabase() && !API) {
+      throw new Error('Supabase not configured — set Vercel env SUPABASE_URL / SUPABASE_ANON_KEY and redeploy');
+    }
     opts = opts || {};
     var headers = Object.assign({ 'Content-Type': 'application/json' }, authHeaders(), opts.headers || {});
     // FormData: drop JSON header

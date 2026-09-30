@@ -1,5 +1,5 @@
 {
-  "buildCommand": "",
+  "buildCommand": "node scripts/inject-env.js",
   "outputDirectory": ".",
   "devCommand": "",
   "framework": null,
@@ -44,12 +44,5 @@
     { "source": "/documentary/:slug", "destination": "/documentary.html?slug=:slug" },
     { "source": "/event/:slug", "destination": "/event.html?slug=:slug" },
     { "source": "/admin/:path*", "destination": "/admin/:path*" }
-  ],
-  "cleanUrls": true,
-  "trailingSlash": false,
-  "framework": null,
-  "buildCommand": "",
-  "outputDirectory": ".",
-  "devCommand": "",
-  "framework": null
+  ]
 }
