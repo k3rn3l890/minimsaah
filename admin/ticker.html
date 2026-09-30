@@ -60,7 +60,7 @@
         el.appendChild(row);
       });
       el.querySelectorAll('[data-toggle]').forEach(function(b){ b.onclick=async function(){ try{ await Admin.request('/ticker/'+b.getAttribute('data-toggle')+'/toggle',{method:'PATCH'}); load(); }catch(e){Admin.toast(e.message,'error');} }; });
-      el.querySelectorAll('[data-del]').forEach(function(b){ b.onclick=async function(){ if(!confirm('Delete ticker?'))return; try{ await Admin.request('/ticker/'+b.getAttribute('data-del'),{method:'DELETE'}); Admin.toast('Deleted'); load(); }catch(e){Admin.toast(e.message,'error');} }; });
+      el.querySelectorAll('[data-del]').forEach(function(b){ b.onclick=async function(){ if(Admin.useSupabase()&&Admin.deletesDisabled()){Admin.toast('Disabled in beta');return;} if(!confirm('Delete ticker?'))return; try{ await Admin.request('/ticker/'+b.getAttribute('data-del'),{method:'DELETE'}); Admin.toast('Deleted'); load(); }catch(e){Admin.toast(e.message,'error');} }; });
     }catch(e){Admin.toast(e.message,'error');}
   }
   document.getElementById('form').addEventListener('submit', async function(e){

@@ -79,6 +79,7 @@
       });
       el.querySelectorAll('[data-del]').forEach(function(b){
         b.onclick=async function(){
+          if(Admin.useSupabase()&&Admin.deletesDisabled()){ Admin.toast('Disabled in beta'); return; }
           if(!confirm('Delete this article?')) return;
           try{ await Admin.request('/articles/'+b.getAttribute('data-del'),{method:'DELETE'}); Admin.toast('Deleted'); load(); }catch(e){ Admin.toast(e.message,'error'); }
         };

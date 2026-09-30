@@ -76,7 +76,7 @@
         el.appendChild(row);
       });
       el.querySelectorAll('[data-del]').forEach(function(b){
-        b.onclick=async function(){ if(!confirm('Delete video?')) return; try{ await Admin.request('/videos/'+b.getAttribute('data-del'),{method:'DELETE'}); Admin.toast('Deleted'); load(); }catch(e){Admin.toast(e.message,'error');} };
+        b.onclick=async function(){ if(Admin.useSupabase()&&Admin.deletesDisabled()){ Admin.toast('Disabled in beta'); return; } if(!confirm('Delete video?')) return; try{ await Admin.request('/videos/'+b.getAttribute('data-del'),{method:'DELETE'}); Admin.toast('Deleted'); load(); }catch(e){Admin.toast(e.message,'error');} };
       });
       var meta=data.meta||{}; var pager=document.getElementById('pager');
       pager.innerHTML='<span>'+(meta.total||items.length)+' total • page '+page+'/'+(meta.totalPages||1)+'</span><div class="flex gap-2"><button id="prev" class="border border-white/10 px-3.5 py-2 hover:bg-white/5 disabled:opacity-30 touch-manipulation">Prev</button><button id="next" class="border border-white/10 px-3.5 py-2 hover:bg-white/5 disabled:opacity-30 touch-manipulation">Next</button></div>';

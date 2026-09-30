@@ -62,7 +62,7 @@
         el.appendChild(card);
       });
       el.querySelectorAll('[data-copy]').forEach(function(b){ b.onclick=function(){ navigator.clipboard.writeText(b.getAttribute('data-copy')); Admin.toast('Copied URL'); }; });
-      el.querySelectorAll('[data-del]').forEach(function(b){ b.onclick=async function(){ if(!confirm('Delete file?'))return; try{ await Admin.request('/media/'+b.getAttribute('data-del'),{method:'DELETE'}); Admin.toast('Deleted'); load(); }catch(e){Admin.toast(e.message,'error');} }; });
+      el.querySelectorAll('[data-del]').forEach(function(b){ b.onclick=async function(){ if(Admin.useSupabase()&&Admin.deletesDisabled()){Admin.toast('Disabled in beta');return;} if(!confirm('Delete file?'))return; try{ await Admin.request('/media/'+b.getAttribute('data-del'),{method:'DELETE'}); Admin.toast('Deleted'); load(); }catch(e){Admin.toast(e.message,'error');} }; });
       var meta=data.meta||{}; var pager=document.getElementById('pager');
       pager.innerHTML='<span>'+(meta.total||items.length)+' files • page '+page+'/'+(meta.totalPages||1)+'</span><div class="flex gap-2"><button id="prev" class="border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-white/5 disabled:opacity-30">Prev</button><button id="next" class="border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-white/5 disabled:opacity-30">Next</button></div>';
       document.getElementById('prev').disabled=page<=1; document.getElementById('next').disabled=page>=(meta.totalPages||1);

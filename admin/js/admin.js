@@ -97,8 +97,18 @@
     location.href = 'login.html';
   }
 
+  function deletesDisabled() {
+    // Beta lock: service_role out entirely, deletes disabled with exact message
+    return useSupabase();
+  }
+
   async function supaDelete(table, id) {
-    // Deletes go via Pages Functions proxy hiding service_role (safety per plan)
+    // Beta: deletes disabled — buttons stay visible per plan, show exact message
+    if (deletesDisabled()) {
+      toast('Disabled in beta');
+      throw new Error('Disabled in beta');
+    }
+    // Post-beta path via Pages Functions proxy hiding service_role (kept for return)
     var sb = supa();
     var session = sb ? (await sb.auth.getSession()).data.session : null;
     var res = await fetch('/api/admin/delete', {
@@ -164,5 +174,6 @@
     useSupabase: useSupabase,
     supa: supa,
     supaDelete: supaDelete,
+    deletesDisabled: deletesDisabled,
   };
 })(window);
