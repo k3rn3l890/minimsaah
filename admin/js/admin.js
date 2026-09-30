@@ -132,6 +132,114 @@
     return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   }
 
+  function cuid() {
+    return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+  }
+
+  // Map camelCase form payloads to Supabase snake_case columns (same fix as auth-migrate first_name).
+  function toSnake(payload) {
+    var map = { coverImage: 'cover_image', videoUrl: 'video_url', embedUrl: 'embed_url', publishedAt: 'published_at', readingTime: 'reading_time', authorId: 'author_id', viewCount: 'view_count', ticketUrl: 'ticket_url', endDate: 'end_date', createdAt: 'created_at', updatedAt: 'updated_at', originalName: 'original_name', mimeType: 'mime_type', uploaderId: 'uploader_id', firstName: 'first_name', lastName: 'last_name', avatarUrl: 'avatar_url' };
+    var o = {};
+    for (var k in payload) {
+      if (payload[k] === undefined) continue;
+      o[map[k] || k] = payload[k];
+    }
+    return o;
+  }
+
+  // Load one row by id for edit forms. Returns normalized row.
+  async function supaOne(table, id) {
+    var sb = supa();
+    if (!sb) throw new Error('Supabase not configured — set Vercel env SUPABASE_URL / SUPABASE_ANON_KEY and redeploy');
+    var r = await sb.from(table).select('*').eq('id', id).single();
+    if (r.error) throw new Error(r.error.message);
+    return normRow(r.data);
+  }
+
+  // Create/update with Nest parity: slug fallback, author from session, readingTime calc.
+  async function supaSave(table, id, isEdit, payload) {
+    var sb = supa();
+    if (!sb) throw new Error('Supabase not configured — set Vercel env SUPABASE_URL / SUPABASE_ANON_KEY and redeploy');
+    var body = toSnake(payload);
+    if (!body.slug && body.title) body.slug = slugify(body.title);
+    if (isEdit) {
+      var up = await sb.from(table).update(body).eq('id', id);
+      if (up.error) throw new Error(up.error.message);
+      return up.data;
+    }
+    if (table === 'articles' || table === 'videos' || table === 'documentaries' || table === 'events') {
+      var me = getUser() || {};
+      var sess = (await sb.auth.getSession()).data.session;
+      body.author_id = (sess && sess.user && sess.user.id) || me.id || body.author_id;
+    }
+    body.id = cuid();
+    if (table === 'articles' && body.body && !body.reading_time) {
+      body.reading_time = Math.ceil(String(body.body).split(' ').length / 200);
+    }
+    var ins = await sb.from(table).insert(body);
+    if (ins.error) throw new Error(ins.error.message);
+    return ins.data;
+  }
+
+  // Upload a File to Supabase Storage + insert media row. Returns {url, filename} like Nest.
+  async function supaUpload(file, meta) {
+    var sb = supa();
+    if (!sb) throw new Error('Supabase not configured — set Vercel env SUPABASE_URL / SUPABASE_ANON_KEY and redeploy');
+    var ext = (file.name.match(/\.[a-z0-9]+$/i) || [''])[0];
+    var filename = cuid() + ext;
+    var up = await sb.storage.from('minimsaah-media').upload(filename, file, { contentType: file.type, upsert: false });
+    if (up.error) throw new Error(up.error.message);
+    var url = sb.storage.from('minimsaah-media').getPublicUrl(filename).data.publicUrl;
+    var type = file.type.indexOf('image/') === 0 ? 'IMAGE' : (file.type.indexOf('video/') === 0 ? 'VIDEO' : 'DOCUMENT');
+    var me = getUser() || {};
+    var sess = (await sb.auth.getSession()).data.session;
+    var uid = (sess && sess.user && sess.user.id) || me.id || null;
+    var ins = await sb.from('media').insert({ filename: filename, original_name: file.name, mime_type: file.type, size: file.size, url: url, alt: (meta && meta.alt) || null, caption: (meta && meta.caption) || null, type: type, uploader_id: uid });
+    if (ins.error) throw new Error(ins.error.message);
+    return { url: url, filename: filename };
+  }
+
+  // Map Supabase snake_case rows to the camelCase fields templates use.
+  // Keeps both key styles so Nest and Supabase payloads render identically.
+  function normRow(r) {
+    if (!r || typeof r !== 'object' || Array.isArray(r)) return r;
+    var o = {};
+    for (var k in r) {
+      o[k] = r[k];
+      var ck = k.replace(/_([a-z])/g, function (m, c) { return c.toUpperCase(); });
+      if (ck !== k && o[ck] === undefined) o[ck] = r[k];
+    }
+    return o;
+  }
+
+  // Supabase list with pager parity to the Nest API.
+  // opts: {status, active, search, searchFields, category, orderBy, asc, secondaryOrderBy, page, limit, noPager}
+  // returns {items (normalized), meta:{total,page,limit,totalPages}}
+  async function supaList(table, opts) {
+    opts = opts || {};
+    var page = opts.page || 1, limit = opts.limit || 10;
+    var sb = supa();
+    if (!sb) throw new Error('Supabase not configured — set Vercel env SUPABASE_URL / SUPABASE_ANON_KEY and redeploy');
+    var q = sb.from(table).select('*', { count: 'exact' });
+    if (opts.status) q = q.eq('status', opts.status);
+    if (opts.active !== undefined) q = q.eq('active', opts.active);
+    if (opts.category) q = q.eq('category', opts.category);
+    if (opts.search) {
+      var clean = String(opts.search).replace(/[%(),]/g, '');
+      var fields = opts.searchFields || ['title'];
+      q = q.or(fields.map(function (f) { return f + '.ilike.%' + clean + '%'; }).join(','));
+    }
+    q = q.order(opts.orderBy || 'created_at', { ascending: !!opts.asc });
+    if (opts.secondaryOrderBy) q = q.order(opts.secondaryOrderBy, { ascending: !!opts.asc });
+    if (!opts.noPager) q = q.range((page - 1) * limit, page * limit - 1);
+    else if (opts.limit) q = q.limit(opts.limit);
+    var r = await q;
+    if (r.error) throw new Error(r.error.message);
+    var items = (r.data || []).map(normRow);
+    var total = (r.count !== null && r.count !== undefined) ? r.count : items.length;
+    return { items: items, meta: { total: total, page: page, limit: limit, totalPages: Math.max(1, Math.ceil(total / limit)) } };
+  }
+
   function fmtDate(d) {
     if (!d) return '';
     try { return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); } catch { return d; }
@@ -180,5 +288,11 @@
     supa: supa,
     supaDelete: supaDelete,
     deletesDisabled: deletesDisabled,
+    normRow: normRow,
+    supaList: supaList,
+    toSnake: toSnake,
+    supaOne: supaOne,
+    supaSave: supaSave,
+    supaUpload: supaUpload,
   };
 })(window);

@@ -10,8 +10,8 @@
 </head>
 <body class="bg-[#050505] text-white font-['Inter',sans-serif] min-h-screen">
 <nav class="sticky top-0 z-40 bg-[#050505]/90 backdrop-blur-md border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between">
-  <a href="index.html" class="font-['Space_Grotesk',sans-serif] text-lg tracking-[0.2em] uppercase">MINIMSAAH</a>
-  <div class="flex gap-2"><a href="videos.html" class="text-xs font-mono border border-white/10 px-3 py-1.5">← Videos</a><button onclick="Admin.logout()" class="text-[11px] font-mono border border-white/10 px-3 py-1.5 uppercase">Logout</button></div>
+  <a href="/admin/index.html" class="font-['Space_Grotesk',sans-serif] text-lg tracking-[0.2em] uppercase">MINIMSAAH</a>
+  <div class="flex gap-2"><a href="/admin/videos.html" class="text-xs font-mono border border-white/10 px-3 py-1.5">← Videos</a><button onclick="Admin.logout()" class="text-[11px] font-mono border border-white/10 px-3 py-1.5 uppercase">Logout</button></div>
 </nav>
 <main class="max-w-[800px] mx-auto p-4 md:p-6">
   <h1 id="heading" class="font-['Space_Grotesk',sans-serif] text-xl md:text-2xl font-medium tracking-tight mb-1">New Video</h1>
@@ -65,7 +65,7 @@
     </div>
     <div class="flex gap-2 pt-2">
       <button type="submit" id="btn" class="flex-1 bg-[#E63946] hover:bg-[#c53030] text-white text-xs font-mono tracking-widest uppercase py-3 rounded-sm">Save Video</button>
-      <a href="videos.html" class="px-6 py-3 border border-white/10 text-xs font-mono tracking-widest uppercase rounded-sm hover:bg-white/5">Cancel</a>
+      <a href="/admin/videos.html" class="px-6 py-3 border border-white/10 text-xs font-mono tracking-widest uppercase rounded-sm hover:bg-white/5">Cancel</a>
     </div>
     <p id="err" class="hidden text-xs text-[#E63946] bg-[#E63946]/10 border border-[#E63946]/20 rounded-sm px-3 py-2"></p>
     <p id="ok" class="hidden text-xs text-green-400 bg-green-900/20 border border-green-800 rounded-sm px-3 py-2"></p>
@@ -119,13 +119,13 @@
   document.getElementById('file').addEventListener('change', async function(e){
     var f=e.target.files[0]; if(!f) return;
     var fd=new FormData(); fd.append('file', f);
-    try{ Admin.toast('Uploading…'); var data=await Admin.request('/media/upload',{method:'POST', body:fd}); thumbEl.value=data.url; updateThumbPreview(); Admin.toast('Uploaded '+data.url); }catch(ex){ Admin.toast(ex.message,'error'); }
+    try{ Admin.toast('Uploading…'); var data; if(Admin.useSupabase()){ data=await Admin.supaUpload(f); } else { data=await Admin.request('/media/upload',{method:'POST', body:fd}); } thumbEl.value=data.url; updateThumbPreview(); Admin.toast('Uploaded '+data.url); }catch(ex){ Admin.toast(ex.message,'error'); }
   });
 
   if(isEdit){
     (async function(){
       try{
-        var it=await Admin.request('/videos/'+encodeURIComponent(id));
+        var it=Admin.useSupabase()? await Admin.supaOne('videos',id) : await Admin.request('/videos/'+encodeURIComponent(id));
         document.getElementById('title').value=it.title||'';
         videoUrlEl.value=it.videoUrl||'';
         thumbEl.value=it.thumbnail||'';
@@ -157,10 +157,11 @@
       featured: document.getElementById('featured').checked,
     };
     try{
-      if(isEdit) await Admin.request('/videos/'+encodeURIComponent(id),{method:'PUT', body: JSON.stringify(payload)});
+      if(Admin.useSupabase()){ await Admin.supaSave('videos',id,isEdit,payload); }
+      else if(isEdit) await Admin.request('/videos/'+encodeURIComponent(id),{method:'PUT', body: JSON.stringify(payload)});
       else await Admin.request('/videos',{method:'POST', body: JSON.stringify(payload)});
       ok.textContent=isEdit?'Updated!':'Created! Redirecting…'; ok.classList.remove('hidden');
-      setTimeout(function(){ location.href='videos.html'; },700);
+      setTimeout(function(){ location.href='/admin/videos.html'; },700);
     }catch(ex){ err.textContent=ex.message; err.classList.remove('hidden'); btn.textContent='Save Video'; btn.disabled=false; }
   });
 })();

@@ -10,29 +10,29 @@
 </head>
 <body class="bg-[#050505] text-white font-['Inter',sans-serif] min-h-screen">
 <nav class="sticky top-0 z-40 bg-[#050505]/90 backdrop-blur-md border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between">
-  <a href="../index.html" class="font-['Space_Grotesk',sans-serif] text-lg tracking-[0.2em] uppercase">MINIMSAAH</a>
+  <a href="/index.html" class="font-['Space_Grotesk',sans-serif] text-lg tracking-[0.2em] uppercase">MINIMSAAH</a>
   <button onclick="Admin.logout()" class="text-xs font-mono border border-white/10 px-3 py-3 min-h-[44px] inline-flex items-center uppercase">Logout</button>
 </nav>
 <div class="flex min-h-[calc(100vh-56px)]">
   <aside class="hidden md:block w-56 shrink-0 border-r border-white/5 bg-[#0A0A0A] p-4">
     <nav class="space-y-1">
-      <a href="index.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Dashboard</a>
-      <a href="articles.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Articles</a>
-      <a href="videos.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Videos</a>
-      <a href="documentaries.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Documentaries</a>
-      <a href="events.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Events</a>
-      <a data-nav="ticker.html" href="ticker.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase bg-white/5 text-white">Ticker</a>
-      <a href="media.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Media</a>
+      <a href="/admin/index.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Dashboard</a>
+      <a href="/admin/articles.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Articles</a>
+      <a href="/admin/videos.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Videos</a>
+      <a href="/admin/documentaries.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Documentaries</a>
+      <a href="/admin/events.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Events</a>
+      <a data-nav="ticker.html" href="/admin/ticker.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase bg-white/5 text-white">Ticker</a>
+      <a href="/admin/media.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Media</a>
     </nav>
   </aside>
   <main class="flex-1 p-4 md:p-6 max-w-[800px] w-full">
     <div class="md:hidden flex gap-2 mb-4 overflow-auto snap-x scrollbar-hide -mx-4 px-4">
-      <a href="articles.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Articles</a>
-      <a href="videos.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Videos</a>
-      <a href="documentaries.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Docs</a>
-      <a href="events.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Events</a>
-      <a href="ticker.html" class="text-xs font-mono tracking-widest bg-white/5 text-white border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0 snap-start">Ticker</a>
-      <a href="media.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Media</a>
+      <a href="/admin/articles.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Articles</a>
+      <a href="/admin/videos.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Videos</a>
+      <a href="/admin/documentaries.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Docs</a>
+      <a href="/admin/events.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Events</a>
+      <a href="/admin/ticker.html" class="text-xs font-mono tracking-widest bg-white/5 text-white border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0 snap-start">Ticker</a>
+      <a href="/admin/media.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Media</a>
     </div>
     <h1 class="font-['Space_Grotesk',sans-serif] text-xl md:text-2xl font-medium tracking-tight mb-2">News Ticker</h1>
     <p class="text-xs font-mono text-gray-500 mb-4">Headlines that scroll on the home page.</p>
@@ -49,7 +49,13 @@
 (function(){Admin.requireAuth();
   async function load(){
     try{
-      var items=await Admin.request('/ticker');
+      var items=[];
+      if(Admin.useSupabase()){
+        var res=await Admin.supaList('tickers',{limit:50,noPager:true,orderBy:'priority',secondaryOrderBy:'created_at'});
+        items=res.items;
+      } else {
+        items=await Admin.request('/ticker');
+      }
       var el=document.getElementById('list');
       el.innerHTML='';
       if(!items.length){ el.innerHTML='<p class="text-sm text-gray-600 py-8 text-center">No ticker headlines.</p>'; return; }
@@ -59,7 +65,16 @@
         row.innerHTML='<div class="flex-1 min-w-0"><p class="text-sm">'+it.text+'</p><p class="text-xs font-mono text-gray-400 mt-1">Priority '+it.priority+' • '+(it.active?'Active':'Hidden')+'</p></div><div class="flex gap-2 shrink-0"><button data-toggle="'+it.id+'" class="text-xs font-mono border border-white/10 px-3 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-white/5">'+(it.active?'Hide':'Show')+'</button><button data-del="'+it.id+'" class="text-xs font-mono border border-[#E63946]/30 text-[#E63946] px-3 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-[#E63946] hover:text-white">Delete</button></div>';
         el.appendChild(row);
       });
-      el.querySelectorAll('[data-toggle]').forEach(function(b){ b.onclick=async function(){ try{ await Admin.request('/ticker/'+b.getAttribute('data-toggle')+'/toggle',{method:'PATCH'}); load(); }catch(e){Admin.toast(e.message,'error');} }; });
+      el.querySelectorAll('[data-toggle]').forEach(function(b){ b.onclick=async function(){ try{
+        if(Admin.useSupabase()){
+          var sb=Admin.supa();
+          var cur=await sb.from('tickers').select('active').eq('id',b.getAttribute('data-toggle')).single();
+          if(cur.error) throw new Error(cur.error.message);
+          var up=await sb.from('tickers').update({active:!cur.data.active}).eq('id',b.getAttribute('data-toggle'));
+          if(up.error) throw new Error(up.error.message);
+          load(); return;
+        }
+        await Admin.request('/ticker/'+b.getAttribute('data-toggle')+'/toggle',{method:'PATCH'}); load(); }catch(e){Admin.toast(e.message,'error');} }; });
       el.querySelectorAll('[data-del]').forEach(function(b){ b.onclick=async function(){ if(Admin.useSupabase()&&Admin.deletesDisabled()){Admin.toast('Disabled in beta');return;} if(!confirm('Delete ticker?'))return; try{ await Admin.request('/ticker/'+b.getAttribute('data-del'),{method:'DELETE'}); Admin.toast('Deleted'); load(); }catch(e){Admin.toast(e.message,'error');} }; });
     }catch(e){Admin.toast(e.message,'error');}
   }
@@ -68,7 +83,14 @@
     var text=document.getElementById('text').value.trim();
     var priority=parseInt(document.getElementById('priority').value,10)||0;
     if(!text) return;
-    try{ await Admin.request('/ticker',{method:'POST', body: JSON.stringify({ text:text, priority:priority })}); document.getElementById('text').value=''; Admin.toast('Added'); load(); }catch(ex){Admin.toast(ex.message,'error');}
+    try{
+      if(Admin.useSupabase()){
+        var sb=Admin.supa();
+        var ins=await sb.from('tickers').insert({text:text,priority:priority,active:true});
+        if(ins.error) throw new Error(ins.error.message);
+        document.getElementById('text').value=''; Admin.toast('Added'); load(); return;
+      }
+      await Admin.request('/ticker',{method:'POST', body: JSON.stringify({ text:text, priority:priority })}); document.getElementById('text').value=''; Admin.toast('Added'); load(); }catch(ex){Admin.toast(ex.message,'error');}
   });
   load();
 })();

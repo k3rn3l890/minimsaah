@@ -11,7 +11,7 @@
 <body class="bg-[#050505] text-white font-['Inter',sans-serif] min-h-screen flex items-center justify-center p-6">
 <div class="w-full max-w-[420px]">
   <div class="text-center mb-8">
-    <a href="../index.html" class="font-['Space_Grotesk',sans-serif] text-2xl tracking-[0.25em] uppercase">MINIMSAAH</a>
+    <a href="/index.html" class="font-['Space_Grotesk',sans-serif] text-2xl tracking-[0.25em] uppercase">MINIMSAAH</a>
     <p class="text-xs font-mono tracking-widest text-gray-500 mt-2 uppercase">Admin — Sign In</p>
   </div>
   <div class="bg-[#0A0A0A] border border-white/10 rounded-sm p-6 md:p-8">
@@ -28,7 +28,7 @@
       <p id="err" class="hidden text-xs text-[#E63946] bg-[#E63946]/10 border border-[#E63946]/20 rounded-sm px-3 py-2"></p>
     </form>
   </div>
-  <p class="text-center text-[11px] font-mono text-gray-600 mt-4"><a href="../index.html" class="hover:text-white">← Back to site</a></p>
+  <p class="text-center text-[11px] font-mono text-gray-600 mt-4"><a href="/index.html" class="hover:text-white">← Back to site</a></p>
 </div>
 <script>window.__API_BASE__ = window.__API_BASE__ || '';</script><script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="../assets/js/supabase-client.js"></script><script src="js/admin.js"></script>
 <script>
@@ -40,12 +40,12 @@
   // if already logged, go to admin
   if (useSupa()) {
     window.SupabaseDB.client().auth.getSession().then(function(r){
-      if (r.data && r.data.session) location.href='index.html';
+      if (r.data && r.data.session) location.href='/admin/index.html';
     });
   } else if(localStorage.getItem('access_token')){
     // try me, if ok redirect (localhost Nest fallback)
     fetch(Admin.API+'/auth/me', { headers: { 'Authorization':'Bearer '+localStorage.getItem('access_token') } }).then(function(r){
-      if(r.ok) location.href='index.html';
+      if(r.ok) location.href='/admin/index.html';
     });
   }
   form.addEventListener('submit', async function(e){
@@ -62,13 +62,13 @@
         if (res.error) throw new Error(res.error.message);
         var u = res.data.user;
         Admin.setUser({ id: u.id, email: u.email, firstName: (u.user_metadata&&u.user_metadata.firstName)||'', lastName: (u.user_metadata&&u.user_metadata.lastName)||'', role: (u.user_metadata&&u.user_metadata.role)||'SUBSCRIBER' });
-        location.href='index.html';
+        location.href='/admin/index.html';
         return;
       }
       var data=await Admin.request('/auth/login', { method:'POST', body: JSON.stringify({ email: email, password: password }) });
       Admin.setTokens(data.accessToken, data.refreshToken);
       Admin.setUser(data.user);
-      location.href='index.html';
+      location.href='/admin/index.html';
     }catch(ex){
       err.textContent=ex.message||'Login failed';
       err.classList.remove('hidden');
