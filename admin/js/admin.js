@@ -206,9 +206,23 @@
   }
 
   // Upload a File to Supabase Storage + insert media row. Returns {url, filename} like Nest.
-  async function supaUpload(file, meta) {
+  // opts.imagesOnly (covers/thumbnails): rejects non-images before anything
+  // leaves the browser. Double gate (MIME + extension) since either alone is
+  // spoofable; SVG excluded (public bucket + XML scriptability = stored XSS).
+  var IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif'];
+  var IMAGE_MAX_BYTES = 8 * 1024 * 1024;
+  async function supaUpload(file, meta, opts) {
     var sb = supa();
     if (!sb) throw new Error('Supabase not configured — set Vercel env SUPABASE_URL / SUPABASE_ANON_KEY and redeploy');
+    if (!file) throw new Error('No file selected');
+    if (opts && opts.imagesOnly) {
+      var mime = file.type || '';
+      var imgExt = (file.name.match(/\.[a-z0-9]+$/i) || [''])[0].toLowerCase();
+      if (mime.indexOf('image/') !== 0 || IMAGE_EXTS.indexOf(imgExt) === -1) {
+        throw new Error('Only image files are allowed (JPG, PNG, GIF, WebP, AVIF)');
+      }
+      if (file.size > IMAGE_MAX_BYTES) throw new Error('Image too large (max 8 MB)');
+    }
     var ext = (file.name.match(/\.[a-z0-9]+$/i) || [''])[0];
     var filename = cuid() + ext;
     var up = await sb.storage.from('minimsaah-media').upload(filename, file, { contentType: file.type, upsert: false });

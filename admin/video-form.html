@@ -122,7 +122,7 @@
   document.getElementById('file').addEventListener('change', async function(e){
     var f=e.target.files[0]; if(!f) return;
     var fd=new FormData(); fd.append('file', f);
-    try{ Admin.toast('Uploading…'); var data; if(Admin.useSupabase()){ data=await Admin.supaUpload(f); } else { data=await Admin.request('/media/upload',{method:'POST', body:fd}); } thumbEl.value=data.url; updateThumbPreview(); Admin.toast('Uploaded '+data.url); }catch(ex){ Admin.toast(ex.message,'error'); }
+    try{ Admin.toast('Uploading…'); var data; if(Admin.useSupabase()){ data=await Admin.supaUpload(f, null, { imagesOnly: true }); } else { data=await Admin.request('/media/upload',{method:'POST', body:fd}); } thumbEl.value=data.url; updateThumbPreview(); Admin.toast('Uploaded '+data.url); }catch(ex){ Admin.toast(ex.message,'error'); }
   });
 
   if(isEdit){

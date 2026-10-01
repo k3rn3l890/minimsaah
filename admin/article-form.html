@@ -107,7 +107,7 @@
     try{
       Admin.toast('Uploading…');
       var data;
-      if(Admin.useSupabase()){ data=await Admin.supaUpload(f); }
+      if(Admin.useSupabase()){ data=await Admin.supaUpload(f, null, { imagesOnly: true }); }
       else { var fd=new FormData(); fd.append('file', f); data=await Admin.request('/media/upload', { method:'POST', body: fd }); }
       coverInput.value=data.url;
       coverImg.src=data.url;

@@ -81,6 +81,18 @@ create policy "staff_update" on public.events for update using (public.is_staff(
 drop policy if exists "staff_write_tickers" on public.tickers;
 create policy "staff_write_tickers" on public.tickers for all using (public.is_staff()) with check (public.is_staff());
 
+-- 4b. Media library rows: staff-only (no anon access — public pages use
+-- bucket URLs directly, never this table). No delete policy: beta lock,
+-- deletes go via Pages Functions (service_role).
+drop policy if exists "staff_read_media" on public.media;
+create policy "staff_read_media" on public.media for select using (public.is_staff());
+
+drop policy if exists "staff_insert_media" on public.media;
+create policy "staff_insert_media" on public.media for insert with check (public.is_staff());
+
+drop policy if exists "staff_update_media" on public.media;
+create policy "staff_update_media" on public.media for update using (public.is_staff()) with check (public.is_staff());
+
 -- 5. Deletes + role changes: BLOCKED via anon, must go via Pages Functions (service_role)
 -- No delete policy for anon = deletes fail by default. Functions use service_role to delete.
 
