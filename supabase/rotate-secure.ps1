@@ -17,9 +17,10 @@ $ErrorActionPreference = 'Stop'
 
 function Read-ClipboardSecret([string]$Label) {
   Write-Host $Label
-  Read-Host 'Copy it now, then press Enter here' | Out-Null
+  Read-Host 'Copy it now, then press Enter here (do NOT type into this window)' | Out-Null
   $v = ((Get-Clipboard -Raw) | Out-String).Trim()
   try { Set-Clipboard -Value ' ' } catch {}
+  Write-Host ('Captured (' + $v.Length + ' chars), clipboard cleared.')
   return $v
 }
 
@@ -34,9 +35,13 @@ $pwAdmin = Read-ClipboardSecret 'Step 2/5: new password for admin@minimsaah.com 
 $pwEditor = Read-ClipboardSecret 'Step 3/5: new password for editor@minimsaah.com (8+ chars, unique)'
 $pwWriter = Read-ClipboardSecret 'Step 4/5: new password for writer@minimsaah.com (8+ chars, unique)'
 $pwVideo = Read-ClipboardSecret 'Step 5/5: new password for video@minimsaah.com (8+ chars, unique)'
-foreach ($p in @($pwAdmin, $pwEditor, $pwWriter, $pwVideo)) {
-  if (-not $p -or $p.Length -lt 8) { Write-Error 'A password is missing or shorter than 8 chars - aborting, nothing changed.'; exit 1 }
+function Assert-Password([string]$Email, [string]$Value) {
+  if (-not $Value -or $Value.Length -lt 8) { Write-Error "Password for $Email missing or shorter than 8 chars - aborting, nothing changed."; exit 1 }
 }
+Assert-Password 'admin@minimsaah.com' $pwAdmin
+Assert-Password 'editor@minimsaah.com' $pwEditor
+Assert-Password 'writer@minimsaah.com' $pwWriter
+Assert-Password 'video@minimsaah.com' $pwVideo
 $burned = @('admin123', 'writer123', 'subscriber123')
 foreach ($p in @($pwAdmin, $pwEditor, $pwWriter, $pwVideo)) {
   if ($burned -contains $p.ToLower()) { Write-Error 'A password matches a publicly leaked value - choose a different one. Aborting, nothing changed.'; exit 1 }
