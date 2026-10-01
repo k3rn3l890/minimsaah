@@ -103,13 +103,15 @@
   var API = location.hostname==='localhost'||location.hostname==='127.0.0.1' ? 'http://localhost:3000/api/v1' : (window.__API_BASE__||'http://localhost:3000/api/v1');
   function getSlug(){ return new URLSearchParams(location.search).get('slug'); }
   function esc(s){ if(s===null||s===undefined) return ''; return String(s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);}); }
+  function normRow(r){ if(!r||typeof r!=='object'||Array.isArray(r)) return r; var o={}; for(var k in r){ o[k]=r[k]; var ck=k.replace(/_([a-z])/g,function(m,c){return c.toUpperCase();}); if(ck!==k&&o[ck]===undefined) o[ck]=r[k]; } return o; }
   function fmt(d){ try{ return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}catch{return d;} }
   function useSupabase(){ return window.SupabaseDB && window.SupabaseDB.isEnabled(); }
   async function loadSupabase(slug){
     var sb = window.SupabaseDB.client();
-    var res = await sb.from('articles').select('*,author:users(firstName,lastName,bio)').eq('slug', slug).single();
+    var res = await sb.from('articles').select('*,author:users(first_name,last_name,bio)').eq('slug', slug).eq('status','PUBLISHED').single();
     if (res.error) throw new Error('not found');
-    var a = res.data;
+    var a = normRow(res.data);
+    if (a.author) a.author = normRow(a.author);
     // fire-and-forget viewCount via RPC (backend increment parity)
     try { await sb.rpc('increment_view', { table_name: 'articles', row_id: a.id }); } catch {}
     return a;
@@ -158,11 +160,11 @@
       var items=[];
       if (useSupabase()) {
         var sb = window.SupabaseDB.client();
-        var q = sb.from('articles').select('*').eq('status','PUBLISHED').order('publishedAt',{ascending:false}).limit(4);
+        var q = sb.from('articles').select('*').eq('status','PUBLISHED').order('published_at',{ascending:false}).limit(4);
         if (cat) q = q.eq('category', cat);
         var r = await q;
         if (r.error) return;
-        items=(r.data||[]).filter(function(x){ return x.id!==excludeId; }).slice(0,3);
+        items=(r.data||[]).map(normRow).filter(function(x){ return x.id!==excludeId; }).slice(0,3);
       } else {
         var qs=cat? '?category='+encodeURIComponent(cat)+'&limit=3&status=PUBLISHED':'?limit=3&status=PUBLISHED';
         var res=await fetch(API+'/articles'+qs);

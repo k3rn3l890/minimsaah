@@ -57,13 +57,24 @@
 (function(){
   var API=location.hostname==='localhost'||location.hostname==='127.0.0.1'?'http://localhost:3000/api/v1':(window.__API_BASE__||'http://localhost:3000/api/v1');
   function getSlug(){return new URLSearchParams(location.search).get('slug');}
+  function useSupabase(){ return window.SupabaseDB && window.SupabaseDB.isEnabled(); }
+  function normRow(r){ if(!r||typeof r!=='object'||Array.isArray(r)) return r; var o={}; for(var k in r){ o[k]=r[k]; var ck=k.replace(/_([a-z])/g,function(m,c){return c.toUpperCase();}); if(ck!==k&&o[ck]===undefined) o[ck]=r[k]; } return o; }
+  async function loadSupabase(slug){
+    // Note: events table has no view_count column, so no increment_view RPC here.
+    var sb = window.SupabaseDB.client();
+    var res = await sb.from('events').select('*').eq('slug', slug).eq('status','PUBLISHED').single();
+    if (res.error) throw new Error('not found');
+    return normRow(res.data);
+  }
   async function load(){
     var slug=getSlug();
     if(!slug){document.getElementById('loading').classList.add('hidden');document.getElementById('error').classList.remove('hidden');return;}
     try{
-      var res=await fetch(API+'/events/'+encodeURIComponent(slug));
-      if(!res.ok) throw new Error();
-      var e=await res.json();
+      var e = useSupabase() ? await loadSupabase(slug) : await (async function(){
+        var res=await fetch(API+'/events/'+encodeURIComponent(slug));
+        if(!res.ok) throw new Error();
+        return await res.json();
+      })();
       document.title=e.title+' | MINIMSAAH';
       document.getElementById('bc-title').textContent=e.title;
       document.getElementById('title').textContent=e.title;

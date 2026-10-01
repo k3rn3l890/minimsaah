@@ -83,6 +83,17 @@
   function getSlug(){return new URLSearchParams(location.search).get('slug');}
   function esc(s){if(s===null||s===undefined)return '';return String(s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);});}
   function fmt(d){try{return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}catch{return d;}}
+  function useSupabase(){ return window.SupabaseDB && window.SupabaseDB.isEnabled(); }
+  function normRow(r){ if(!r||typeof r!=='object'||Array.isArray(r)) return r; var o={}; for(var k in r){ o[k]=r[k]; var ck=k.replace(/_([a-z])/g,function(m,c){return c.toUpperCase();}); if(ck!==k&&o[ck]===undefined) o[ck]=r[k]; } return o; }
+  async function loadSupabase(slug){
+    var sb = window.SupabaseDB.client();
+    var res = await sb.from('videos').select('*,author:users(first_name,last_name,bio)').eq('slug', slug).eq('status','PUBLISHED').single();
+    if (res.error) throw new Error('not found');
+    var v = normRow(res.data);
+    if (v.author) v.author = normRow(v.author);
+    try { await sb.rpc('increment_view', { table_name: 'videos', row_id: v.id }); } catch {}
+    return v;
+  }
   var current=null;
   function loadPlayer(v){
     var wrap=document.getElementById('player');
@@ -107,9 +118,12 @@
     var slug=getSlug();
     if(!slug){document.getElementById('loading').classList.add('hidden');document.getElementById('error').classList.remove('hidden');return;}
     try{
-      var res=await fetch(API+'/videos/'+encodeURIComponent(slug));
-      if(!res.ok) throw new Error('not found');
-      var v=await res.json(); current=v;
+      var v = useSupabase() ? await loadSupabase(slug) : await (async function(){
+        var res=await fetch(API+'/videos/'+encodeURIComponent(slug));
+        if(!res.ok) throw new Error('not found');
+        return await res.json();
+      })();
+      current=v;
       document.title=v.title+' | MINIMSAAH';
       document.getElementById('bc-title').textContent=v.title;
       document.getElementById('cat').textContent=(v.category||'High­light').replace(/_/g,' ');
@@ -130,11 +144,21 @@
   }
   async function loadRelated(cat, excludeId){
     try{
-      var q=cat? '?category='+encodeURIComponent(cat)+'&limit=3&status=PUBLISHED':'?limit=3&status=PUBLISHED';
-      var res=await fetch(API+'/videos'+q);
-      if(!res.ok) return;
-      var data=await res.json();
-      var items=(data.items||data).filter(function(x){return x.id!==excludeId;}).slice(0,3);
+      var items=[];
+      if (useSupabase()) {
+        var sb = window.SupabaseDB.client();
+        var sq = sb.from('videos').select('*').eq('status','PUBLISHED').order('published_at',{ascending:false}).limit(4);
+        if (cat) sq = sq.eq('category', cat);
+        var sr = await sq;
+        if (sr.error) return;
+        items=(sr.data||[]).map(normRow).filter(function(x){return x.id!==excludeId;}).slice(0,3);
+      } else {
+        var q=cat? '?category='+encodeURIComponent(cat)+'&limit=3&status=PUBLISHED':'?limit=3&status=PUBLISHED';
+        var res=await fetch(API+'/videos'+q);
+        if(!res.ok) return;
+        var data=await res.json();
+        items=(data.items||data).filter(function(x){return x.id!==excludeId;}).slice(0,3);
+      }
       if(!items.length) return;
       var grid=document.getElementById('related-grid');
       items.forEach(function(it){

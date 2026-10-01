@@ -16,6 +16,20 @@
     return window.SupabaseDB && window.SupabaseDB.isEnabled();
   }
 
+  // Map Supabase snake_case rows to the camelCase fields templates use.
+  // Same pattern as admin.js normRow: keeps both key styles so every
+  // existing read (a.coverImage, v.viewCount, …) works unchanged.
+  function normRow(r) {
+    if (!r || typeof r !== 'object' || Array.isArray(r)) return r;
+    var o = {};
+    for (var k in r) {
+      o[k] = r[k];
+      var ck = k.replace(/_([a-z])/g, function (m, c) { return c.toUpperCase(); });
+      if (ck !== k && o[ck] === undefined) o[ck] = r[k];
+    }
+    return o;
+  }
+
   async function fetchSupabase(table, opts) {
     opts = opts || {};
     try {
@@ -26,12 +40,13 @@
       if (opts.active !== undefined) q = q.eq('active', opts.active);
       if (opts.category) q = q.eq('category', opts.category);
       if (opts.orderBy) q = q.order(opts.orderBy, { ascending: false });
-      else if (table !== 'tickers') q = q.order('publishedAt', { ascending: false });
+      else if (table !== 'tickers') q = q.order('published_at', { ascending: false });
       else q = q.order('priority', { ascending: false });
       if (opts.limit) q = q.limit(opts.limit);
       var res = await q;
       if (res.error) throw new Error(res.error.message);
-      return { items: res.data || [], meta: { total: (res.data || []).length, page: 1, limit: opts.limit || 10, totalPages: 1 } };
+      var items = (res.data || []).map(normRow);
+      return { items: items, meta: { total: items.length, page: 1, limit: opts.limit || 10, totalPages: 1 } };
     } catch (e) {
       console.warn('[MINIMSAAH] supabase fetch failed', table, e.message);
       return null;
@@ -74,7 +89,7 @@
   // ─── Hydrate Hero (featured article) ─────────────────────────────
   async function hydrateHero() {
     var data = useSupabase()
-      ? await fetchSupabase('articles', { status: 'PUBLISHED', limit: 1, orderBy: 'publishedAt' })
+      ? await fetchSupabase('articles', { status: 'PUBLISHED', limit: 1, orderBy: 'published_at' })
       : await fetchJSON('/articles?status=PUBLISHED&limit=1');
     if (!data || !data.items || !data.items.length) return;
     var a = data.items[0];
@@ -116,7 +131,7 @@
     var section = qs('#featured');
     if (!section) return;
     var data = useSupabase()
-      ? await fetchSupabase('articles', { status: 'PUBLISHED', limit: 4, orderBy: 'publishedAt' })
+      ? await fetchSupabase('articles', { status: 'PUBLISHED', limit: 4, orderBy: 'published_at' })
       : await fetchJSON('/articles?status=PUBLISHED&limit=4');
     if (!data || !data.items || data.items.length < 2) return;
     var featured = data.items[0];
@@ -162,7 +177,7 @@
     var wrap = qs('#horiz-wrap');
     if (!wrap) return;
     var data = useSupabase()
-      ? await fetchSupabase('videos', { status: 'PUBLISHED', limit: 3, orderBy: 'publishedAt' })
+      ? await fetchSupabase('videos', { status: 'PUBLISHED', limit: 3, orderBy: 'published_at' })
       : await fetchJSON('/videos?status=PUBLISHED&limit=3');
     if (!data || !data.items || !data.items.length) return;
     // Also fetch ticker? not needed
@@ -219,7 +234,7 @@
     var section = qs('#docs');
     if (!section) return;
     var data = useSupabase()
-      ? await fetchSupabase('documentaries', { status: 'PUBLISHED', limit: 3, orderBy: 'publishedAt' })
+      ? await fetchSupabase('documentaries', { status: 'PUBLISHED', limit: 3, orderBy: 'published_at' })
       : await fetchJSON('/documentaries?status=PUBLISHED&limit=3');
     if (!data || !data.items || !data.items.length) return;
     var docs = data.items;
@@ -254,7 +269,7 @@
     var section = qs('#news');
     if (!section) return;
     var data = useSupabase()
-      ? await fetchSupabase('articles', { status: 'PUBLISHED', limit: 6, orderBy: 'publishedAt' })
+      ? await fetchSupabase('articles', { status: 'PUBLISHED', limit: 6, orderBy: 'published_at' })
       : await fetchJSON('/articles?status=PUBLISHED&limit=6');
     if (!data || !data.items || !data.items.length) return;
     var items = data.items;
