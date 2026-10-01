@@ -30,17 +30,25 @@
   </div>
   <p class="text-center text-[11px] font-mono text-gray-600 mt-4"><a href="/index.html" class="hover:text-white">← Back to site</a></p>
 </div>
-<script>window.__API_BASE__ = window.__API_BASE__ || '';</script><script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="../assets/js/supabase-client.js"></script><script src="js/admin.js"></script>
+<script>window.__API_BASE__ = window.__API_BASE__ || '';</script><script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="/assets/js/supabase-client.js"></script><script src="/admin/js/admin.js"></script>
 <script>
 (function(){
   var form=document.getElementById('form');
   var err=document.getElementById('err');
   var btn=document.getElementById('btn');
   function useSupa(){ return window.SupabaseDB && window.SupabaseDB.isEnabled(); }
-  // if already logged, go to admin
+  // if already logged, go to admin (staff only — others are signed out)
   if (useSupa()) {
     window.SupabaseDB.client().auth.getSession().then(function(r){
-      if (r.data && r.data.session) location.href='/admin/index.html';
+      var sess = r.data && r.data.session;
+      if (!sess) return;
+      window.SupabaseDB.client().auth.getUser().then(function(ur){
+        var u = ur.data && ur.data.user;
+        var role = u && u.user_metadata && u.user_metadata.role;
+        var ok = (Admin.isStaffRole ? Admin.isStaffRole(role) : (['OWNER','EDITOR','JOURNALIST','VIDEOGRAPHER'].indexOf(role) !== -1));
+        if (ok) location.href='/admin/index.html';
+        else window.SupabaseDB.client().auth.signOut();
+      });
     });
   } else if(localStorage.getItem('access_token')){
     // try me, if ok redirect (localhost Nest fallback)
@@ -61,7 +69,13 @@
         var res = await sb.auth.signInWithPassword({ email: email, password: password });
         if (res.error) throw new Error(res.error.message);
         var u = res.data.user;
-        Admin.setUser({ id: u.id, email: u.email, firstName: (u.user_metadata&&u.user_metadata.firstName)||'', lastName: (u.user_metadata&&u.user_metadata.lastName)||'', role: (u.user_metadata&&u.user_metadata.role)||'SUBSCRIBER' });
+        var role = (u.user_metadata&&u.user_metadata.role)||'SUBSCRIBER';
+        var allowed = (Admin.isStaffRole ? Admin.isStaffRole(role) : (['OWNER','EDITOR','JOURNALIST','VIDEOGRAPHER'].indexOf(role) !== -1));
+        if (!allowed) {
+          try { await sb.auth.signOut(); } catch (e) {}
+          throw new Error('Access denied — staff only');
+        }
+        Admin.setUser({ id: u.id, email: u.email, firstName: (u.user_metadata&&u.user_metadata.firstName)||'', lastName: (u.user_metadata&&u.user_metadata.lastName)||'', role: role });
         location.href='/admin/index.html';
         return;
       }

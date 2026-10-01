@@ -88,7 +88,7 @@
     if (heroTitle) {
       heroTitle.textContent = a.title;
       heroTitle.style.cursor = 'pointer';
-      heroTitle.addEventListener('click', function () { location.href = 'article.html?slug=' + encodeURIComponent(a.slug); });
+      heroTitle.addEventListener('click', function () { location.href = '/article.html?slug=' + encodeURIComponent(a.slug); });
     }
     if (heroDeck && a.excerpt) heroDeck.textContent = a.excerpt;
     if (heroBadge) {
@@ -102,7 +102,7 @@
     if (heroMeta) {
       heroMeta.innerHTML = '<span class="text-xs font-mono text-gray-400">By <span class="text-white">' + escapeHtml((a.author && (a.author.firstName + ' ' + a.author.lastName)) || 'MINIMSAAH') + '</span></span><span class="w-1 h-1 rounded-full bg-[#E63946]"></span><span class="text-xs font-mono text-gray-500">' + readingTimeLabel(a.readingTime) + '</span>';
     }
-    if (heroCta) heroCta.href = 'article.html?slug=' + encodeURIComponent(a.slug);
+    if (heroCta) heroCta.href = '/article.html?slug=' + encodeURIComponent(a.slug);
     if (heroImg && a.coverImage) {
       heroImg.src = a.coverImage;
       heroImg.alt = a.title;
@@ -134,7 +134,7 @@
       if (h3) { h3.textContent = featured.title; large.style.cursor = 'pointer'; }
       var p = large.querySelector('p.text-gray-400');
       if (p && featured.excerpt) p.textContent = featured.excerpt;
-      large.onclick = function () { location.href = 'article.html?slug=' + encodeURIComponent(featured.slug); };
+      large.onclick = function () { location.href = '/article.html?slug=' + encodeURIComponent(featured.slug); };
     }
 
     // Side cards
@@ -152,7 +152,7 @@
         if (cat) cat.textContent = (art.category || '').replace(/_/g, ' ');
         var meta = card.querySelector('p.text-xs');
         if (meta) meta.textContent = readingTimeLabel(art.readingTime) + ' • ' + fmtDate(art.publishedAt);
-        card.href = 'article.html?slug=' + encodeURIComponent(art.slug);
+        card.href = '/article.html?slug=' + encodeURIComponent(art.slug);
       });
     }
   }
@@ -205,7 +205,7 @@
       panel.addEventListener('click', function (e) {
         // if click on play, modal already handled via delegation
         if (e.target.closest('.rounded-full') || e.target.closest('[data-video-url]')) return;
-        location.href = 'video.html?slug=' + encodeURIComponent(v.slug);
+        location.href = '/video.html?slug=' + encodeURIComponent(v.slug);
       });
     });
 
@@ -238,7 +238,7 @@
       if (meta) meta.textContent = 'Documentary • ' + (d.duration ? Math.floor(d.duration/60) + ' min' : '');
       var p = card.querySelector('p');
       if (p && d.description) p.textContent = d.description;
-      card.href = 'documentary.html?slug=' + encodeURIComponent(d.slug);
+      card.href = '/documentary.html?slug=' + encodeURIComponent(d.slug);
       // play overlay should open player modal, not navigate
       var playBtn = card.querySelector('.rounded-full');
       if (playBtn && d.videoUrl) {
@@ -275,7 +275,7 @@
       metas.forEach(function (sp) {
         if (sp.textContent.indexOf('min read') !== -1) sp.textContent = readingTimeLabel(art.readingTime) + ' • ' + fmtDate(art.publishedAt);
       });
-      card.href = 'article.html?slug=' + encodeURIComponent(art.slug);
+      card.href = '/article.html?slug=' + encodeURIComponent(art.slug);
     });
   }
 
@@ -302,7 +302,7 @@
       if (p && ev.description) p.textContent = ev.description;
       var loc = row.querySelector('p.text-\\[10px\\].text-gray-600');
       if (loc) loc.textContent = (ev.location || ev.venue || '') + ' • ' + fmtDate(ev.date);
-      row.href = 'event.html?slug=' + encodeURIComponent(ev.slug);
+      row.href = '/event.html?slug=' + encodeURIComponent(ev.slug);
     });
   }
 

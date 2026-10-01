@@ -8,6 +8,9 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
 <style>*:focus-visible{outline:2px solid #E63946;outline-offset:2px}</style>
+<style>html.mm-guard body{visibility:hidden}</style>
+<script>document.documentElement.className+=' mm-guard';</script>
+<noscript><meta http-equiv="refresh" content="0;url=/admin/login.html"></noscript>
 </head>
 <body class="bg-[#050505] text-white font-['Inter',sans-serif] min-h-screen">
 <nav class="sticky top-0 z-40 bg-[#050505]/90 backdrop-blur-md border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between">
@@ -104,10 +107,10 @@
   </main>
 </div>
 
-<script>window.__API_BASE__ = window.__API_BASE__ || 'https://minimsaah-api.onrender.com/api/v1';</script><script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="../assets/js/supabase-client.js"></script><script src="js/admin.js"></script>
+<script>window.__API_BASE__ = window.__API_BASE__ || 'https://minimsaah-api.onrender.com/api/v1';</script><script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="/assets/js/supabase-client.js"></script><script src="/admin/js/admin.js"></script>
 <script>
 (function(){
-  Admin.requireAuth();
+  if(typeof window.Admin==='undefined'||!Admin.requireAuth){location.href='/admin/login.html';}else{Admin.requireAuth().then(function(){document.documentElement.classList.remove('mm-guard');}).catch(function(){});}
   Admin.setActiveNav();
   var u=Admin.getUser();
   if(u) document.getElementById('user-name').textContent=u.firstName+' '+u.lastName+' ('+u.role+')';
@@ -163,7 +166,7 @@
         var row=document.createElement('a');
         row.href='/admin/article-form.html?id='+encodeURIComponent(it.id);
         row.className='flex justify-between items-center py-2 border-b border-white/5 hover:text-white';
-        row.innerHTML='<span class="truncate pr-4">'+it.title+'</span><span class="text-[11px] font-mono shrink-0 '+(it.status==='PUBLISHED'?'text-green-400':'text-gray-500')+'">'+it.status+'</span>';
+        row.innerHTML='<span class="truncate pr-4">'+Admin.escapeHtml(it.title)+'</span><span class="text-[11px] font-mono shrink-0 '+(it.status==='PUBLISHED'?'text-green-400':'text-gray-500')+'">'+Admin.escapeHtml(it.status)+'</span>';
         el.appendChild(row);
       });
     }catch(e){ console.warn(e); }

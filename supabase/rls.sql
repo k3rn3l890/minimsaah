@@ -92,9 +92,17 @@ drop policy if exists "staff_update_users" on public.users;
 create policy "staff_update_users" on public.users for update using (public.is_owner_editor());
 
 -- 7. View count RPC (avoids backend increment logic)
+-- Hardened: explicit table allowlist + row_id shape guard. Anonymous calls stay
+-- allowed (public pages increment views) but arbitrary tables/ids are rejected.
 create or replace function public.increment_view(table_name text, row_id text)
 returns void language plpgsql security definer as $$
 begin
+  if table_name not in ('articles', 'videos', 'documentaries') then
+    raise exception 'invalid table_name';
+  end if;
+  if row_id is null or length(row_id) > 64 or row_id !~ '^[A-Za-z0-9_-]+$' then
+    raise exception 'invalid row_id';
+  end if;
   if table_name = 'articles' then update public.articles set view_count = view_count + 1 where id = row_id;
   elsif table_name = 'videos' then update public.videos set view_count = view_count + 1 where id = row_id;
   elsif table_name = 'documentaries' then update public.documentaries set view_count = view_count + 1 where id = row_id;

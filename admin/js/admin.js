@@ -73,23 +73,47 @@
     return window.SupabaseDB ? window.SupabaseDB.client() : null;
   }
 
-  async function requireAuth() {
+  var STAFF_ROLES = ['OWNER', 'EDITOR', 'JOURNALIST', 'VIDEOGRAPHER'];
+  function isStaffRole(r) { return STAFF_ROLES.indexOf(r) !== -1; }
+  function isLocalhost() { return location.hostname === 'localhost' || location.hostname === '127.0.0.1'; }
+
+  async function requireAuth(opts) {
+    opts = opts || {};
+    var timeoutMs = opts.timeoutMs || 8000;
+    function fail() { location.href = '/admin/login.html'; throw new Error('Not authenticated'); }
+    function withTimeout(p) {
+      return Promise.race([
+        p,
+        new Promise(function (_, rej) { setTimeout(function () { rej(new Error('auth timeout')); }, timeoutMs); }),
+      ]);
+    }
     if (useSupabase()) {
       var sb = supa();
-      if (!sb) { location.href = 'login.html'; throw new Error('Not authenticated'); }
-      var res = await sb.auth.getSession();
-      var session = res.data && res.data.session;
-      if (!session) {
-        // fallback to legacy token for localhost dev
-        if (!getToken()) { location.href = 'login.html'; throw new Error('Not authenticated'); }
-        return;
+      if (!sb) fail();
+      var session = null;
+      try {
+        var res = await withTimeout(sb.auth.getSession());
+        session = res.data && res.data.session;
+      } catch (e) { fail(); }
+      if (!session) fail();
+      // Staff gate: role comes from the verified auth user, never localStorage.
+      var role = null;
+      try {
+        var ures = await withTimeout(sb.auth.getUser());
+        var u = ures.data && ures.data.user;
+        role = u && u.user_metadata && u.user_metadata.role;
+      } catch (e) { fail(); }
+      if (!isStaffRole(role)) {
+        try { await sb.auth.signOut(); } catch (e) {}
+        clearTokens();
+        fail();
       }
-      return;
+      return session;
     }
-    if (!getToken()) {
-      location.href = 'login.html';
-      throw new Error('Not authenticated');
-    }
+    // Supabase not configured: localhost Nest fallback only. Prod fails closed.
+    if (!isLocalhost()) fail();
+    if (!getToken()) fail();
+    return null;
   }
 
   async function logout() {
@@ -99,7 +123,7 @@
     var rt = getRefresh();
     if (rt) fetch(API + '/auth/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }).catch(function(){});
     clearTokens();
-    location.href = 'login.html';
+    location.href = '/admin/login.html';
   }
 
   function deletesDisabled() {
@@ -262,9 +286,19 @@
     el._t = setTimeout(function () { el.style.display = 'none'; }, 3000);
   }
 
-  // Sidebar active
+  function escapeHtml(s) {
+    if (s === null || s === undefined) return '';
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]);
+    });
+  }
+
+  // Sidebar active — works under cleanUrls (/admin, /admin/videos, /admin/videos.html)
   function setActiveNav() {
-    var path = location.pathname.split('/').pop() || 'index.html';
+    var seg = location.pathname.split('/').pop() || '';
+    var path = seg || 'index.html';
+    if (path === 'admin') path = 'index.html';
+    else if (path.indexOf('.') === -1) path = path + '.html';
     document.querySelectorAll('[data-nav]').forEach(function (a) {
       if (a.getAttribute('data-nav') === path) a.classList.add('bg-white/5', 'text-white');
     });
@@ -279,6 +313,9 @@
     setTokens: setTokens,
     clearTokens: clearTokens,
     requireAuth: requireAuth,
+    isStaffRole: isStaffRole,
+    STAFF_ROLES: STAFF_ROLES,
+    escapeHtml: escapeHtml,
     logout: logout,
     slugify: slugify,
     fmtDate: fmtDate,
