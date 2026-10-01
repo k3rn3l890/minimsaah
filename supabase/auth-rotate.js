@@ -6,7 +6,11 @@
  *
  * Usage:
  *   node supabase/auth-rotate.js            # dry run: validates wiring, writes nothing
- *   node supabase/auth-rotate.js --live     # prompts for service key + 4 passwords, rotates
+ *   node supabase/auth-rotate.js --live     # masked prompts (non-Windows terminals)
+ *   Via wrapper only: .\supabase\rotate-secure.ps1
+ *     (PowerShell SecureString prompts -> process env -> --live-env).
+ *     --live-env refuses to run without the wrapper sentinel, so env
+ *     intake cannot be reached by typed commands (which leak to history).
  *
  * After each account: verifies user_metadata.role is unchanged, prints OK.
  * Stops on first failure (idempotent — re-run when ready).
@@ -109,12 +113,36 @@ async function promptRequired(label, minLen, whatFor) {
 
 async function main() {
   var live = process.argv.indexOf('--live') !== -1;
-  console.log('MINIMSAAH password rotation — ' + (live ? 'LIVE' : 'DRY RUN (writes nothing)'));
+  var liveEnv = process.argv.indexOf('--live-env') !== -1;
+  console.log('MINIMSAAH password rotation — ' + (live || liveEnv ? 'LIVE' : 'DRY RUN (writes nothing)'));
   console.log('Accounts: ' + STAFF.map(function (s) { return s.email; }).join(', '));
-  if (!live) {
+  if (!live && !liveEnv) {
     console.log('Dry run OK: wiring valid. Re-run with --live to rotate.');
     return;
   }
+  var getPassword;
+  var supabase;
+  if (liveEnv) {
+    // Wrapper-only path: refuses without the sentinel so typed commands
+    // (which persist in shell history) can never reach env intake.
+    if (process.env.MINIMSAAH_SECURE_WRAPPER !== '1') {
+      console.error('Refusing env intake without the secure wrapper — run .\\supabase\\rotate-secure.ps1 instead.');
+      process.exit(1);
+    }
+    var serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+    var pwMap = {
+      'admin@minimsaah.com': process.env.STAFF_ADMIN_PASSWORD || '',
+      'editor@minimsaah.com': process.env.STAFF_EDITOR_PASSWORD || '',
+      'writer@minimsaah.com': process.env.STAFF_WRITER_PASSWORD || '',
+      'video@minimsaah.com': process.env.STAFF_VIDEO_PASSWORD || '',
+    };
+    if (!serviceKey || serviceKey.length < 100) { console.error('Service key missing or truncated — aborting, nothing changed.'); process.exit(1); }
+    var bad = STAFF.filter(function (s) { return !pwMap[s.email] || pwMap[s.email].length < 16; });
+    if (bad.length) { console.error('Missing/short password for: ' + bad.map(function (s) { return s.email; }).join(', ') + ' — aborting, nothing changed.'); process.exit(1); }
+    supabase = createClient(SUPABASE_URL, serviceKey, { auth: { persistSession: false } });
+    serviceKey = null;
+    getPassword = async function (email) { var p = pwMap[email]; pwMap[email] = ''; return p; };
+  } else {
   var serviceKey = '';
   for (var k = 1; k <= 3; k++) {
     serviceKey = (await promptRequired('SUPABASE_SERVICE_ROLE_KEY (masked, memory-only)', 0, 'service key')).trim();
@@ -126,6 +154,10 @@ async function main() {
   console.log('Key accepted (' + serviceKey.length + ' chars), connecting…');
   var supabase = createClient(SUPABASE_URL, serviceKey, { auth: { persistSession: false } });
   serviceKey = null;
+  getPassword = async function (email) {
+    return promptRequired('New password for ' + email + ' (masked, memory-only)', 16, 'password');
+  };
+  }
 
   var listed = await supabase.auth.admin.listUsers();
   if (listed.error) { console.error('Cannot list users: ' + listed.error.message); shutdown(1); return; }
@@ -135,7 +167,7 @@ async function main() {
   for (const s of STAFF) {
     var existing = byEmail[s.email];
     if (!existing) { console.error('FAIL ' + s.email + ': no such Auth user — aborting, nothing changed for this account.'); shutdown(1); return; }
-    var pw = await promptRequired('New password for ' + s.email + ' (masked, memory-only)', 16, 'password');
+    var pw = await getPassword(s.email);
     var up = await supabase.auth.admin.updateUserById(existing.id, { password: pw });
     pw = null;
     if (up.error) { console.error('FAIL ' + s.email + ': ' + up.error.message); shutdown(1); return; }
