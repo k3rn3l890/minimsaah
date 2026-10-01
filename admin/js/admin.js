@@ -232,7 +232,7 @@
     var me = getUser() || {};
     var sess = (await sb.auth.getSession()).data.session;
     var uid = (sess && sess.user && sess.user.id) || me.id || null;
-    var ins = await sb.from('media').insert({ filename: filename, original_name: file.name, mime_type: file.type, size: file.size, url: url, alt: (meta && meta.alt) || null, caption: (meta && meta.caption) || null, type: type, uploader_id: uid });
+    var ins = await sb.from('media').insert({ id: cuid(), filename: filename, original_name: file.name, mime_type: (file.type || 'application/octet-stream'), size: file.size, url: url, alt: (meta && meta.alt) || null, caption: (meta && meta.caption) || null, type: type, uploader_id: uid });
     if (ins.error) throw new Error(ins.error.message);
     return { url: url, filename: filename };
   }
