@@ -82,16 +82,6 @@ a:focus-visible {
   <!-- NOISE OVERLAY -->
   <div style="position: fixed; inset: 0; pointer-events: none; z-index: 9999; opacity: 0.04; background-image: url('data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E');"></div>
 
-  <!-- PRELOADER -->
-  <div id="loader" class="fixed inset-0 bg-[#050505] z-[10000] flex justify-center items-center text-white">
-    <div class="overflow-hidden mb-6">
-      <div id="loader-counter" class="font-['Space_Grotesk',sans-serif] text-8xl md:text-9xl font-medium tracking-tighter leading-none translate-y-full pb-2">0</div>
-    </div>
-    <div class="absolute bottom-0 left-0 w-full h-[2px] bg-white/10 overflow-hidden">
-      <div id="loader-progress" class="w-0 h-full bg-[#E63946]"></div>
-    </div>
-  </div>
-
   <!-- NAVIGATION -->
   <!-- NAV: hamburger LEFT, MINIMSAAH CENTER -->
   <nav class="fixed top-0 left-0 right-0 px-4 sm:px-6 py-4 md:px-12 md:py-8 flex items-center gap-3 z-50 text-white bg-[#050505]/90 backdrop-blur-md border-b border-white/5" style="padding-top: max(1rem, env(safe-area-inset-top)); box-sizing: border-box;">
@@ -817,7 +807,9 @@ a:focus-visible {
         smoothTouch: false,
       });
 
-      lenis.stop(); // Stop scroll during preload
+      // No preloader gate: page reveals and scrolls immediately.
+      // Reveal body (was opacity:0 until the old loader finished)
+      gsap.set("body", { opacity: 1 });
 
       // Sync Lenis with GSAP ScrollTrigger
       gsap.registerPlugin(ScrollTrigger);
@@ -826,10 +818,6 @@ a:focus-visible {
         lenis.raf(time * 1000);
       });
       gsap.ticker.lagSmoothing(0, 0);
-
-      // Lock body temporarily
-      gsap.set("body", { opacity: 1 });
-      document.body.style.overflow = "hidden";
 
       // 10. Reduced Motion — disable GSAP animations if user prefers
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -842,33 +830,17 @@ a:focus-visible {
         if (loader) loader.style.display = 'none';
       }
 
-      // 2. Preloader
-      const loaderCounter = document.getElementById("loader-counter");
-      const loaderProgress = document.getElementById("loader-progress");
+      // 2. Intro (no preloader — hero animates in immediately on load)
+      lenis.scrollTo(0, { immediate: true });
 
-      const tlLoader = gsap.timeline({
+      const tlIntro = gsap.timeline({
         onComplete: () => {
-          document.body.style.overflow = "";
-          document.body.style.overflowY = "auto";
-          lenis.start();
-          lenis.scrollTo(0, { immediate: true });
           ScrollTrigger.refresh();
         }
       });
 
-      tlLoader
-        .to(loaderCounter, { y: 0, duration: 1, ease: "power4.out" })
-        .to(loaderProgress, { width: "100%", duration: 1.5, ease: "power2.inOut" }, "-=0.5")
-        .to({ val: 0 }, {
-          val: 100,
-          duration: 1.5,
-          ease: "power2.inOut",
-          onUpdate: function() {
-            loaderCounter.textContent = Math.round(this.targets()[0].val);
-          }
-        }, "-=1.5")
-        .to("#loader", { yPercent: -100, duration: 1, ease: "power4.inOut", delay: 0.2 })
-        .from("#hero-badge", { opacity: 0, y: 20, duration: 0.6, ease: "power3.out" }, "-=0.6")
+      tlIntro
+        .from("#hero-badge", { opacity: 0, y: 20, duration: 0.6, ease: "power3.out" })
         .from("#hero-title", { opacity: 0, y: 30, duration: 0.8, ease: "power3.out" }, "-=0.4")
         .from("#hero-deck", { opacity: 0, y: 20, duration: 0.6, ease: "power3.out" }, "-=0.4")
         .from("#hero-meta", { opacity: 0, y: 15, duration: 0.5, ease: "power3.out" }, "-=0.3")
