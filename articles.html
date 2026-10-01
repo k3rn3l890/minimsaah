@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" class="antialiased">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="/assets/img/logo.png">
+<link rel="apple-touch-icon" href="/assets/img/logo.png">
+<title>All Stories | MINIMSAAH</title>
+<meta name="description" content="Every published story from MINIMSAAH — features, match reports, analysis, interviews and opinion from Accra, Ghana.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+<style>
+*:focus-visible{outline:2px solid #E63946;outline-offset:2px;border-radius:4px}
+</style>
+</head>
+<body class="bg-[#050505] text-white font-['Inter',sans-serif] m-0 overflow-x-hidden selection:bg-[#E63946] selection:text-white">
+<div style="position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:0.04;background-image:url('data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E');"></div>
+
+<nav class="fixed top-0 left-0 right-0 px-4 sm:px-6 py-4 md:px-12 md:py-6 flex items-center gap-3 z-50 bg-[#050505]/90 backdrop-blur-md border-b border-white/5" style="padding-top: max(1rem, env(safe-area-inset-top)); box-sizing: border-box;">
+  <button id="menu-toggle-detail" class="md:hidden w-12 h-12 shrink-0 flex items-center justify-center bg-white/[0.08] border border-white/15 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,0,0,0.6)] rounded-sm touch-manipulation active:bg-white/10 active:scale-[0.98] transition-all" aria-label="Open menu" aria-expanded="false">
+    <svg class="w-[22px] h-[22px] sm:w-6 sm:h-6 text-white pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 8h14M5 12h14M5 16h14"/></svg>
+  </button>
+  <a href="/index.html" class="absolute left-1/2 -translate-x-1/2 md:static md:left-auto md:translate-x-0 md:flex-1 md:min-w-0 flex items-center">
+    <img src="/assets/img/logo.png" alt="MINIMSAAH" width="3834" height="1093" class="h-10 sm:h-10 md:h-14 w-auto max-w-[200px] sm:max-w-[280px] md:max-w-none"><span class="sr-only">MINIMSAAH</span>
+  </a>
+  <div class="hidden md:flex gap-6 text-xs font-medium tracking-widest uppercase opacity-80 ml-auto">
+    <a href="/index.html#about" class="hover:text-[#E63946]">About Me</a>
+    <a href="/index.html#videos" class="hover:text-[#E63946]">Video Stories</a>
+    <a href="/index.html#news" class="hover:text-[#E63946]">News & Articles</a>
+    <a href="/index.html#docs" class="hover:text-[#E63946]">Documentaries</a>
+    <a href="/index.html#events" class="hover:text-[#E63946]">Events & Promos</a>
+  </div>
+  <div class="hidden sm:flex items-center gap-2 ml-auto md:ml-0">
+    <a href="/admin/login.html" class="text-[10px] font-mono tracking-widest border border-white/10 px-3 py-1.5 hover:border-[#E63946]/50 hover:text-[#E63946] uppercase">Admin</a>
+  </div>
+  <div class="md:hidden w-12 h-12 shrink-0 ml-auto pointer-events-none" aria-hidden="true"></div>
+</nav>
+<div id="mobile-drawer-detail" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden opacity-0 transition-opacity"><div class="absolute top-0 right-0 w-[85%] sm:w-[380px] h-full bg-[#050505] border-l border-white/5 flex flex-col p-6"><div class="flex items-center justify-center mb-6"><span class="font-['Space_Grotesk',sans-serif] text-lg tracking-[0.2em] uppercase">MINIMSAAH</span></div><nav class="flex flex-col gap-1 text-sm font-mono tracking-widest uppercase"><a href="/index.html#about" class="py-3 border-b border-white/5 hover:text-[#E63946]">About Me</a><a href="/index.html#videos" class="py-3 border-b border-white/5 hover:text-[#E63946]">Video Stories</a><a href="/index.html#news" class="py-3 border-b border-white/5 hover:text-[#E63946]">News & Articles</a><a href="/index.html#docs" class="py-3 border-b border-white/5 hover:text-[#E63946]">Documentaries</a><a href="/index.html#events" class="py-3 border-b border-white/5 hover:text-[#E63946]">Events & Promos</a><a href="/admin/login.html" class="py-3 text-[#E63946]">Admin →</a></nav><button id="menu-close-detail" class="w-full mt-6 bg-[#E63946] hover:bg-[#c53030] active:bg-[#b02a35] text-white text-xs font-mono tracking-[0.15em] uppercase py-3.5 rounded-full touch-manipulation active:scale-[0.99] transition-colors" aria-label="Close menu">Close Menu</button></div></div>
+
+<main class="pt-20">
+  <div class="px-4 sm:px-6 md:px-12 lg:px-20 max-w-[1200px] mx-auto py-4 flex flex-wrap items-center gap-2 text-[11px] font-mono text-gray-500 tracking-widest uppercase">
+    <a href="/index.html" class="hover:text-white">Home</a><span class="text-gray-700">/</span><span class="text-gray-400">All Stories</span>
+  </div>
+
+  <div class="px-4 sm:px-6 md:px-12 lg:px-20 max-w-[1200px] mx-auto pb-12 sm:pb-16">
+    <span class="text-[11px] font-mono text-[#E63946] tracking-widest">JOURNALISM</span>
+    <h1 class="font-['Space_Grotesk',sans-serif] text-3xl md:text-5xl font-medium tracking-tight mt-1">All Stories</h1>
+    <p id="count" class="text-xs font-mono text-gray-500 mt-2 tracking-widest"></p>
+
+    <div class="mt-6 flex flex-col md:flex-row gap-3 md:items-end">
+      <div class="flex-1 min-w-0">
+        <label for="q" class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Search stories</label>
+        <input id="q" type="search" placeholder="Title or excerpt…" autocomplete="off" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-2.5 text-sm placeholder:text-gray-600 focus:border-[#E63946]/50 focus:outline-none">
+      </div>
+    </div>
+    <div id="chips" class="mt-4 flex flex-wrap gap-2"></div>
+
+    <div id="loading" class="py-20 text-center">
+      <div class="inline-block w-6 h-6 border-2 border-white/20 border-t-[#E63946] rounded-full animate-spin"></div>
+      <p class="text-xs font-mono text-gray-500 mt-3 tracking-widest">LOADING STORIES…</p>
+    </div>
+    <div id="grid" class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    <div id="empty" class="hidden py-20 text-center">
+      <p class="text-gray-400 mb-2">No stories match.</p>
+      <button id="reset" class="text-xs font-mono tracking-widest text-[#E63946] hover:underline uppercase">Clear search & filters</button>
+    </div>
+    <div id="error" class="hidden py-20 text-center">
+      <p class="text-gray-400 mb-2">Could not load stories.</p>
+      <a href="/index.html#news" class="text-xs font-mono tracking-widest text-[#E63946] hover:underline uppercase">Back to News</a>
+    </div>
+  </div>
+</main>
+
+<footer class="border-t border-white/5 bg-[#0A0A0A] py-10 px-6 md:px-12 text-center">
+  <a href="/index.html" class="font-['Space_Grotesk',sans-serif] text-xl tracking-[0.25em] uppercase">MINIMSAAH</a>
+  <p class="text-xs text-gray-600 mt-2 font-mono tracking-widest">© 2026 MINIMSAAH — ACCRA, GHANA</p>
+</footer>
+
+<script>window.__API_BASE__ = window.__API_BASE__ || 'https://minimsaah-api.onrender.com/api/v1';</script><script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="/assets/js/supabase-client.js"></script>
+<script>
+// mobile drawer for archive
+(function(){ var t=document.getElementById('menu-toggle-detail'), d=document.getElementById('mobile-drawer-detail'), c=document.getElementById('menu-close-detail'); if(!t||!d) return; function open(){ d.classList.remove('hidden'); requestAnimationFrame(function(){ d.classList.remove('opacity-0'); }); t.setAttribute('aria-expanded','true'); document.body.style.overflow='hidden'; } function close(){ d.classList.add('opacity-0'); setTimeout(function(){ d.classList.add('hidden'); },200); t.setAttribute('aria-expanded','false'); document.body.style.overflow=''; } t.onclick=open; if(c) c.onclick=close; d.onclick=function(e){ if(e.target===d) close(); }; })();
+</script>
+<script>
+(function(){
+  var API = location.hostname==='localhost'||location.hostname==='127.0.0.1' ? 'http://localhost:3000/api/v1' : (window.__API_BASE__||'http://localhost:3000/api/v1');
+  function useSupabase(){ return window.SupabaseDB && window.SupabaseDB.isEnabled(); }
+  function esc(s){ if(s===null||s===undefined) return ''; return String(s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);}); }
+  function normRow(r){ if(!r||typeof r!=='object'||Array.isArray(r)) return r; var o={}; for(var k in r){ o[k]=r[k]; var ck=k.replace(/_([a-z])/g,function(m,c){return c.toUpperCase();}); if(ck!==k&&o[ck]===undefined) o[ck]=r[k]; } return o; }
+  function fmt(d){ try{ return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}catch{return d;} }
+  var CATS = ['FEATURE','MATCH_REPORT','ANALYSIS','INTERVIEW','OPINION','BREAKING'];
+  var all = [], q = '', cat = '';
+  function show(el, on){ el.classList.toggle('hidden', !on); }
+  async function fetchAll(){
+    if (useSupabase()) {
+      var sb = window.SupabaseDB.client();
+      var r = await sb.from('articles').select('*').eq('status','PUBLISHED').order('published_at',{ascending:false}).limit(100);
+      if (r.error) throw new Error(r.error.message);
+      return (r.data||[]).map(normRow);
+    }
+    var res = await fetch(API+'/articles?status=PUBLISHED&limit=100');
+    if (!res.ok) throw new Error('not found');
+    var data = await res.json();
+    return data.items || data;
+  }
+  function filtered(){
+    var needle = q.trim().toLowerCase();
+    return all.filter(function(it){
+      if (cat && it.category !== cat) return false;
+      if (!needle) return true;
+      return ((it.title||'')+' '+(it.excerpt||'')).toLowerCase().indexOf(needle) !== -1;
+    });
+  }
+  function render(){
+    var grid = document.getElementById('grid');
+    var items = filtered();
+    document.getElementById('count').textContent = items.length + (items.length===1?' STORY':' STORIES');
+    show(document.getElementById('empty'), items.length === 0);
+    grid.innerHTML = '';
+    items.forEach(function(it){
+      var a = document.createElement('a');
+      a.href = '/article.html?slug=' + encodeURIComponent(it.slug);
+      a.className = 'group block rounded-sm overflow-hidden border border-white/5 bg-[#0A0A0A]';
+      a.innerHTML = '<div class="aspect-[16/9] overflow-hidden bg-[#111]">' + (it.coverImage ? '<img src="'+esc(it.coverImage)+'" alt="" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">' : '') + '</div><div class="p-4"><span class="text-[10px] font-mono tracking-widest text-[#E63946] uppercase">'+esc((it.category||'').replace(/_/g,' '))+'</span><h3 class="font-[Space_Grotesk,sans-serif] text-sm font-medium mt-1 group-hover:text-[#E63946] line-clamp-2">'+esc(it.title)+'</h3><span class="text-[11px] font-mono text-gray-600 mt-1 block">'+esc(String(it.readingTime||5))+' min read • '+fmt(it.publishedAt||it.createdAt)+'</span></div>';
+      grid.appendChild(a);
+    });
+    renderChips();
+  }
+  function renderChips(){
+    var box = document.getElementById('chips');
+    var present = {};
+    all.forEach(function(it){ if (it.category) present[it.category] = true; });
+    var list = [''].concat(CATS.filter(function(c){ return present[c]; }));
+    box.innerHTML = '';
+    list.forEach(function(c){
+      var b = document.createElement('button');
+      var active = (c === cat);
+      b.className = 'text-[11px] font-mono tracking-widest uppercase px-3 py-2 border touch-manipulation ' + (active ? 'bg-[#E63946] border-[#E63946] text-white' : 'border-white/10 text-gray-400 hover:border-white/30 hover:text-white');
+      b.textContent = c ? c.replace(/_/g,' ') : 'All';
+      b.setAttribute('aria-pressed', active ? 'true' : 'false');
+      b.onclick = function(){ cat = c; render(); };
+      box.appendChild(b);
+    });
+  }
+  async function load(){
+    try{
+      all = await fetchAll();
+      document.getElementById('loading').classList.add('hidden');
+      render();
+    }catch(e){
+      document.getElementById('loading').classList.add('hidden');
+      show(document.getElementById('error'), true);
+    }
+  }
+  document.getElementById('q').addEventListener('input', function(e){ q = e.target.value; render(); });
+  document.getElementById('reset').onclick = function(){
+    q = ''; cat = '';
+    document.getElementById('q').value = '';
+    render();
+  };
+  load();
+})();
+</script>
+</body>
+</html>

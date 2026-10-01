@@ -20,6 +20,8 @@ const files = [
   'video.html',
   'documentary.html',
   'event.html',
+  'articles.html',
+  'documentaries.html',
   'admin/login.html',
   'admin/index.html',
   'admin/articles.html',
