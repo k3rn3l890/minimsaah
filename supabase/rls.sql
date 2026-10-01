@@ -113,11 +113,31 @@ drop policy if exists "own_profile" on public.users;
 create policy "own_profile" on public.users for select using (auth.uid()::text = id or public.is_staff());
 
 drop policy if exists "staff_update_users" on public.users;
--- WITH CHECK mirrors USING (JWT predicate, row-independent). Role/status
--- changes are further locked: NEW.role must equal OLD.role, so privilege
--- escalation via anon key is impossible; role changes go via service_role
--- (auth-migrate.js) which bypasses RLS.
-create policy "staff_update_users" on public.users for update using (public.is_owner_editor()) with check (public.is_owner_editor() and NEW.role = OLD.role);
+-- WITH CHECK mirrors USING (both are JWT predicates against the caller).
+-- Role changes are locked separately by the lock_user_role trigger below
+-- (NEW/OLD are only legal inside triggers, never in policy expressions).
+create policy "staff_update_users" on public.users for update using (public.is_owner_editor()) with check (public.is_owner_editor());
+
+-- Role-escalation lock: the ONLY writer of public.users.role via anon key
+-- paths is nonexistent in-app (role changes go through service_role
+-- auth-migrate/Functions, which bypass RLS but NOT triggers). Fires only
+-- when role actually changes, so status-only updates (e.g. suspend) pass
+-- through untouched. Allows service_role + OWNER JWT, nobody else.
+create or replace function public.lock_user_role()
+returns trigger language plpgsql as $$
+begin
+  if NEW.role is distinct from OLD.role then
+    if coalesce(auth.jwt() ->> 'role', '') = 'service_role' then return NEW; end if;
+    if coalesce(auth.jwt() -> 'user_metadata' ->> 'role', '') = 'OWNER' then return NEW; end if;
+    raise exception 'role changes restricted';
+  end if;
+  return NEW;
+end;
+$$;
+
+drop trigger if exists lock_user_role on public.users;
+create trigger lock_user_role before update of role on public.users
+for each row execute function public.lock_user_role();
 
 -- 7. View count RPC (avoids backend increment logic)
 -- Hardened: explicit table allowlist + row_id shape guard. Anonymous calls stay
