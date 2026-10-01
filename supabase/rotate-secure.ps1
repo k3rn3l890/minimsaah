@@ -27,7 +27,7 @@ Read-Host 'Press Enter when the key is copied' | Out-Null
 $key = ((Get-Clipboard -Raw) | Out-String).Trim()
 try { Set-Clipboard -Value ' ' } catch {}
 if (-not $key -or $key.Length -lt 100) { Write-Error 'Clipboard did not hold a full key — aborting, nothing changed.'; exit 1 }
-Write-Host ('Key captured (' + $key.Length + ' chars), clipboard cleared.')>
+Write-Host ('Key captured (' + $key.Length + ' chars), clipboard cleared.')
 
 $pwAdmin = Read-Secret 'New password for admin@minimsaah.com (16+ chars)'
 $pwEditor = Read-Secret 'New password for editor@minimsaah.com (16+ chars)'
