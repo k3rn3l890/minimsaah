@@ -137,8 +137,12 @@ async function main() {
       'video@minimsaah.com': process.env.STAFF_VIDEO_PASSWORD || '',
     };
     if (!serviceKey || serviceKey.length < 100) { console.error('Service key missing or truncated — aborting, nothing changed.'); process.exit(1); }
-    var bad = STAFF.filter(function (s) { return !pwMap[s.email] || pwMap[s.email].length < 16; });
+    var bad = STAFF.filter(function (s) { return !pwMap[s.email] || pwMap[s.email].length < 8; });
     if (bad.length) { console.error('Missing/short password for: ' + bad.map(function (s) { return s.email; }).join(', ') + ' — aborting, nothing changed.'); process.exit(1); }
+    var BURNED = ['admin123', 'writer123', 'subscriber123'];
+    var envVals = STAFF.map(function (s) { return pwMap[s.email]; });
+    if (envVals.some(function (v) { return BURNED.indexOf(String(v).toLowerCase()) !== -1; })) { console.error('A password matches a publicly leaked value — aborting, nothing changed.'); process.exit(1); }
+    if (new Set(envVals).size !== envVals.length) { console.error('Passwords must differ per account — aborting, nothing changed.'); process.exit(1); }
     supabase = createClient(SUPABASE_URL, serviceKey, { auth: { persistSession: false } });
     serviceKey = null;
     getPassword = async function (email) { var p = pwMap[email]; pwMap[email] = ''; return p; };
@@ -155,7 +159,7 @@ async function main() {
   var supabase = createClient(SUPABASE_URL, serviceKey, { auth: { persistSession: false } });
   serviceKey = null;
   getPassword = async function (email) {
-    return promptRequired('New password for ' + email + ' (masked, memory-only)', 16, 'password');
+    return promptRequired('New password for ' + email + ' (masked, memory-only)', 8, 'password');
   };
   }
 
@@ -164,10 +168,20 @@ async function main() {
   var byEmail = {};
   (listed.data.users || []).forEach(function (u) { byEmail[u.email] = u; });
 
+  // Collect first, validate the SET, rotate only a clean set: nothing is
+  // written until all four secrets pass length, burn-list and uniqueness.
+  var BURNED = ['admin123', 'writer123', 'subscriber123'];
+  var secrets = {};
+  for (const s of STAFF) {
+    if (!byEmail[s.email]) { console.error('FAIL ' + s.email + ': no such Auth user — aborting, nothing changed for this account.'); shutdown(1); return; }
+    secrets[s.email] = await getPassword(s.email);
+  }
+  var vals = STAFF.map(function (s) { return secrets[s.email]; });
+  if (vals.some(function (v) { return BURNED.indexOf(String(v).toLowerCase()) !== -1; })) { console.error('FAIL: a password matches a publicly leaked value — choose different ones. Nothing changed.'); shutdown(1); return; }
+  if (new Set(vals).size !== vals.length) { console.error('FAIL: passwords must differ per account. Nothing changed.'); shutdown(1); return; }
   for (const s of STAFF) {
     var existing = byEmail[s.email];
-    if (!existing) { console.error('FAIL ' + s.email + ': no such Auth user — aborting, nothing changed for this account.'); shutdown(1); return; }
-    var pw = await getPassword(s.email);
+    var pw = secrets[s.email]; secrets[s.email] = '';
     var up = await supabase.auth.admin.updateUserById(existing.id, { password: pw });
     pw = null;
     if (up.error) { console.error('FAIL ' + s.email + ': ' + up.error.message); shutdown(1); return; }
