@@ -89,8 +89,8 @@
   // ─── Hydrate Hero (featured article) ─────────────────────────────
   async function hydrateHero() {
     var data = useSupabase()
-      ? await fetchSupabase('articles', { status: 'PUBLISHED', limit: 1, orderBy: 'published_at' })
-      : await fetchJSON('/articles?status=PUBLISHED&limit=1');
+      ? await fetchSupabase('articles', { status: 'PUBLISHED', limit: 2, orderBy: 'published_at' })
+      : await fetchJSON('/articles?status=PUBLISHED&limit=2');
     if (!data || !data.items || !data.items.length) return;
     var a = data.items[0];
     var heroTitle = qs('#hero-title');
@@ -121,6 +121,26 @@
     if (heroImg && a.coverImage) {
       heroImg.src = a.coverImage;
       heroImg.alt = a.title;
+    }
+    // Secondary story (same hydrate pattern as side cards). Honest empty
+    // state: hide the block when there is no second story instead of
+    // leaving a placeholder that links nowhere.
+    var sec = qs('#hero-secondary a.group\\/secgroup');
+    var second = data.items[1];
+    if (sec && second) {
+      var secImg = sec.querySelector('img');
+      if (secImg && second.coverImage) { secImg.src = second.coverImage; secImg.alt = second.title; }
+      var secCat = sec.querySelector('span');
+      if (secCat) secCat.textContent = (second.category || 'Feature').replace(/_/g, ' ').toUpperCase();
+      var secTitle = sec.querySelector('h3');
+      if (secTitle) secTitle.textContent = second.title;
+      var secSpans = sec.querySelectorAll('span');
+      var secMeta = secSpans[secSpans.length - 1];
+      if (secMeta) secMeta.textContent = readingTimeLabel(second.readingTime);
+      sec.href = '/article.html?slug=' + encodeURIComponent(second.slug);
+    } else if (!second) {
+      var secWrap = qs('#hero-secondary');
+      if (secWrap) secWrap.style.display = 'none';
     }
     // refresh ScrollTrigger if present
     if (window.ScrollTrigger) setTimeout(function () { window.ScrollTrigger.refresh(); }, 80);
@@ -307,7 +327,7 @@
     evs.forEach(function (ev, i) {
       var row = rows[i];
       if (!row) return;
-      var day = row.querySelector('span.text-2xl');
+      var day = row.querySelector('div.shrink-0 span');
       var mon = row.querySelector('span.text-\\[10px\\]');
       if (day) day.textContent = new Date(ev.date).getDate();
       if (mon) mon.textContent = new Date(ev.date).toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
