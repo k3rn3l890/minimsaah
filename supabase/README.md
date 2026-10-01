@@ -10,9 +10,10 @@ Single project `minimsaah` holds DB + Storage. Data persists, `pg_dump` ready fo
 - Option A (fresh): `npx prisma migrate deploy` against `DIRECT_URL` to create `20260919120856_init` tables, then `npx prisma db seed` recreates demo.
 - Option B (migrate existing local dump, as requested): `pg_dump --data-only` local `postgresql://postgres:postgres@localhost:5432/minimsaah`, restore to `DIRECT_URL`. Skip `sessions`, migrate `users` profile only (passwords via auth-migrate.js).
 
-## 3. Auth (keep admin123 for beta)
-- Run: `SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node supabase/auth-migrate.js`
-- Creates 5 users with same passwords, `user_metadata.role`, links `public.users.id = auth.id`.
+## 3. Auth (passwords live in your vault, never in this repo)
+- New staff: Dashboard > Authentication > Users > Invite user (preferred).
+- Re-provision only: `SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... STAFF_ADMIN_PASSWORD=... STAFF_EDITOR_PASSWORD=... STAFF_WRITER_PASSWORD=... STAFF_VIDEO_PASSWORD=... node supabase/auth-migrate.js`
+- Creates 4 users with per-user passwords, `user_metadata.role`, links `public.users.id = auth.id`. Never re-run against live staff.
 
 ## 4. RLS + Storage — run in this order
 - SQL Editor → run `supabase/schema.sql` FIRST (creates tables, fixes 42P01), then `supabase/rls.sql`, then `supabase/storage.sql`.

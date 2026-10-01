@@ -1,7 +1,10 @@
 /**
  * MINIMSAAH — auth-migrate.js (run locally with service_role, never in browser)
- * Migrates 4 staff users to Supabase Auth preserving admin123 passwords for beta. No 5th user.
- * Usage: SUPABASE_URL=https://<ref>.supabase.co SUPABASE_SERVICE_ROLE_KEY=<service_role> node supabase/auth-migrate.js
+ * Provisions staff users in Supabase Auth. Passwords come ONLY from env vars —
+ * never commit them. DO NOT RERUN against live staff: createUser fails on
+ * duplicates by design, and any delete-then-run would destroy profiles/roles.
+ * New staff: Dashboard > Authentication > Users > Invite user (preferred).
+ * Usage: SUPABASE_URL=https://<ref>.supabase.co SUPABASE_SERVICE_ROLE_KEY=<service_role> STAFF_ADMIN_PASSWORD=... STAFF_EDITOR_PASSWORD=... STAFF_WRITER_PASSWORD=... STAFF_VIDEO_PASSWORD=... node supabase/auth-migrate.js
  */
 const { createClient } = require('@supabase/supabase-js');
 
@@ -15,11 +18,17 @@ if (!url || !serviceKey) {
 const supabase = createClient(url, serviceKey, { auth: { persistSession: false } });
 
 const users = [
-  { email: 'admin@minimsaah.com', password: 'admin123', role: 'OWNER', firstName: 'Kwame', lastName: 'Asante' },
-  { email: 'editor@minimsaah.com', password: 'admin123', role: 'EDITOR', firstName: 'Ama', lastName: 'Mensah' },
-  { email: 'writer@minimsaah.com', password: 'writer123', role: 'JOURNALIST', firstName: 'Kofi', lastName: 'Boateng' },
-  { email: 'video@minimsaah.com', password: 'writer123', role: 'VIDEOGRAPHER', firstName: 'Yaa', lastName: 'Owusu' },
+  { email: 'admin@minimsaah.com', password: process.env.STAFF_ADMIN_PASSWORD, role: 'OWNER', firstName: 'Kwame', lastName: 'Asante' },
+  { email: 'editor@minimsaah.com', password: process.env.STAFF_EDITOR_PASSWORD, role: 'EDITOR', firstName: 'Ama', lastName: 'Mensah' },
+  { email: 'writer@minimsaah.com', password: process.env.STAFF_WRITER_PASSWORD, role: 'JOURNALIST', firstName: 'Kofi', lastName: 'Boateng' },
+  { email: 'video@minimsaah.com', password: process.env.STAFF_VIDEO_PASSWORD, role: 'VIDEOGRAPHER', firstName: 'Yaa', lastName: 'Owusu' },
 ];
+for (const u of users) {
+  if (!u.password) {
+    console.error('Missing password env for ' + u.email + ' — refusing to run (see header).');
+    process.exit(1);
+  }
+}
 
 (async () => {
   for (const u of users) {
