@@ -19,10 +19,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
+<script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js" integrity="sha384-ZBvlAMcOinSpqbKp+h0PpJxrDWCO8veRjvEhIc+Wg2Um8ZUKrbyNtJChA7FhNtCF" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" integrity="sha384-Z3REaz79l2IaAZqJsSABtTbhjgOUYyV3p90XNnAPCSHg3EMTz1fouunq9WZRtj3d" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js" integrity="sha384-tKsJDT6PlUI0pSBt9/sBKJluKgA19/a6mBrDsZaXotLB4ZYfMGM6xt6/WgGpYhTm" crossorigin="anonymous"></script>
 
 <style>
 /* ===== Focus Ring Styles (Keyboard Accessibility) ===== */
@@ -796,24 +796,45 @@ a:focus-visible {
     // Safety: show page after 3s if GSAP/CDN fails
     setTimeout(() => { const b = document.body; if (b && getComputedStyle(b).opacity === "0") { b.style.opacity = "1"; b.style.overflow = "auto"; const l = document.getElementById("loader"); if (l) l.style.display = "none"; } }, 3000);
 
+    // Observe-only: surface async failures in the console for diagnosis.
+    // Never preventDefault: swallowing would hide auth/storage/data errors.
+    window.addEventListener('unhandledrejection', function(e){
+      try { console.warn('[MINIMSAAH] unhandled rejection', (e.reason && (e.reason.message || e.reason)) || e.reason); } catch (err) {}
+    });
+
     document.addEventListener("DOMContentLoaded", () => {
-      // 1. Initialize Lenis Smooth Scrolling
-      const lenis = new Lenis({
-        duration: 1.2,
-        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-        direction: 'vertical',
-        gestureDirection: 'vertical',
-        smooth: true,
-        smoothTouch: false,
-      });
+      // 1. Initialize Lenis Smooth Scrolling. Guarded: if the Lenis CDN
+      // fails, fall back to a native-scroll stub so a single blocked file
+      // cannot kill menu, drawer and animations below.
+      let lenis;
+      try {
+        if (typeof Lenis === 'undefined') throw new Error('Lenis unavailable');
+        lenis = new Lenis({
+          duration: 1.2,
+          easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+          direction: 'vertical',
+          gestureDirection: 'vertical',
+          smooth: true,
+          smoothTouch: false,
+        });
+      } catch (e) {
+        lenis = {
+          on: function(){}, raf: function(){},
+          start: function(){}, stop: function(){}, destroy: function(){},
+          scrollTo: function(){ window.scrollTo(0, 0); }
+        };
+      }
 
       // No preloader gate: page reveals and scrolls immediately.
       // Reveal body (was opacity:0 until the old loader finished)
       gsap.set("body", { opacity: 1 });
 
-      // Sync Lenis with GSAP ScrollTrigger
-      gsap.registerPlugin(ScrollTrigger);
-      lenis.on('scroll', ScrollTrigger.update);
+      // Sync Lenis with GSAP ScrollTrigger (skipped if that CDN failed —
+      // scroll reveals below each guard their own trigger usage)
+      if (typeof ScrollTrigger !== 'undefined') {
+        gsap.registerPlugin(ScrollTrigger);
+        lenis.on('scroll', ScrollTrigger.update);
+      }
       gsap.ticker.add((time) => {
         lenis.raf(time * 1000);
       });
@@ -822,7 +843,7 @@ a:focus-visible {
       // 10. Reduced Motion — disable GSAP animations if user prefers
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         gsap.globalTimeline.timeScale(100);
-        ScrollTrigger.getAll().forEach(st => st.kill());
+        if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.getAll().forEach(st => st.kill());
         lenis.destroy();
         document.body.style.overflow = '';
         document.body.style.opacity = '1';
@@ -835,7 +856,7 @@ a:focus-visible {
 
       const tlIntro = gsap.timeline({
         onComplete: () => {
-          ScrollTrigger.refresh();
+          if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
         }
       });
 
@@ -863,9 +884,18 @@ a:focus-visible {
         });
       });
 
-      // 4. Horizontal Scroll (Video Stories)
+      // 4. Horizontal Scroll (Video Stories). Without ScrollTrigger there is
+      // no pin/scrub — fall back to a plain vertical stack so the stories
+      // stay reachable instead of clipped off-screen.
       const horizWrap = document.getElementById("horiz-wrap");
       if(horizWrap) {
+        if (typeof ScrollTrigger === 'undefined') {
+          horizWrap.style.width = '100%';
+          horizWrap.style.flexDirection = 'column';
+          horizWrap.style.paddingTop = '0';
+          var videosSection = document.getElementById("videos");
+          if (videosSection) { videosSection.style.height = 'auto'; }
+        } else {
         const getScrollAmount = () => horizWrap.scrollWidth - window.innerWidth;
         const tween = gsap.to(horizWrap, {
           x: () => -getScrollAmount(),
@@ -881,6 +911,7 @@ a:focus-visible {
           scrub: 1,
           invalidateOnRefresh: true,
         });
+        }
       }
 
       // 5. Footer Reveal Elements
@@ -1039,7 +1070,7 @@ a:focus-visible {
   <script>window.__API_BASE__ = window.__API_BASE__ || 'https://minimsaah-api.onrender.com/api/v1';</script>
   <!-- Supabase: set in Cloudflare Pages Settings -> Environment variables -->
   <script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2" integrity="sha384-WgXwGL6fUsYJWNaKJgVbrJKGRQwc1vieh2oy4kw9nXqpNDz3tdSsqEYUgeHD/NuF" crossorigin="anonymous"></script>
   <script src="/assets/js/embeds.js"></script>
   <script src="/assets/js/player.js"></script>
   <script src="/assets/js/supabase-client.js"></script>

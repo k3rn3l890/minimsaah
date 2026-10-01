@@ -10,6 +10,9 @@ alter table public.documentaries enable row level security;
 alter table public.events enable row level security;
 alter table public.tickers enable row level security;
 alter table public.media enable row level security;
+alter table public.sessions enable row level security;
+-- sessions: deny-all via PostgREST (no policies). Direct Postgres (Prisma/local
+-- dev) bypasses RLS so backend register/login/refresh/logout keep working.
 
 -- 2. Helper: is staff (owner/editor/journalist/videographer)
 create or replace function public.is_staff()
@@ -79,7 +82,16 @@ drop policy if exists "staff_update" on public.events;
 create policy "staff_update" on public.events for update using (public.is_staff());
 
 drop policy if exists "staff_write_tickers" on public.tickers;
-create policy "staff_write_tickers" on public.tickers for all using (public.is_staff()) with check (public.is_staff());
+-- Split: INSERT/UPDATE stay staff-wide (ticker add/toggle for all staff roles);
+-- DELETE restricted to OWNER/EDITOR. No anon delete, matching other tables.
+drop policy if exists "staff_insert_tickers" on public.tickers;
+create policy "staff_insert_tickers" on public.tickers for insert with check (public.is_staff());
+
+drop policy if exists "staff_update_tickers" on public.tickers;
+create policy "staff_update_tickers" on public.tickers for update using (public.is_staff()) with check (public.is_staff());
+
+drop policy if exists "staff_delete_tickers" on public.tickers;
+create policy "staff_delete_tickers" on public.tickers for delete using (public.is_owner_editor());
 
 -- 4b. Media library rows: staff-only (no anon access — public pages use
 -- bucket URLs directly, never this table). No delete policy: beta lock,
@@ -101,13 +113,17 @@ drop policy if exists "own_profile" on public.users;
 create policy "own_profile" on public.users for select using (auth.uid()::text = id or public.is_staff());
 
 drop policy if exists "staff_update_users" on public.users;
-create policy "staff_update_users" on public.users for update using (public.is_owner_editor());
+-- WITH CHECK mirrors USING (JWT predicate, row-independent). Role/status
+-- changes are further locked: NEW.role must equal OLD.role, so privilege
+-- escalation via anon key is impossible; role changes go via service_role
+-- (auth-migrate.js) which bypasses RLS.
+create policy "staff_update_users" on public.users for update using (public.is_owner_editor()) with check (public.is_owner_editor() and NEW.role = OLD.role);
 
 -- 7. View count RPC (avoids backend increment logic)
 -- Hardened: explicit table allowlist + row_id shape guard. Anonymous calls stay
 -- allowed (public pages increment views) but arbitrary tables/ids are rejected.
 create or replace function public.increment_view(table_name text, row_id text)
-returns void language plpgsql security definer as $$
+returns void language plpgsql security definer set search_path = public as $$
 begin
   if table_name not in ('articles', 'videos', 'documentaries') then
     raise exception 'invalid table_name';

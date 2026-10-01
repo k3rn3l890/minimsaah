@@ -75,7 +75,7 @@
   </form>
 </main>
 <script src="/assets/js/embeds.js"></script>
-<script>window.__API_BASE__ = window.__API_BASE__ || 'https://minimsaah-api.onrender.com/api/v1';</script><script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="/assets/js/supabase-client.js"></script><script src="/admin/js/admin.js"></script>
+<script>window.__API_BASE__ = window.__API_BASE__ || 'https://minimsaah-api.onrender.com/api/v1';</script><script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2" integrity="sha384-WgXwGL6fUsYJWNaKJgVbrJKGRQwc1vieh2oy4kw9nXqpNDz3tdSsqEYUgeHD/NuF" crossorigin="anonymous"></script><script src="/assets/js/supabase-client.js"></script><script src="/admin/js/admin.js"></script>
 <script>
 (function(){
   if(typeof window.Admin==='undefined'||!Admin.requireAuth){location.href='/admin/login.html';}else{Admin.requireAuth().then(function(){document.documentElement.classList.remove('mm-guard');}).catch(function(){});}
@@ -99,7 +99,8 @@
     var v=videoUrlEl.value.trim();
     if(!v){ document.getElementById('preview-placeholder').style.display='flex'; document.getElementById('preview-iframe').classList.add('hidden'); return; }
     var embed=window.MinimsaahEmbeds? window.MinimsaahEmbeds.toEmbedUrl(v, ''):'';
-    if(!embed){ document.getElementById('preview-placeholder').textContent='Invalid link'; return; }
+    var previewOk = window.MinimsaahEmbeds ? window.MinimsaahEmbeds.isAllowedEmbedUrl(embed) : (/^https:\/\//i.test(embed || ''));
+    if(!embed || !previewOk){ document.getElementById('preview-placeholder').textContent='Preview unavailable for this link'; document.getElementById('preview-placeholder').style.display='flex'; document.getElementById('preview-iframe').classList.add('hidden'); return; }
     document.getElementById('preview-placeholder').style.display='none';
     var iframe=document.getElementById('preview-iframe');
     iframe.classList.remove('hidden');

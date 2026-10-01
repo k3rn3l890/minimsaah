@@ -29,28 +29,50 @@
     return 'unknown';
   }
 
+  // Hosts we will ever place in an <iframe>. Anything else (including
+  // javascript:/data:/blob:) is rejected — embedUrlFromApi is DB-controlled
+  // and previously bypassed every check below.
+  var EMBED_HOSTS = [
+    'www.youtube-nocookie.com', 'www.youtube.com', 'youtube.com',
+    'youtu.be', 'www.tiktok.com', 'tiktok.com',
+    'www.facebook.com', 'facebook.com', 'fb.watch',
+    'www.instagram.com', 'instagram.com',
+  ];
+
+  function isAllowedEmbedUrl(url) {
+    if (!url || typeof url !== 'string') return false;
+    if (url.toLowerCase().indexOf('https://') !== 0) return false;
+    var host;
+    try { host = new URL(url).hostname.toLowerCase(); } catch (e) { return false; }
+    return EMBED_HOSTS.indexOf(host) !== -1;
+  }
+
+  // Direct media files never go in an iframe (no controls, sandbox-hostile);
+  // callers render these with a native <video> element instead.
+  function isNativeMedia(url) {
+    return typeof url === 'string' && /^https:\/\//i.test(url) && /\.(mp4|webm|m3u8)(\?|$)/i.test(url);
+  }
+
   function toEmbedUrl(videoUrl, embedUrlFromApi) {
-    if (embedUrlFromApi) return embedUrlFromApi;
+    if (embedUrlFromApi && isAllowedEmbedUrl(embedUrlFromApi)) return embedUrlFromApi;
+    if (isNativeMedia(videoUrl)) return videoUrl;
     var provider = detectProvider(videoUrl);
+    var built = '';
     if (provider === 'youtube') {
       var id = extractYouTubeId(videoUrl);
-      if (id) return 'https://www.youtube-nocookie.com/embed/' + id + '?rel=0&modestbranding=1&playsinline=1&autoplay=1';
-    }
-    if (provider === 'tiktok') {
+      if (id) built = 'https://www.youtube-nocookie.com/embed/' + id + '?rel=0&modestbranding=1&playsinline=1&autoplay=1';
+    } else if (provider === 'tiktok') {
       // TikTok embed needs video id numeric
       var m = videoUrl.match(/tiktok\.com\/.*\/video\/(\d+)/);
-      if (m) return 'https://www.tiktok.com/embed/' + m[1];
-      return videoUrl; // fallback
-    }
-    if (provider === 'facebook') {
-      return 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(videoUrl) + '&show_text=0&width=560&height=315';
-    }
-    if (provider === 'instagram') {
+      if (m) built = 'https://www.tiktok.com/embed/' + m[1];
+    } else if (provider === 'facebook') {
+      built = 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(videoUrl) + '&show_text=0&width=560&height=315';
+    } else if (provider === 'instagram') {
       var clean = videoUrl.split('?')[0].replace(/\/$/, '');
       if (clean.indexOf('/embed') === -1) clean += '/embed';
-      return clean;
+      built = clean;
     }
-    return videoUrl;
+    return isAllowedEmbedUrl(built) ? built : '';
   }
 
   function thumbnailUrl(video, fallback) {
@@ -63,6 +85,21 @@
   }
 
   function createIframe(embedUrl, provider) {
+    // Defense in depth: never frame a URL the allowlist rejects. Direct
+    // media files get a native <video> (controls, no iframe weirdness).
+    if (isNativeMedia(embedUrl)) {
+      var v = document.createElement('video');
+      v.src = embedUrl;
+      v.setAttribute('controls', 'true');
+      v.setAttribute('playsinline', 'true');
+      v.setAttribute('preload', 'metadata');
+      v.style.width = '100%';
+      v.style.height = '100%';
+      v.style.border = '0';
+      v.style.background = '#000';
+      return v;
+    }
+    if (!isAllowedEmbedUrl(embedUrl)) return null;
     var iframe = document.createElement('iframe');
     iframe.src = embedUrl;
     iframe.setAttribute('frameborder', '0');
@@ -82,6 +119,8 @@
     detectProvider: detectProvider,
     extractYouTubeId: extractYouTubeId,
     toEmbedUrl: toEmbedUrl,
+    isAllowedEmbedUrl: isAllowedEmbedUrl,
+    isNativeMedia: isNativeMedia,
     thumbnailUrl: thumbnailUrl,
     createIframe: createIframe,
   };

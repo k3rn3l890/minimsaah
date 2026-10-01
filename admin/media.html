@@ -46,7 +46,7 @@
     <div id="pager" class="flex justify-between items-center mt-4 text-xs font-mono text-gray-500"></div>
   </main>
 </div>
-<script>window.__API_BASE__ = window.__API_BASE__ || 'https://minimsaah-api.onrender.com/api/v1';</script><script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="/assets/js/supabase-client.js"></script><script src="/admin/js/admin.js"></script>
+<script>window.__API_BASE__ = window.__API_BASE__ || 'https://minimsaah-api.onrender.com/api/v1';</script><script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2" integrity="sha384-WgXwGL6fUsYJWNaKJgVbrJKGRQwc1vieh2oy4kw9nXqpNDz3tdSsqEYUgeHD/NuF" crossorigin="anonymous"></script><script src="/assets/js/supabase-client.js"></script><script src="/admin/js/admin.js"></script>
 <script>
 (function(){if(typeof window.Admin==='undefined'||!Admin.requireAuth){location.href='/admin/login.html';}else{Admin.requireAuth().then(function(){document.documentElement.classList.remove('mm-guard');}).catch(function(){});}
   var page=1, limit=12;
@@ -67,7 +67,7 @@
         var isImg=it.mimeType && it.mimeType.indexOf('image')===0;
         var card=document.createElement('div');
         card.className='bg-[#0A0A0A] border border-white/5 rounded-sm overflow-hidden';
-        card.innerHTML='<div class="aspect-[4/3] bg-[#111] overflow-hidden min-h-[140px]">'+(isImg? '<img src="'+Admin.escapeHtml(it.url)+'" class="w-full h-full object-cover" alt="">':'<div class="w-full h-full flex items-center justify-center text-xs font-mono text-gray-400">'+Admin.escapeHtml(it.mimeType)+'</div>')+'</div><div class="p-2"><p class="text-xs truncate">'+Admin.escapeHtml(it.originalName)+'</p><p class="text-xs font-mono text-gray-400 truncate break-all">'+Admin.escapeHtml(it.url)+'</p><div class="flex gap-2 mt-2"><button data-copy="'+Admin.escapeHtml(it.url)+'" class="flex-1 text-xs font-mono border border-white/10 py-3 min-h-[44px] inline-flex items-center justify-center touch-manipulation hover:bg-white/5">Copy URL</button><button data-del="'+it.id+'" class="text-xs font-mono border border-[#E63946]/30 text-[#E63946] px-3 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-[#E63946] hover:text-white">Del</button></div></div>';
+        card.innerHTML='<div class="aspect-[4/3] bg-[#111] overflow-hidden min-h-[140px]">'+(isImg? '<img src="'+Admin.escapeHtml(it.url)+'" class="w-full h-full object-cover" alt="">':'<div class="w-full h-full flex items-center justify-center text-xs font-mono text-gray-400">'+Admin.escapeHtml(it.mimeType)+'</div>')+'</div><div class="p-2"><p class="text-xs truncate">'+Admin.escapeHtml(it.originalName)+'</p><p class="text-xs font-mono text-gray-400 truncate break-all">'+Admin.escapeHtml(it.url)+'</p><div class="flex gap-2 mt-2"><button data-copy="'+Admin.escapeHtml(it.url)+'" class="flex-1 text-xs font-mono border border-white/10 py-3 min-h-[44px] inline-flex items-center justify-center touch-manipulation hover:bg-white/5">Copy URL</button><button data-del="'+Admin.escapeHtml(it.id)+'" class="text-xs font-mono border border-[#E63946]/30 text-[#E63946] px-3 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-[#E63946] hover:text-white">Del</button></div></div>';
         el.appendChild(card);
       });
       el.querySelectorAll('[data-copy]').forEach(function(b){ b.onclick=function(){ navigator.clipboard.writeText(b.getAttribute('data-copy')); Admin.toast('Copied URL'); }; });
@@ -81,10 +81,11 @@
   }
   document.getElementById('file').addEventListener('change', async function(e){
     var files=e.target.files;
+    if(files.length>10){ Admin.toast('Max 10 files at once','error'); e.target.value=''; return; }
     for(var i=0;i<files.length;i++){
       try{
         Admin.toast('Uploading '+files[i].name+'…');
-        if(Admin.useSupabase()){ await Admin.supaUpload(files[i]); }
+        if(Admin.useSupabase()){ await Admin.supaUpload(files[i], null, { library: true }); }
         else { var fd=new FormData(); fd.append('file', files[i]); await Admin.request('/media/upload',{method:'POST', body:fd}); }
       }catch(ex){ Admin.toast(ex.message,'error'); }
     }

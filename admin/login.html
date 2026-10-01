@@ -24,19 +24,48 @@
         <label class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Password</label>
         <input id="password" type="password" required placeholder="••••••••" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-2.5 text-sm placeholder:text-gray-600 focus:border-[#E63946]/50 focus:outline-none">
       </div>
+      <div id="mfa-box" class="hidden">
+        <label class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Authenticator code</label>
+        <input id="mfa-code" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit code" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-2.5 text-sm placeholder:text-gray-600 focus:border-[#E63946]/50 focus:outline-none">
+        <button type="button" id="mfa-btn" class="w-full mt-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-mono tracking-widest uppercase py-3 rounded-sm transition">Verify Code</button>
+      </div>
+      <div id="turnstile-box" class="hidden"><div id="turnstile-widget"></div></div>
       <button type="submit" id="btn" class="w-full bg-[#E63946] hover:bg-[#c53030] text-white text-xs font-mono tracking-widest uppercase py-3 rounded-sm transition">Sign In</button>
       <p id="err" class="hidden text-xs text-[#E63946] bg-[#E63946]/10 border border-[#E63946]/20 rounded-sm px-3 py-2"></p>
     </form>
   </div>
   <p class="text-center text-[11px] font-mono text-gray-600 mt-4"><a href="/index.html" class="hover:text-white">← Back to site</a></p>
 </div>
-<script>window.__API_BASE__ = window.__API_BASE__ || '';</script><script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="/assets/js/supabase-client.js"></script><script src="/admin/js/admin.js"></script>
+<script>window.__API_BASE__ = window.__API_BASE__ || '';</script><script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2" integrity="sha384-WgXwGL6fUsYJWNaKJgVbrJKGRQwc1vieh2oy4kw9nXqpNDz3tdSsqEYUgeHD/NuF" crossorigin="anonymous"></script><script src="/assets/js/supabase-client.js"></script><script src="/admin/js/admin.js"></script>
 <script>
 (function(){
   var form=document.getElementById('form');
   var err=document.getElementById('err');
   var btn=document.getElementById('btn');
   function useSupa(){ return window.SupabaseDB && window.SupabaseDB.isEnabled(); }
+  // Best-effort audit (never blocks login; audit table may not exist yet).
+  function audit(event, email){
+    try{
+      if (window.SupabaseDB && window.SupabaseDB.isEnabled()) {
+        window.SupabaseDB.client().rpc('log_admin_event', { p_event: event, p_email: email || '' }).then(null, function(){});
+      }
+    }catch(e){}
+  }
+  // Turnstile CAPTCHA: only active when a site key is configured
+  // (window.__TURNSTILE_SITEKEY via Vercel env + inject). Unconfigured = skipped.
+  var TURNSTILE_KEY = window.__TURNSTILE_SITEKEY || '';
+  if (TURNSTILE_KEY) {
+    var ts = document.createElement('script');
+    ts.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    ts.async = true; ts.defer = true;
+    ts.onerror = function(){ TURNSTILE_KEY = ''; };
+    ts.onload = function(){
+      try { window.turnstile.render('#turnstile-widget', { sitekey: TURNSTILE_KEY }); }
+      catch (e) { TURNSTILE_KEY = ''; }
+    };
+    document.head.appendChild(ts);
+    document.getElementById('turnstile-box').classList.remove('hidden');
+  }
   // if already logged, go to admin (staff only — others are signed out)
   if (useSupa()) {
     window.SupabaseDB.client().auth.getSession().then(function(r){
@@ -66,13 +95,41 @@
     try{
       if (useSupa()) {
         var sb = window.SupabaseDB.client();
-        var res = await sb.auth.signInWithPassword({ email: email, password: password });
-        if (res.error) throw new Error(res.error.message);
+        var captchaToken = '';
+        if (TURNSTILE_KEY && window.turnstile) {
+          try { captchaToken = window.turnstile.getResponse() || ''; } catch (e) { captchaToken = ''; }
+          if (!captchaToken) throw new Error('Please complete the captcha');
+        }
+        var res = await sb.auth.signInWithPassword({ email: email, password: password, options: { captchaToken: captchaToken || undefined } });
+        if (res.error) { audit('login_failed', email); throw new Error(res.error.message); }
+        // MFA: staff with enrolled factors complete a TOTP challenge.
+        // Zero enrolled factors → skipped (no lockout during rollout).
+        var factors = [];
+        try {
+          if (sb.auth.mfa && sb.auth.mfa.listFactors) {
+            var lf = await sb.auth.mfa.listFactors();
+            factors = (lf.data && (lf.data.totp || [])) || [];
+          }
+        } catch (e) { factors = []; }
+        if (factors.length) {
+          var ch = await sb.auth.mfa.challenge({ factorId: factors[0].id });
+          if (ch.error) throw new Error(ch.error.message);
+          var code = await new Promise(function (resolve) {
+            document.getElementById('mfa-box').classList.remove('hidden');
+            document.getElementById('mfa-btn').onclick = function () {
+              resolve(document.getElementById('mfa-code').value.trim());
+            };
+          });
+          var vr = await sb.auth.mfa.verify({ factorId: factors[0].id, challengeId: ch.data.id, code: code });
+          document.getElementById('mfa-box').classList.add('hidden');
+          if (vr.error) { audit('login_failed', email); throw new Error(vr.error.message); }
+        }
         var u = res.data.user;
         var role = (u.user_metadata&&u.user_metadata.role)||'SUBSCRIBER';
         var allowed = (Admin.isStaffRole ? Admin.isStaffRole(role) : (['OWNER','EDITOR','JOURNALIST','VIDEOGRAPHER'].indexOf(role) !== -1));
         if (!allowed) {
           try { await sb.auth.signOut(); } catch (e) {}
+          audit('login_denied', email);
           throw new Error('Access denied — staff only');
         }
         Admin.setUser({ id: u.id, email: u.email, firstName: (u.user_metadata&&u.user_metadata.firstName)||'', lastName: (u.user_metadata&&u.user_metadata.lastName)||'', role: role });

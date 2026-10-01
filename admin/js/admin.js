@@ -157,6 +157,19 @@
   }
 
   function cuid() {
+    // CSPRNG ids (DB keys are TEXT; UUIDs satisfy the RPC row_id shape).
+    // Falls back to the legacy timestamp scheme outside secure contexts.
+    try {
+      if (window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
+      if (window.crypto && window.crypto.getRandomValues) {
+        var b = new Uint8Array(16);
+        window.crypto.getRandomValues(b);
+        b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+        var h = []; for (var i = 0; i < 16; i++) h.push(('0' + b[i].toString(16)).slice(-2));
+        var s = h.join('');
+        return s.slice(0, 8) + '-' + s.slice(8, 12) + '-' + s.slice(12, 16) + '-' + s.slice(16, 20) + '-' + s.slice(20);
+      }
+    } catch (e) {}
     return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
   }
 
@@ -211,6 +224,23 @@
   // spoofable; SVG excluded (public bucket + XML scriptability = stored XSS).
   var IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif'];
   var IMAGE_MAX_BYTES = 8 * 1024 * 1024;
+  // Media-library gate (NOT imagesOnly): images + video + documents stay
+  // allowed, but active content is denied even when MIME is spoofed.
+  var LIBRARY_VIDEO_EXTS = ['.mp4', '.webm', '.mov', '.m4v', '.ogg'];
+  var LIBRARY_DOC_EXTS = ['.pdf', '.doc', '.docx'];
+  var LIBRARY_VIDEO_MAX_BYTES = 50 * 1024 * 1024;
+  var BLOCKED_EXTS = ['.svg', '.html', '.htm', '.js', '.mjs', '.php', '.exe', '.sh', '.bat', '.cmd', '.ps1'];
+  function checkLibraryFile(file) {
+    var mime = file.type || '';
+    var ext = (file.name.match(/\.[a-z0-9]+$/i) || [''])[0].toLowerCase();
+    if (BLOCKED_EXTS.indexOf(ext) !== -1) throw new Error('File type not allowed');
+    var isImg = mime.indexOf('image/') === 0 && IMAGE_EXTS.indexOf(ext) !== -1;
+    var isVid = mime.indexOf('video/') === 0 && LIBRARY_VIDEO_EXTS.indexOf(ext) !== -1;
+    var isDoc = LIBRARY_DOC_EXTS.indexOf(ext) !== -1 && (mime === '' || mime.indexOf('application/') === 0 || mime.indexOf('text/') === 0);
+    if (!isImg && !isVid && !isDoc) throw new Error('Only images, videos and documents (PDF/DOC) are allowed');
+    var cap = isVid ? LIBRARY_VIDEO_MAX_BYTES : IMAGE_MAX_BYTES;
+    if (file.size > cap) throw new Error('File too large (max ' + (isVid ? '50 MB' : '8 MB') + ')');
+  }
   async function supaUpload(file, meta, opts) {
     var sb = supa();
     if (!sb) throw new Error('Supabase not configured — set Vercel env SUPABASE_URL / SUPABASE_ANON_KEY and redeploy');
@@ -223,6 +253,7 @@
       }
       if (file.size > IMAGE_MAX_BYTES) throw new Error('Image too large (max 8 MB)');
     }
+    if (opts && opts.library) checkLibraryFile(file);
     var ext = (file.name.match(/\.[a-z0-9]+$/i) || [''])[0];
     var filename = cuid() + ext;
     var up = await sb.storage.from('minimsaah-media').upload(filename, file, { contentType: file.type, upsert: false });

@@ -9,7 +9,7 @@
     // Use backend on 3000; if served from backend itself, use relative
     var host = location.hostname;
     if (host === 'localhost' || host === '127.0.0.1') return 'http://localhost:3000/api/v1';
-    return (window.__API_BASE__ || 'http://localhost:3000/api/v1');
+    return (window.__API_BASE__ || '');
   })();
 
   function useSupabase() {
@@ -115,7 +115,7 @@
       if (time && a.publishedAt) time.textContent = fmtDate(a.publishedAt);
     }
     if (heroMeta) {
-      heroMeta.innerHTML = '<span class="text-xs font-mono text-gray-400">By <span class="text-white">' + escapeHtml((a.author && (a.author.firstName + ' ' + a.author.lastName)) || 'MINIMSAAH') + '</span></span><span class="w-1 h-1 rounded-full bg-[#E63946]"></span><span class="text-xs font-mono text-gray-500">' + readingTimeLabel(a.readingTime) + '</span>';
+      heroMeta.innerHTML = '<span class="text-xs font-mono text-gray-400">By <span class="text-white">' + escapeHtml((a.author && (a.author.firstName + ' ' + a.author.lastName)) || 'MINIMSAAH') + '</span></span><span class="w-1 h-1 rounded-full bg-[#E63946]"></span><span class="text-xs font-mono text-gray-500">' + escapeHtml(readingTimeLabel(a.readingTime)) + '</span>';
     }
     if (heroCta) heroCta.href = '/article.html?slug=' + encodeURIComponent(a.slug);
     if (heroImg && a.coverImage) {

@@ -40,6 +40,10 @@
     var body = m.querySelector('#video-modal-body');
     body.innerHTML = '';
     var embed = window.MinimsaahEmbeds ? window.MinimsaahEmbeds.toEmbedUrl(video.videoUrl, video.embedUrl) : video.embedUrl || video.videoUrl;
+    var allowed = window.MinimsaahEmbeds
+      ? (window.MinimsaahEmbeds.isAllowedEmbedUrl(embed) || window.MinimsaahEmbeds.isNativeMedia(embed))
+      : (/^https:\/\//i.test(embed || ''));
+    if (!embed || !allowed) return;
     var provider = window.MinimsaahEmbeds ? window.MinimsaahEmbeds.detectProvider(video.videoUrl) : 'unknown';
 
     // For instagram, use iframe with embed url; for others same
@@ -61,6 +65,7 @@
       m.firstElementChild.style.height = 'auto';
     }
 
+    if (!iframe) return;
     body.appendChild(iframe);
     currentIframe = iframe;
     m.style.display = 'flex';

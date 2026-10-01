@@ -37,7 +37,12 @@ const files = [
 ];
 
 const placeholderPattern = /<script>window\.__SUPABASE_URL = window\.__SUPABASE_URL \|\| ''; window\.__SUPABASE_ANON_KEY = window\.__SUPABASE_ANON_KEY \|\| '';<\/script>/;
-const supabaseJsPattern = /<script src="https:\/\/cdn\.jsdelivr\.net\/npm\/@supabase\/supabase-js@2"><\/script>/;
+const supabaseJsPattern = /<script src="https:\/\/cdn\.jsdelivr\.net\/npm\/@supabase\/supabase-js@[^"]+"(?: integrity="[^"]+" crossorigin="anonymous")?><\/script>/;
+// Pinned Supabase JS (must match the SRI-tagged script tags in HTML):
+// update version + integrity together. Integrity generated with:
+// node -e "console.log(require('crypto').createHash('sha384').update(require('fs').readFileSync('sb.js')).digest('base64'))"
+// after downloading the exact file from cdn.jsdelivr.net.
+const PINNED_SUPABASE_TAG = '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2" integrity="sha384-WgXwGL6fUsYJWNaKJgVbrJKGRQwc1vieh2oy4kw9nXqpNDz3tdSsqEYUgeHD/NuF" crossorigin="anonymous"></script>';
 
 function buildInjection() {
   return `<script>window.__SUPABASE_URL = '${supabaseUrl}'; window.__SUPABASE_ANON_KEY = '${supabaseAnonKey}';</script>`;
@@ -58,7 +63,7 @@ function injectIntoFile(relPath) {
     updated = content.replace(placeholderPattern, injection);
   } else if (!content.includes('window.__SUPABASE_URL')) {
     if (supabaseJsPattern.test(content)) {
-      updated = content.replace(supabaseJsPattern, injection + '\n<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>');
+      updated = content.replace(supabaseJsPattern, injection + '\n' + PINNED_SUPABASE_TAG);
     } else if (/<script/.test(content)) {
       updated = content.replace(/<script/, injection + '\n<script');
     } else {

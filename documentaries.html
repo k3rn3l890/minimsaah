@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+<script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js" integrity="sha384-ZBvlAMcOinSpqbKp+h0PpJxrDWCO8veRjvEhIc+Wg2Um8ZUKrbyNtJChA7FhNtCF" crossorigin="anonymous"></script>
 <style>
 *:focus-visible{outline:2px solid #E63946;outline-offset:2px;border-radius:4px}
 </style>
@@ -73,7 +73,7 @@
   <p class="text-xs text-gray-600 mt-2 font-mono tracking-widest">© 2026 MINIMSAAH — ACCRA, GHANA</p>
 </footer>
 
-<script>window.__API_BASE__ = window.__API_BASE__ || 'https://minimsaah-api.onrender.com/api/v1';</script><script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="/assets/js/embeds.js"></script><script src="/assets/js/supabase-client.js"></script>
+<script>window.__API_BASE__ = window.__API_BASE__ || 'https://minimsaah-api.onrender.com/api/v1';</script><script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2" integrity="sha384-WgXwGL6fUsYJWNaKJgVbrJKGRQwc1vieh2oy4kw9nXqpNDz3tdSsqEYUgeHD/NuF" crossorigin="anonymous"></script><script src="/assets/js/embeds.js"></script><script src="/assets/js/supabase-client.js"></script>
 <script src="/assets/js/player.js"></script>
 <script>
 // mobile drawer for archive
@@ -81,7 +81,7 @@
 </script>
 <script>
 (function(){
-  var API = location.hostname==='localhost'||location.hostname==='127.0.0.1' ? 'http://localhost:3000/api/v1' : (window.__API_BASE__||'http://localhost:3000/api/v1');
+  var API = location.hostname==='localhost'||location.hostname==='127.0.0.1' ? 'http://localhost:3000/api/v1' : (window.__API_BASE__||'');
   function useSupabase(){ return window.SupabaseDB && window.SupabaseDB.isEnabled(); }
   function esc(s){ if(s===null||s===undefined) return ''; return String(s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);}); }
   function normRow(r){ if(!r||typeof r!=='object'||Array.isArray(r)) return r; var o={}; for(var k in r){ o[k]=r[k]; var ck=k.replace(/_([a-z])/g,function(m,c){return c.toUpperCase();}); if(ck!==k&&o[ck]===undefined) o[ck]=r[k]; } return o; }

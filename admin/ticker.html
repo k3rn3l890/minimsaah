@@ -47,7 +47,7 @@
     <div id="list" class="space-y-2"></div>
   </main>
 </div>
-<script>window.__API_BASE__ = window.__API_BASE__ || 'https://minimsaah-api.onrender.com/api/v1';</script><script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="/assets/js/supabase-client.js"></script><script src="/admin/js/admin.js"></script>
+<script>window.__API_BASE__ = window.__API_BASE__ || 'https://minimsaah-api.onrender.com/api/v1';</script><script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2" integrity="sha384-WgXwGL6fUsYJWNaKJgVbrJKGRQwc1vieh2oy4kw9nXqpNDz3tdSsqEYUgeHD/NuF" crossorigin="anonymous"></script><script src="/assets/js/supabase-client.js"></script><script src="/admin/js/admin.js"></script>
 <script>
 (function(){if(typeof window.Admin==='undefined'||!Admin.requireAuth){location.href='/admin/login.html';}else{Admin.requireAuth().then(function(){document.documentElement.classList.remove('mm-guard');}).catch(function(){});}
   async function load(){
@@ -65,7 +65,7 @@
       items.forEach(function(it){
         var row=document.createElement('div');
         row.className='bg-[#0A0A0A] border border-white/5 rounded-sm p-3 flex gap-3 items-center '+(it.active?'':'opacity-50');
-        row.innerHTML='<div class="flex-1 min-w-0"><p class="text-sm">'+Admin.escapeHtml(it.text)+'</p><p class="text-xs font-mono text-gray-400 mt-1">Priority '+it.priority+' • '+(it.active?'Active':'Hidden')+'</p></div><div class="flex gap-2 shrink-0"><button data-toggle="'+it.id+'" class="text-xs font-mono border border-white/10 px-3 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-white/5">'+(it.active?'Hide':'Show')+'</button><button data-del="'+it.id+'" class="text-xs font-mono border border-[#E63946]/30 text-[#E63946] px-3 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-[#E63946] hover:text-white">Delete</button></div>';
+        row.innerHTML='<div class="flex-1 min-w-0"><p class="text-sm">'+Admin.escapeHtml(it.text)+'</p><p class="text-xs font-mono text-gray-400 mt-1">Priority '+Admin.escapeHtml(String(it.priority))+' • '+(it.active?'Active':'Hidden')+'</p></div><div class="flex gap-2 shrink-0"><button data-toggle="'+Admin.escapeHtml(it.id)+'" class="text-xs font-mono border border-white/10 px-3 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-white/5">'+(it.active?'Hide':'Show')+'</button><button data-del="'+Admin.escapeHtml(it.id)+'" class="text-xs font-mono border border-[#E63946]/30 text-[#E63946] px-3 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-[#E63946] hover:text-white">Delete</button></div>';
         el.appendChild(row);
       });
       el.querySelectorAll('[data-toggle]').forEach(function(b){ b.onclick=async function(){ try{
