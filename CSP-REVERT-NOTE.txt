@@ -1,0 +1,17 @@
+FAST REVERT FOR BROWSER RULE (vercel.json)
+
+If live site looks broken white after deploy, do this in 1 min:
+
+Option A (fast, Vercel Dashboard):
+1. Open vercel.json on main
+2. Change "Content-Security-Policy" back to "Content-Security-Policy-Report-Only"
+3. Keep same value line. Redeploy.
+
+Old key + value to restore:
+key: Content-Security-Policy-Report-Only
+value: default-src 'self'; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://code.iconify.design; connect-src 'self' https://dndiajfohpmnmocmmokt.supabase.co https://*.supabase.co wss://*.supabase.co https://minimsaah-api.onrender.com https://api.iconify.design; frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com https://www.tiktok.com https://www.facebook.com https://www.instagram.com; form-action 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'
+
+Option B (git, 1 command):
+git revert HEAD --no-edit; git push origin main
+
+Saved: 2026-10-01. Commit before this change is 3ab00fd.

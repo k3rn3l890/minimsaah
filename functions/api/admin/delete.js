@@ -7,11 +7,29 @@
 import { createClient } from '@supabase/supabase-js';
 
 export async function onRequestPost(context) {
-  const { request, env } = context;
-  const auth = request.headers.get('Authorization') || '';
+  return handleDelete(context.request, context.env);
+}
+
+// Vercel format (same logic, so it works on Vercel too)
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+  const result = await handleDelete(req, process.env);
+  const body = await result.json().catch(() => ({ error: 'error' }));
+  res.status(result.status).json(body);
+}
+
+async function handleDelete(request, env) {
+  const auth = request.headers.get ? request.headers.get('Authorization') || '' : (request.headers['authorization'] || request.headers['Authorization'] || '');
   if (!auth.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const supaUser = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY || env.SUPABASE_URL, {
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !env.SUPABASE_SERVICE_ROLE_KEY) {
+    return Response.json({ error: 'Server not configured' }, { status: 500 });
+  }
+
+  const supaUser = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
     global: { headers: { Authorization: auth } },
   });
   const { data: { user }, error: uErr } = await supaUser.auth.getUser();
@@ -22,7 +40,7 @@ export async function onRequestPost(context) {
 
   const { table, id } = await request.json().catch(() => ({}));
   const allowed = ['articles', 'videos', 'documentaries', 'events', 'tickers', 'media'];
-  if (!allowed.includes(table) || !id) return Response.json({ error: 'Bad request' }, { status: 400 });
+  if (!allowed.includes(table) || typeof id !== 'string' || id.length < 1 || id.length > 128 || !/^[A-Za-z0-9._-]+$/.test(id)) return Response.json({ error: 'Bad request' }, { status: 400 });
 
   const supaAdmin = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false },
