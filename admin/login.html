@@ -26,8 +26,13 @@
       </div>
       <div id="mfa-box" class="hidden">
         <label class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Authenticator code</label>
-        <input id="mfa-code" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit code" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-2.5 text-sm placeholder:text-gray-600 focus:border-[#E63946]/50 focus:outline-none">
-        <button type="button" id="mfa-btn" class="w-full mt-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-mono tracking-widest uppercase py-3 rounded-sm transition">Verify Code</button>
+        <select id="mfa-factor" class="hidden w-full mt-2 bg-[#0A0A0A] border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm"></select>
+        <input id="mfa-code" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit code" class="w-full mt-2 bg-white/5 border border-white/10 rounded-sm px-3 py-2.5 text-sm placeholder:text-gray-600 focus:border-[#E63946]/50 focus:outline-none">
+        <p id="mfa-note" class="hidden text-xs text-gray-400 mt-2"></p>
+        <div class="flex gap-2 mt-2">
+          <button type="button" id="mfa-btn" class="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-mono tracking-widest uppercase py-3 rounded-sm transition">Verify Code</button>
+          <button type="button" id="mfa-cancel" class="text-xs font-mono border border-white/10 px-4 py-3 uppercase hover:bg-white/5">Cancel</button>
+        </div>
       </div>
       <div id="turnstile-box" class="hidden"><div id="turnstile-widget"></div></div>
       <button type="submit" id="btn" class="w-full bg-[#E63946] hover:bg-[#c53030] text-white text-xs font-mono tracking-widest uppercase py-3 rounded-sm transition">Sign In</button>
@@ -43,6 +48,46 @@
   var err=document.getElementById('err');
   var btn=document.getElementById('btn');
   function useSupa(){ return window.SupabaseDB && window.SupabaseDB.isEnabled(); }
+  function mfaShow(el, on){ el.classList.toggle('hidden', !on); }
+  function mfaNote(m){ var n=document.getElementById('mfa-note'); n.textContent=m||''; mfaShow(n, !!m); }
+  function mfaReset(){
+    mfaShow(document.getElementById('mfa-box'), false);
+    mfaShow(document.getElementById('mfa-factor'), false);
+    mfaNote('');
+    document.getElementById('mfa-code').value = '';
+    document.getElementById('mfa-btn').textContent = 'Verify Code';
+  }
+  // Resolves the trimmed input on Verify, null on Cancel. Re-armed per round.
+  function waitCode(){
+    return new Promise(function(resolve){
+      document.getElementById('mfa-btn').onclick = function(){
+        resolve(document.getElementById('mfa-code').value.trim());
+      };
+      document.getElementById('mfa-cancel').onclick = function(){ resolve(null); };
+    });
+  }
+  // Factor picker. Single factor → its id without prompting.
+  function pickFactor(factors){
+    return new Promise(function(resolve){
+      if (!factors.length) { resolve(null); return; }
+      if (factors.length === 1) { resolve(factors[0].id); return; }
+      var sel = document.getElementById('mfa-factor');
+      sel.innerHTML = '';
+      factors.forEach(function(f){
+        var o = document.createElement('option');
+        o.value = f.id;
+        o.textContent = (f.friendly_name || 'Authenticator') + ' (…' + String(f.id).slice(-4) + ')';
+        sel.appendChild(o);
+      });
+      mfaShow(document.getElementById('mfa-box'), true);
+      mfaShow(sel, true);
+      mfaNote('Choose which authenticator to use, then Continue.');
+      document.getElementById('mfa-btn').textContent = 'Continue';
+      document.getElementById('mfa-btn').onclick = function(){ resolve(sel.value || null); };
+      document.getElementById('mfa-cancel').onclick = function(){ resolve(null); };
+    });
+  }
+  async function signOutQuiet(){ try { await window.SupabaseDB.client().auth.signOut(); } catch (e) {} }
   // Best-effort audit (never blocks login; audit table may not exist yet).
   function audit(event, email){
     try{
@@ -75,8 +120,20 @@
         var u = ur.data && ur.data.user;
         var role = u && u.user_metadata && u.user_metadata.role;
         var ok = (Admin.isStaffRole ? Admin.isStaffRole(role) : (['OWNER','EDITOR','JOURNALIST','VIDEOGRAPHER'].indexOf(role) !== -1));
-        if (ok) location.href='/admin/index.html';
-        else window.SupabaseDB.client().auth.signOut();
+        if (!ok) { window.SupabaseDB.client().auth.signOut(); return; }
+        // Don't auto-enter on a half-stepped-up session: an aal1 session
+        // with enrolled factors must complete MFA via a fresh login.
+        var sb0 = window.SupabaseDB.client();
+        function go(){ location.href='/admin/index.html'; }
+        try {
+          if (sb0.auth.mfa && sb0.auth.mfa.getAuthenticatorAssuranceLevel) {
+            sb0.auth.mfa.getAuthenticatorAssuranceLevel().then(function(lr){
+              var lv = lr.data || {};
+              if (lv.nextLevel === 'aal2' && lv.currentLevel !== 'aal2') { sb0.auth.signOut(); return; }
+              go();
+            }, function(){ go(); });
+          } else go();
+        } catch (e) { go(); }
       });
     });
   } else if(localStorage.getItem('access_token')){
@@ -112,19 +169,38 @@
           }
         } catch (e) { factors = []; }
         if (factors.length) {
-          var ch = await sb.auth.mfa.challenge({ factorId: factors[0].id });
-          if (ch.error) throw new Error(ch.error.message);
-          var code = await new Promise(function (resolve) {
-            document.getElementById('mfa-box').classList.remove('hidden');
-            document.getElementById('mfa-btn').onclick = function () {
-              resolve(document.getElementById('mfa-code').value.trim());
-            };
-          });
-          var vr = await sb.auth.mfa.verify({ factorId: factors[0].id, challengeId: ch.data.id, code: code });
-          document.getElementById('mfa-box').classList.add('hidden');
-          if (vr.error) { audit('login_failed', email); throw new Error(vr.error.message); }
+          // Already stepped up (e.g. restored aal2 session) → skip challenge.
+          var steppedUp = false;
+          try {
+            if (sb.auth.mfa.getAuthenticatorAssuranceLevel) {
+              var lv0 = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+              steppedUp = !!(lv0.data && lv0.data.currentLevel === 'aal2');
+            }
+          } catch (e) {}
+          if (!steppedUp) {
+            var fid = await pickFactor(factors);
+            if (!fid) { await signOutQuiet(); mfaReset(); throw new Error('Sign-in cancelled'); }
+            mfaShow(document.getElementById('mfa-box'), true);
+            mfaShow(document.getElementById('mfa-factor'), false);
+            document.getElementById('mfa-btn').textContent = 'Verify Code';
+            var verified = false, attempts = 0;
+            while (!verified && attempts < 3) {
+              attempts++;
+              var ch = await sb.auth.mfa.challenge({ factorId: fid });
+              if (ch.error) throw new Error(ch.error.message);
+              var code = await waitCode();
+              if (code === null) { await signOutQuiet(); mfaReset(); throw new Error('Sign-in cancelled'); }
+              if (!code) { mfaNote('Enter the 6-digit code'); continue; }
+              var vr = await sb.auth.mfa.verify({ factorId: fid, challengeId: ch.data.id, code: code });
+              if (!vr.error) { verified = true; break; }
+              mfaNote('Code rejected (' + attempts + '/3) — check your app clock and retry');
+            }
+            mfaShow(document.getElementById('mfa-box'), false);
+            if (!verified) { await signOutQuiet(); audit('login_failed', email); throw new Error('Verification failed'); }
+          }
         }
-        var u = res.data.user;
+        var gu = await sb.auth.getUser();
+        var u = (gu.data && gu.data.user) || res.data.user;
         var role = (u.user_metadata&&u.user_metadata.role)||'SUBSCRIBER';
         var allowed = (Admin.isStaffRole ? Admin.isStaffRole(role) : (['OWNER','EDITOR','JOURNALIST','VIDEOGRAPHER'].indexOf(role) !== -1));
         if (!allowed) {
@@ -141,6 +217,7 @@
       Admin.setUser(data.user);
       location.href='/admin/index.html';
     }catch(ex){
+      try { mfaReset(); } catch (e) {}
       err.textContent=ex.message||'Login failed';
       err.classList.remove('hidden');
       btn.textContent='Sign In';

@@ -118,25 +118,42 @@ drop policy if exists "staff_update_users" on public.users;
 -- (NEW/OLD are only legal inside triggers, never in policy expressions).
 create policy "staff_update_users" on public.users for update using (public.is_owner_editor()) with check (public.is_owner_editor());
 
+-- Own-profile edit: any authenticated user may update ONLY their own row.
+-- Role/status escalation stays impossible: the trigger below blocks role
+-- changes (non-OWNER) and self-status changes (non-OWNER/service_role).
+-- Shipping atomically with the trigger extension is mandatory.
+drop policy if exists "own_profile_update" on public.users;
+create policy "own_profile_update" on public.users for update to authenticated using (auth.uid()::text = id) with check (auth.uid()::text = id);
+
 -- Role-escalation lock: the ONLY writer of public.users.role via anon key
 -- paths is nonexistent in-app (role changes go through service_role
 -- auth-migrate/Functions, which bypass RLS but NOT triggers). Fires only
 -- when role actually changes, so status-only updates (e.g. suspend) pass
 -- through untouched. Allows service_role + OWNER JWT, nobody else.
+-- Self-status lock: a user may not change their OWN status (would allow
+-- self-unsuspend); OWNER suspending OTHERS still passes (OLD.id is not self).
+-- Direct-DB writes (NULL JWT: Prisma local dev, SQL editor, pg_dump restore)
+-- bypass RLS but NOT this trigger, so NULL JWT must pass through.
 create or replace function public.lock_user_role()
 returns trigger language plpgsql as $$
 begin
+  if auth.jwt() is null then return NEW; end if;
   if NEW.role is distinct from OLD.role then
     if coalesce(auth.jwt() ->> 'role', '') = 'service_role' then return NEW; end if;
     if coalesce(auth.jwt() -> 'user_metadata' ->> 'role', '') = 'OWNER' then return NEW; end if;
     raise exception 'role changes restricted';
+  end if;
+  if NEW.status is distinct from OLD.status and OLD.id::text = (auth.uid())::text then
+    if coalesce(auth.jwt() ->> 'role', '') = 'service_role' then return NEW; end if;
+    if coalesce(auth.jwt() -> 'user_metadata' ->> 'role', '') = 'OWNER' then return NEW; end if;
+    raise exception 'status changes restricted';
   end if;
   return NEW;
 end;
 $$;
 
 drop trigger if exists lock_user_role on public.users;
-create trigger lock_user_role before update of role on public.users
+create trigger lock_user_role before update of role, status on public.users
 for each row execute function public.lock_user_role();
 
 -- 7. View count RPC (avoids backend increment logic)

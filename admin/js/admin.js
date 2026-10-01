@@ -108,6 +108,19 @@
         clearTokens();
         fail();
       }
+      // MFA enforcement: only when the account has verified factors
+      // (nextLevel==='aal2'). Factor-less staff are provably unaffected.
+      try {
+        if (sb.auth.mfa && typeof sb.auth.mfa.getAuthenticatorAssuranceLevel === 'function') {
+          var aal = await withTimeout(sb.auth.mfa.getAuthenticatorAssuranceLevel());
+          var lv = (aal.data || {});
+          if (lv.nextLevel === 'aal2' && lv.currentLevel !== 'aal2') {
+            try { await sb.auth.signOut(); } catch (e) {}
+            clearTokens();
+            fail();
+          }
+        }
+      } catch (e) { fail(); }
       return session;
     }
     // Supabase not configured: localhost Nest fallback only. Prod fails closed.
@@ -319,6 +332,8 @@
     if (!el) {
       el = document.createElement('div');
       el.id = 'toast';
+      el.setAttribute('role', 'status');
+      el.setAttribute('aria-live', 'polite');
       el.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;min-width:240px;max-width:360px;padding:12px 16px;border-radius:6px;font-size:13px;border:1px solid rgba(255,255,255,0.1);display:none;';
       document.body.appendChild(el);
     }

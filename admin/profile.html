@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile — MINIMSAAH Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>*:focus-visible{outline:2px solid #E63946;outline-offset:2px}</style>
+<style>html.mm-guard body{visibility:hidden}</style>
+<script>document.documentElement.className+=' mm-guard';</script>
+<noscript><meta http-equiv="refresh" content="0;url=/admin/login.html"></noscript>
+</head>
+<body class="bg-[#050505] text-white font-['Inter',sans-serif] min-h-screen">
+<nav class="sticky top-0 z-40 bg-[#050505]/90 backdrop-blur-md border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between">
+  <a href="/index.html" class="font-['Space_Grotesk',sans-serif] text-lg tracking-[0.2em] uppercase">MINIMSAAH</a>
+  <div class="flex items-center gap-2">
+    <button onclick="Admin.logout()" class="text-[11px] font-mono border border-white/10 px-3 py-2 uppercase">Logout</button>
+  </div>
+</nav>
+<div class="flex min-h-[calc(100vh-56px)]">
+  <aside class="hidden md:block w-56 shrink-0 border-r border-white/5 bg-[#0A0A0A] p-4">
+    <nav class="space-y-1">
+      <a href="/admin/index.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Dashboard</a>
+      <a href="/admin/articles.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Articles</a>
+      <a href="/admin/videos.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Videos</a>
+      <a href="/admin/documentaries.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Documentaries</a>
+      <a href="/admin/events.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Events</a>
+      <a href="/admin/ticker.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Ticker</a>
+      <a href="/admin/media.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Media</a>
+      <a data-nav="profile.html" href="/admin/profile.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase bg-white/5 text-white">Profile</a>
+    </nav>
+  </aside>
+  <main class="flex-1 p-4 md:p-6 max-w-[1100px] w-full">
+    <div class="md:hidden flex gap-2 mb-4 overflow-auto snap-x scrollbar-hide -mx-4 px-4">
+      <a href="/admin/articles.html" class="text-[11px] font-mono tracking-widest border border-white/10 px-3.5 py-2 uppercase shrink-0">Articles</a>
+      <a href="/admin/videos.html" class="text-[11px] font-mono tracking-widest border border-white/10 px-3.5 py-2 uppercase shrink-0">Videos</a>
+      <a href="/admin/documentaries.html" class="text-[11px] font-mono tracking-widest border border-white/10 px-3.5 py-2 uppercase shrink-0">Docs</a>
+      <a href="/admin/events.html" class="text-[11px] font-mono tracking-widest border border-white/10 px-3.5 py-2 uppercase shrink-0">Events</a>
+      <a href="/admin/ticker.html" class="text-[11px] font-mono tracking-widest border border-white/10 px-3.5 py-2 uppercase shrink-0">Ticker</a>
+      <a href="/admin/media.html" class="text-[11px] font-mono tracking-widest border border-white/10 px-3.5 py-2 uppercase shrink-0">Media</a>
+      <a href="/admin/profile.html" class="text-[11px] font-mono tracking-widest bg-white/5 text-white border border-white/10 px-3.5 py-2 uppercase shrink-0">Profile</a>
+    </div>
+    <h1 class="font-['Space_Grotesk',sans-serif] text-xl md:text-2xl font-medium tracking-tight mb-4">Profile</h1>
+
+    <div class="grid lg:grid-cols-2 gap-4">
+      <section class="bg-[#0A0A0A] border border-white/5 rounded-sm p-4 md:p-5">
+        <h2 class="text-xs font-mono tracking-widest uppercase text-white mb-4">Account details</h2>
+        <div class="flex items-center gap-4 mb-4">
+          <img id="avatar-img" src="" alt="Profile photo" class="w-20 h-20 rounded-full object-cover bg-[#111] border border-white/10 hidden">
+          <div id="avatar-ph" class="w-20 h-20 rounded-full bg-[#111] border border-white/10 flex items-center justify-center text-xs font-mono text-gray-500">No photo</div>
+          <label class="text-[11px] font-mono border border-white/10 px-3 py-3 min-h-[44px] inline-flex items-center uppercase cursor-pointer hover:bg-white/5 touch-manipulation">Upload photo<input id="avatar-file" type="file" accept="image/*" class="hidden"></label>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label for="firstName" class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">First name</label>
+            <input id="firstName" autocomplete="given-name" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm focus:border-[#E63946]/50 focus:outline-none">
+          </div>
+          <div>
+            <label for="lastName" class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Last name</label>
+            <input id="lastName" autocomplete="family-name" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm focus:border-[#E63946]/50 focus:outline-none">
+          </div>
+        </div>
+        <div class="mt-3">
+          <label for="bio" class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Bio</label>
+          <textarea id="bio" rows="3" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 text-sm focus:border-[#E63946]/50 focus:outline-none"></textarea>
+        </div>
+        <div class="mt-3 grid sm:grid-cols-2 gap-3 text-xs font-mono">
+          <div><p class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Email</p><p id="email-ro" class="text-gray-300 mt-1 break-all"></p></div>
+          <div><p class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Role</p><p id="role-ro" class="mt-1"><span class="text-[11px] font-mono tracking-widest text-[#E63946] uppercase"></span></p></div>
+        </div>
+        <p id="perr" class="hidden text-xs text-[#E63946] bg-[#E63946]/10 border border-[#E63946]/20 rounded-sm px-3 py-2 mt-3" role="alert"></p>
+        <p id="pok" class="hidden text-xs text-green-400 bg-green-900/20 border border-green-800 rounded-sm px-3 py-2 mt-3" role="status"></p>
+        <button id="save-profile" class="mt-4 w-full sm:w-auto bg-[#E63946] hover:bg-[#c53030] text-white text-xs font-mono tracking-widest uppercase px-5 py-3 min-h-[44px] rounded-sm touch-manipulation">Save Profile</button>
+      </section>
+
+      <div class="space-y-4">
+        <section class="bg-[#0A0A0A] border border-white/5 rounded-sm p-4 md:p-5">
+          <h2 class="text-xs font-mono tracking-widest uppercase text-white mb-1">Password</h2>
+          <p class="text-xs text-gray-500 mb-4">Changing it here keeps you signed in on this device.</p>
+          <div>
+            <label for="pw1" class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">New password</label>
+            <input id="pw1" type="password" autocomplete="new-password" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm focus:border-[#E63946]/50 focus:outline-none">
+          </div>
+          <div class="mt-3">
+            <label for="pw2" class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Confirm new password</label>
+            <input id="pw2" type="password" autocomplete="new-password" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm focus:border-[#E63946]/50 focus:outline-none">
+          </div>
+          <p id="pwerr" class="hidden text-xs text-[#E63946] bg-[#E63946]/10 border border-[#E63946]/20 rounded-sm px-3 py-2 mt-3" role="alert"></p>
+          <p id="pwok" class="hidden text-xs text-green-400 bg-green-900/20 border border-green-800 rounded-sm px-3 py-2 mt-3" role="status"></p>
+          <button id="save-pw" class="mt-4 w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-mono tracking-widest uppercase px-5 py-3 min-h-[44px] rounded-sm touch-manipulation">Change Password</button>
+        </section>
+
+        <section class="bg-[#0A0A0A] border border-white/5 rounded-sm p-4 md:p-5">
+          <h2 class="text-xs font-mono tracking-widest uppercase text-white mb-1">Two-factor authentication</h2>
+          <p class="text-xs text-gray-500 mb-4">Authenticator app (TOTP). Required at login once enabled.</p>
+          <div id="mfa-list" class="space-y-2 text-sm text-gray-400 mb-3"><p class="text-xs font-mono text-gray-600">Checking…</p></div>
+          <div id="mfa-enroll" class="hidden border-t border-white/5 pt-4">
+            <div id="mfa-qr" class="bg-white p-3 rounded-sm inline-block mb-3"></div>
+            <p class="text-xs text-gray-500 mb-1">Can't scan? Enter this secret manually:</p>
+            <p class="flex items-center gap-2 mb-3">
+              <code id="mfa-secret" class="text-xs font-mono text-gray-300 break-all flex-1"></code>
+              <button id="mfa-copy" class="text-[11px] font-mono border border-white/10 px-3 py-2 uppercase shrink-0 touch-manipulation hover:bg-white/5">Copy</button>
+            </p>
+            <div>
+              <label for="mfa-code" class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">6-digit code from your app</label>
+              <input id="mfa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="8" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm focus:border-[#E63946]/50 focus:outline-none">
+            </div>
+            <div class="flex gap-2 mt-3">
+              <button id="mfa-verify" class="flex-1 bg-[#E63946] hover:bg-[#c53030] text-white text-xs font-mono tracking-widest uppercase px-5 py-3 min-h-[44px] rounded-sm touch-manipulation">Verify & Enable</button>
+              <button id="mfa-cancel" class="text-xs font-mono border border-white/10 px-4 py-3 min-h-[44px] uppercase touch-manipulation hover:bg-white/5">Cancel</button>
+            </div>
+          </div>
+          <p id="mfaerr" class="hidden text-xs text-[#E63946] bg-[#E63946]/10 border border-[#E63946]/20 rounded-sm px-3 py-2 mt-3" role="alert"></p>
+          <p id="mfaok" class="hidden text-xs text-green-400 bg-green-900/20 border border-green-800 rounded-sm px-3 py-2 mt-3" role="status"></p>
+          <button id="mfa-start" class="mt-4 w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-mono tracking-widest uppercase px-5 py-3 min-h-[44px] rounded-sm touch-manipulation">Set Up Authenticator</button>
+        </section>
+
+        <section class="bg-[#0A0A0A] border border-white/5 rounded-sm p-4 md:p-5">
+          <h2 class="text-xs font-mono tracking-widest uppercase text-white mb-1">Sessions</h2>
+          <p class="text-xs text-gray-500 mb-4">Signed in elsewhere? End every session except this one.</p>
+          <button id="signout-others" class="w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-[#E63946]/30 text-[#E63946] text-xs font-mono tracking-widest uppercase px-5 py-3 min-h-[44px] rounded-sm touch-manipulation">Sign Out Other Sessions</button>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+<script>window.__API_BASE__ = window.__API_BASE__ || 'https://minimsaah-api.onrender.com/api/v1';</script><script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2" integrity="sha384-WgXwGL6fUsYJWNaKJgVbrJKGRQwc1vieh2oy4kw9nXqpNDz3tdSsqEYUgeHD/NuF" crossorigin="anonymous"></script><script src="/assets/js/supabase-client.js"></script><script src="/admin/js/admin.js"></script>
+<script>
+(function(){
+  if(typeof window.Admin==='undefined'||!Admin.requireAuth){location.href='/admin/login.html';}else{Admin.requireAuth().then(function(){document.documentElement.classList.remove('mm-guard');}).catch(function(){});}
+  var uid = null, avatarUrl = '';
+  function show(el, on){ el.classList.toggle('hidden', !on); }
+  function perr(m){ var e=document.getElementById('perr'); e.textContent=m; show(e,true); }
+  function pwErr(m){ var e=document.getElementById('pwerr'); e.textContent=m; show(e,true); document.getElementById('pw1').focus(); }
+  function mfaErr(m){ var e=document.getElementById('mfaerr'); e.textContent=m; show(e,true); }
+  function ok(id, m){ var e=document.getElementById(id); e.textContent=m; show(e,true); setTimeout(function(){ show(e,false); }, 4000); }
+
+  function setAvatar(url){
+    avatarUrl = url || '';
+    var img = document.getElementById('avatar-img'), ph = document.getElementById('avatar-ph');
+    if (url && /^https:\/\//i.test(url)) { img.src = url; show(img, true); show(ph, false); }
+    else { img.removeAttribute('src'); show(img, false); show(ph, true); }
+  }
+
+  async function init(){
+    if (!Admin.useSupabase()) { perr('Supabase not configured.'); return; }
+    var sess = (await Admin.supa().auth.getSession()).data.session;
+    if (!sess) return;
+    uid = sess.user.id;
+    try{
+      var row = await Admin.supaOne('users', uid);
+      document.getElementById('firstName').value = row.firstName || row.first_name || '';
+      document.getElementById('lastName').value = row.lastName || row.last_name || '';
+      document.getElementById('bio').value = row.bio || '';
+      document.getElementById('email-ro').textContent = row.email || sess.user.email || '';
+      var roleEl = document.querySelector('#role-ro span');
+      if (roleEl) roleEl.textContent = row.role || '';
+      setAvatar(row.avatarUrl || row.avatar_url || '');
+      var cached = Admin.getUser() || {};
+      cached.firstName = row.firstName || row.first_name || cached.firstName;
+      cached.lastName = row.lastName || row.last_name || cached.lastName;
+      Admin.setUser(cached);
+    }catch(e){ perr(e.message); }
+    refreshMfa();
+  }
+
+  document.getElementById('avatar-file').addEventListener('change', async function(e){
+    var f = e.target.files[0];
+    if (!f) return;
+    try{
+      Admin.toast('Uploading…');
+      var data = await Admin.supaUpload(f, null, { imagesOnly: true });
+      setAvatar(data.url);
+      Admin.toast('Photo uploaded — Save Profile to keep it');
+    }catch(ex){ Admin.toast(ex.message, 'error'); }
+    e.target.value = '';
+  });
+
+  document.getElementById('save-profile').addEventListener('click', async function(){
+    var btn = this;
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try{
+      var fn = document.getElementById('firstName').value.trim();
+      var ln = document.getElementById('lastName').value.trim();
+      if (!fn || !ln) throw new Error('First and last name are required');
+      await Admin.supaSave('users', uid, true, {
+        firstName: fn, lastName: ln,
+        bio: document.getElementById('bio').value.trim() || null,
+        avatarUrl: avatarUrl || null,
+      });
+      var cached = Admin.getUser() || {};
+      cached.firstName = fn; cached.lastName = ln;
+      Admin.setUser(cached);
+      ok('pok', 'Profile saved');
+    }catch(e){ perr(e.message); }
+    btn.disabled = false; btn.textContent = 'Save Profile';
+  });
+
+  document.getElementById('save-pw').addEventListener('click', async function(){
+    var btn = this;
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try{
+      var p1 = document.getElementById('pw1').value;
+      var p2 = document.getElementById('pw2').value;
+      if (!p1 || p1.length < 8) throw new Error('New password must be at least 8 characters');
+      if (p1 !== p2) throw new Error('Passwords do not match');
+      var r = await Admin.supa().auth.updateUser({ password: p1 });
+      if (r.error) throw new Error(r.error.message);
+      document.getElementById('pw1').value = '';
+      document.getElementById('pw2').value = '';
+      try { await Admin.supa().auth.signOut({ scope: 'others' }); } catch (e) {}
+      ok('pwok', 'Password changed. Other sessions signed out.');
+    }catch(e){
+      var msg = e.message || 'Password change failed';
+      if (/nonce|recently|re-auth|reauth/i.test(msg)) msg = 'Session too old — log out and back in, then retry';
+      pwErr(msg);
+    }
+    btn.disabled = false; btn.textContent = 'Change Password';
+  });
+
+  var pendingFactorId = null;
+  async function refreshMfa(){
+    var box = document.getElementById('mfa-list');
+    try{
+      var lf = await Admin.supa().auth.mfa.listFactors();
+      if (lf.error) throw new Error(lf.error.message);
+      var all = (lf.data && lf.data.all) || [];
+      var verified = ((lf.data && lf.data.totp) || []);
+      if (!verified.length) {
+        box.innerHTML = '<p class="text-xs font-mono text-gray-600">No authenticator yet.</p>';
+      } else {
+        box.innerHTML = '';
+        verified.forEach(function(f){
+          var row = document.createElement('div');
+          row.className = 'flex items-center justify-between gap-2 py-2 border-b border-white/5';
+          var label = document.createElement('span');
+          label.className = 'text-xs font-mono text-gray-300';
+          label.textContent = 'Authenticator (' + (f.friendly_name || f.id.slice(0, 8) + '…') + ')';
+          var btn = document.createElement('button');
+          btn.className = 'text-[11px] font-mono border border-[#E63946]/30 text-[#E63946] px-3 py-2 uppercase shrink-0 touch-manipulation hover:bg-[#E63946] hover:text-white';
+          btn.textContent = 'Remove';
+          btn.onclick = function(){ unenrollFlow(f.id); };
+          row.appendChild(label); row.appendChild(btn);
+          box.appendChild(row);
+        });
+      }
+      show(document.getElementById('mfa-start'), true);
+    }catch(e){ mfaErr(e.message); }
+  }
+
+  document.getElementById('mfa-start').addEventListener('click', async function(){
+    try{
+      var en = await Admin.supa().auth.mfa.enroll({ factorType: 'totp', friendlyName: 'admin-app' });
+      if (en.error) throw new Error(en.error.message);
+      pendingFactorId = en.data.id;
+      var qr = document.getElementById('mfa-qr');
+      var svg = (en.data.totp && en.data.totp.qr_code) || '';
+      qr.innerHTML = '';
+      if (svg.indexOf('<svg') === 0) { qr.innerHTML = svg; }
+      else if (svg.indexOf('data:') === 0) {
+        var img = document.createElement('img');
+        img.src = svg; img.alt = 'Authenticator QR code'; img.style.width = '180px'; img.style.height = '180px';
+        qr.appendChild(img);
+      }
+      document.getElementById('mfa-secret').textContent = (en.data.totp && en.data.totp.secret) || '';
+      show(document.getElementById('mfa-enroll'), true);
+      show(document.getElementById('mfa-start'), false);
+    }catch(e){ mfaErr(e.message); }
+  });
+
+  document.getElementById('mfa-copy').addEventListener('click', function(){
+    var s = document.getElementById('mfa-secret').textContent;
+    if (s && navigator.clipboard) navigator.clipboard.writeText(s).then(function(){ Admin.toast('Copied'); });
+  });
+
+  document.getElementById('mfa-cancel').addEventListener('click', async function(){
+    show(document.getElementById('mfa-enroll'), false);
+    show(document.getElementById('mfa-start'), true);
+    if (pendingFactorId) {
+      try { await Admin.supa().auth.mfa.unenroll({ factorId: pendingFactorId }); } catch (e) {}
+      pendingFactorId = null;
+    }
+    refreshMfa();
+  });
+
+  document.getElementById('mfa-verify').addEventListener('click', async function(){
+    var btn = this;
+    btn.disabled = true;
+    try{
+      var code = document.getElementById('mfa-code').value.trim();
+      if (!code) throw new Error('Enter the 6-digit code');
+      var ch = await Admin.supa().auth.mfa.challenge({ factorId: pendingFactorId });
+      if (ch.error) throw new Error(ch.error.message);
+      var vr = await Admin.supa().auth.mfa.verify({ factorId: pendingFactorId, challengeId: ch.data.id, code: code });
+      if (vr.error) throw new Error(vr.error.message);
+      try {
+        var lf2 = await Admin.supa().auth.mfa.listFactors();
+        var stale = (((lf2.data && lf2.data.all) || []).filter(function(f){ return f.status !== 'verified' && f.id !== pendingFactorId; }));
+        for (var i = 0; i < stale.length; i++) {
+          try { await Admin.supa().auth.mfa.unenroll({ factorId: stale[i].id }); } catch (e) {}
+        }
+      } catch (e) {}
+      pendingFactorId = null;
+      document.getElementById('mfa-code').value = '';
+      show(document.getElementById('mfa-enroll'), false);
+      ok('mfaok', 'Two-factor authentication enabled');
+      refreshMfa();
+    }catch(e){ mfaErr(e.message); }
+    btn.disabled = false;
+  });
+
+  async function unenrollFlow(factorId){
+    if (!confirm('Remove this authenticator? You will sign in with password only.')) return;
+    try{
+      // Step-up: unenroll of a verified factor requires a fresh aal2 session.
+      var ch = await Admin.supa().auth.mfa.challenge({ factorId: factorId });
+      if (ch.error) throw new Error(ch.error.message);
+      var code = window.prompt('Enter a fresh 6-digit code from your authenticator to confirm removal:');
+      if (!code) return;
+      var vr = await Admin.supa().auth.mfa.verify({ factorId: factorId, challengeId: ch.data.id, code: code.trim() });
+      if (vr.error) throw new Error(vr.error.message);
+      var un = await Admin.supa().auth.mfa.unenroll({ factorId: factorId });
+      if (un.error) throw new Error(un.error.message);
+      ok('mfaok', 'Authenticator removed');
+      refreshMfa();
+    }catch(e){ mfaErr(e.message); }
+  }
+
+  document.getElementById('signout-others').addEventListener('click', async function(){
+    if (!confirm('Sign out all other sessions? This device stays signed in.')) return;
+    try{
+      var r = await Admin.supa().auth.signOut({ scope: 'others' });
+      if (r.error) throw new Error(r.error.message);
+      Admin.toast('Other sessions signed out');
+    }catch(e){ Admin.toast(e.message, 'error'); }
+  });
+
+  init();
+})();
+</script>
+</body>
+</html>
