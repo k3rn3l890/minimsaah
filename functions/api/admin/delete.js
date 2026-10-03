@@ -6,6 +6,23 @@
  */
 import { createClient } from '@supabase/supabase-js';
 
+// Soft delete cap (code only, memory only): max 10 deletes per hour per user.
+// Resets when server sleeps. Soft way: slows abuse, does not hard block pros.
+const deleteTimesByUser = new Map();
+function deleteAllowed(userId) {
+  const now = Date.now();
+  const hour = 60 * 60 * 1000;
+  const list = (deleteTimesByUser.get(userId) || []).filter((t) => (now - t) < hour);
+  if (list.length >= 10) {
+    const oldest = list[0] || now;
+    const retrySec = Math.ceil((oldest + hour - now) / 1000);
+    return { ok: false, retrySec };
+  }
+  list.push(now);
+  deleteTimesByUser.set(userId, list);
+  return { ok: true, retrySec: 0 };
+}
+
 export async function onRequestPost(context) {
   return handleDelete(context.request, context.env);
 }
@@ -18,6 +35,8 @@ export default async function handler(req, res) {
   }
   const result = await handleDelete(req, process.env);
   const body = await result.json().catch(() => ({ error: 'error' }));
+  const retryAfter = result.headers ? result.headers.get('Retry-After') : null;
+  if (retryAfter && res.setHeader) res.setHeader('Retry-After', retryAfter);
   res.status(result.status).json(body);
 }
 
@@ -38,9 +57,18 @@ async function handleDelete(request, env) {
   const role = user.user_metadata?.role;
   if (!['OWNER', 'EDITOR'].includes(role)) return Response.json({ error: 'Forbidden' }, { status: 403 });
 
-  const { table, id } = await request.json().catch(() => ({}));
+  const bodyData = (typeof request.json === 'function')
+    ? await request.json().catch(() => ({}))
+    : (request.body || {});
+  const table = bodyData.table;
+  const id = bodyData.id;
   const allowed = ['articles', 'videos', 'documentaries', 'events', 'tickers', 'media'];
   if (!allowed.includes(table) || typeof id !== 'string' || id.length < 1 || id.length > 128 || !/^[A-Za-z0-9._-]+$/.test(id)) return Response.json({ error: 'Bad request' }, { status: 400 });
+
+  const cap = deleteAllowed(user.id);
+  if (!cap.ok) {
+    return Response.json({ error: 'Too many deletes. Wait a bit.' }, { status: 429, headers: { 'Retry-After': String(cap.retrySec || 60) } });
+  }
 
   const supaAdmin = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false },

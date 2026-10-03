@@ -299,7 +299,21 @@
   // returns {items (normalized), meta:{total,page,limit,totalPages}}
   async function supaList(table, opts) {
     opts = opts || {};
+    // Soft guards (code only): table allow list + page caps + search slow-down.
+    var allowedTables = ['articles', 'videos', 'documentaries', 'events', 'tickers', 'media', 'users'];
+    if (allowedTables.indexOf(table) === -1) throw new Error('Bad table');
     var page = opts.page || 1, limit = opts.limit || 10;
+    if (!(page >= 1)) page = 1;
+    if (!(limit >= 1)) limit = 10;
+    if (limit > 50) limit = 50;
+    // Max 30 searches per minute per page (soft, browser memory only).
+    if (opts.search) {
+      var nowS = Date.now();
+      global.__msSearchTimes = global.__msSearchTimes || [];
+      global.__msSearchTimes = global.__msSearchTimes.filter(function (t) { return (nowS - t) < 60 * 1000; });
+      if (global.__msSearchTimes.length >= 30) throw new Error('Slow down. Wait a bit and try search again.');
+      global.__msSearchTimes.push(nowS);
+    }
     var sb = supa();
     if (!sb) throw new Error('Supabase not configured — set Vercel env SUPABASE_URL / SUPABASE_ANON_KEY and redeploy');
     var q = sb.from(table).select('*', { count: 'exact' });
@@ -314,7 +328,7 @@
     q = q.order(opts.orderBy || 'created_at', { ascending: !!opts.asc });
     if (opts.secondaryOrderBy) q = q.order(opts.secondaryOrderBy, { ascending: !!opts.asc });
     if (!opts.noPager) q = q.range((page - 1) * limit, page * limit - 1);
-    else if (opts.limit) q = q.limit(opts.limit);
+    else if (limit) q = q.limit(limit);
     var r = await q;
     if (r.error) throw new Error(r.error.message);
     var items = (r.data || []).map(normRow);

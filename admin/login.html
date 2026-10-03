@@ -145,10 +145,42 @@
   form.addEventListener('submit', async function(e){
     e.preventDefault();
     err.classList.add('hidden');
-    btn.textContent='Signing in…';
-    btn.disabled=true;
     var email = document.getElementById('email').value.trim();
     var password = document.getElementById('password').value;
+    // Soft try limit (code only, no server change).
+    // 3 fails -> wait 30 sec. 5 fails in 15 min -> wait 15 min. Friendly, not hard block.
+    function tryKey(em){ return 'ms_login_tries_' + String(em||'').toLowerCase(); }
+    function getTries(em){
+      try { return JSON.parse(localStorage.getItem(tryKey(em)) || '{"count":0,"firstTime":0,"lockUntil":0}'); }
+      catch (ex) { return { count: 0, firstTime: 0, lockUntil: 0 }; }
+    }
+    function setTries(em, t){ try { localStorage.setItem(tryKey(em), JSON.stringify(t)); } catch (ex) {} }
+    function clearTries(em){ try { localStorage.removeItem(tryKey(em)); } catch (ex) {} }
+    function waitText(ms){
+      var s = Math.ceil(ms / 1000);
+      if (s >= 60) return Math.ceil(s / 60) + ' minute(s)';
+      return s + ' second(s)';
+    }
+    var now = Date.now();
+    var st = getTries(email);
+    if (st.firstTime && (now - st.firstTime) > 15 * 60 * 1000) { st = { count: 0, firstTime: 0, lockUntil: 0 }; setTries(email, st); }
+    if (st.lockUntil && now < st.lockUntil) {
+      err.textContent = 'Too many tries. Wait ' + waitText(st.lockUntil - now) + '.';
+      err.classList.remove('hidden');
+      return;
+    }
+    function recordFail(em){
+      var t = Date.now();
+      var s = getTries(em);
+      if (!s.firstTime || (t - s.firstTime) > 15 * 60 * 1000) s = { count: 0, firstTime: t, lockUntil: 0 };
+      s.count = (s.count || 0) + 1;
+      if (s.count >= 5) s.lockUntil = t + 15 * 60 * 1000;
+      else if (s.count >= 3) s.lockUntil = t + 30 * 1000;
+      setTries(em, s);
+      return s;
+    }
+    btn.textContent='Signing in…';
+    btn.disabled=true;
     try{
       if (useSupa()) {
         var sb = window.SupabaseDB.client();
@@ -209,16 +241,21 @@
           throw new Error('Access denied — staff only');
         }
         Admin.setUser({ id: u.id, email: u.email, firstName: (u.user_metadata&&u.user_metadata.firstName)||'', lastName: (u.user_metadata&&u.user_metadata.lastName)||'', role: role });
+        clearTries(email);
         location.href='/admin/index.html';
         return;
       }
       var data=await Admin.request('/auth/login', { method:'POST', body: JSON.stringify({ email: email, password: password }) });
       Admin.setTokens(data.accessToken, data.refreshToken);
       Admin.setUser(data.user);
+      clearTries(email);
       location.href='/admin/index.html';
     }catch(ex){
       try { mfaReset(); } catch (e) {}
-      err.textContent=ex.message||'Login failed';
+      var fs = recordFail(email);
+      var extra = '';
+      if (fs.lockUntil && Date.now() < fs.lockUntil) extra = ' Wait ' + waitText(fs.lockUntil - Date.now()) + '.';
+      err.textContent=(ex.message||'Login failed') + extra;
       err.classList.remove('hidden');
       btn.textContent='Sign In';
       btn.disabled=false;
