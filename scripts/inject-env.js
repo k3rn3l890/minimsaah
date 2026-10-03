@@ -22,6 +22,7 @@ const files = [
   'event.html',
   'articles.html',
   'documentaries.html',
+  'videos.html',
   'admin/login.html',
   'admin/index.html',
   'admin/articles.html',

@@ -192,61 +192,46 @@
     }
   }
 
-  // ─── Hydrate Video Stories (horizontal scroll) ───────────────────
+  // ─── Hydrate Video Stories (Docs-style grid) ────────────────────
   async function hydrateVideos() {
-    var wrap = qs('#horiz-wrap');
-    if (!wrap) return;
+    var section = qs('#videos');
+    if (!section) return;
     var data = useSupabase()
       ? await fetchSupabase('videos', { status: 'PUBLISHED', limit: 3, orderBy: 'published_at' })
       : await fetchJSON('/videos?status=PUBLISHED&limit=3');
     if (!data || !data.items || !data.items.length) return;
-    // Also fetch ticker? not needed
     var videos = data.items;
-    // Each child is 1/3 width; we replace content
-    var panels = qsa(':scope > div', wrap);
-    videos.forEach(function (v, idx) {
-      var panel = panels[idx];
-      if (!panel) return;
-      var titleEl = panel.querySelector('h2');
-      if (titleEl) titleEl.textContent = v.title.toUpperCase();
-      var badge = panel.querySelector('span.border');
-      if (badge) badge.textContent = (v.category || 'Feature').replace(/_/g, ' ');
-      var dur = panel.querySelector('span.text-gray-500');
-      if (dur && v.duration) {
-        var m = Math.floor(v.duration / 60), s = v.duration % 60;
-        dur.textContent = m + ':' + String(s).padStart(2, '0');
-      }
-      var desc = panel.querySelector('.border-l-2 p');
-      if (desc && v.description) desc.innerHTML = '<strong class="text-white font-medium">' + escapeHtml(v.title) + '.</strong> ' + escapeHtml(v.description);
-      var views = panel.querySelector('span.text-xs.font-mono');
-      if (views) views.textContent = (v.viewCount || 0) + ' views • ' + fmtDate(v.publishedAt || v.createdAt);
-      // bg image
-      var bgImg = panel.querySelector('.absolute.inset-0 img');
-      if (bgImg) {
+    var cards = qsa('#videos .grid > a', document);
+    videos.slice(0, cards.length).forEach(function (v, idx) {
+      var card = cards[idx];
+      if (!card) return;
+      var img = card.querySelector('img');
+      if (img) {
         var t = thumbForVideo(v);
-        if (t) { bgImg.src = t; bgImg.alt = v.title; }
+        if (t) { img.src = t; img.alt = v.title; }
       }
-      // play button: make it open modal, not redirect
-      var play = panel.querySelector('.rounded-full');
-      if (play) {
+      var label = card.querySelector('span.text-\\[10px\\]');
+      if (label) {
+        var durTxt = '';
+        if (v.duration) durTxt = ' • ' + Math.floor(v.duration / 60) + ':' + String(v.duration % 60).padStart(2, '0');
+        label.textContent = ((v.category || 'Feature').replace(/_/g, ' ')) + durTxt;
+      }
+      var h3 = card.querySelector('h3');
+      if (h3) h3.textContent = v.title;
+      var p = card.querySelector('p');
+      if (p && v.description) p.textContent = v.description;
+      card.href = '/video.html?slug=' + encodeURIComponent(v.slug);
+      var play = card.querySelector('[data-play]');
+      if (play && v.videoUrl) {
         play.setAttribute('data-video-url', v.videoUrl);
         if (v.embedUrl) play.setAttribute('data-embed-url', v.embedUrl);
-        play.style.cursor = 'pointer';
-        // wrapper clickable too
-        play.closest('div').style.cursor = 'pointer';
+        play.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (window.MinimsaahPlayer) window.MinimsaahPlayer.open({ videoUrl: v.videoUrl, embedUrl: v.embedUrl });
+        });
       }
-      // whole panel clickable to video detail
-      panel.style.cursor = 'pointer';
-      panel.addEventListener('click', function (e) {
-        // if click on play, modal already handled via delegation
-        if (e.target.closest('.rounded-full') || e.target.closest('[data-video-url]')) return;
-        location.href = '/video.html?slug=' + encodeURIComponent(v.slug);
-      });
     });
-
-    // Update header count
-    var header = document.querySelector('#videos .font-mono.text-gray-500');
-    if (header && videos.length) header.textContent = videos.length + ' STORIES';
   }
 
   // ─── Hydrate Documentaries ──────────────────────────────────────
