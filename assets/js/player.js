@@ -134,7 +134,12 @@
     body.innerHTML = '';
     blocked.style.display = 'none';
     poster.style.display = 'flex';
-    try { thumb.src = posterFor(video); thumb.alt = video.title || ''; } catch (e) {}
+    try {
+      var pt = posterFor(video);
+      if (pt) { thumb.src = pt; thumb.style.display = ''; }
+      else { thumb.removeAttribute('src'); thumb.style.display = 'none'; }
+      thumb.alt = video.title || '';
+    } catch (e) {}
     m.style.display = 'flex';
     document.body.style.overflow = 'hidden';
     // focus close for a11y

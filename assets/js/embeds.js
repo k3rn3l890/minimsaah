@@ -81,7 +81,42 @@
     // YouTube fallback
     var id = extractYouTubeId(video && video.videoUrl || '');
     if (id) return 'https://img.youtube.com/vi/' + id + '/hqdefault.jpg';
-    return fallback || 'https://images.pexels.com/photos/31471420/pexels-photo-31471420.jpeg?auto=compress&cs=tinysrgb&w=800';
+    // No fake default images: unknown means '' so cards show a clean title card.
+    return fallback || '';
+  }
+
+  // Clean a social video link for outbound watching: trim, force https,
+  // unify phone hosts to main hosts, drop tracking junk. Never throws.
+  // Saved links stay as typed; the cleaned link is used for watching only.
+  function cleanVideoUrl(videoUrl) {
+    try {
+      var u = String(videoUrl || '').trim();
+      if (!u) return '';
+      if (u.indexOf('http://') === 0) u = 'https://' + u.slice(7);
+      if (u.indexOf('https://') !== 0) return '';
+      var host, rest = '';
+      try {
+        var parsed = new URL(u);
+        host = parsed.hostname.toLowerCase();
+        rest = parsed.pathname + parsed.search + parsed.hash;
+      } catch (e) { return u; }
+      if (host === 'm.tiktok.com' || host === 'vm.tiktok.com' || host === 'vt.tiktok.com') host = 'www.tiktok.com';
+      if (host === 'm.facebook.com' || host === 'fb.watch') host = host === 'fb.watch' ? 'fb.watch' : 'www.facebook.com';
+      if (host === 'm.instagram.com') host = 'www.instagram.com';
+      // Short youtu.be links carry the id in the path — rebuild as watch?v=.
+      if (host === 'youtu.be') {
+        var sid = rest.split('?')[0].split('#')[0].replace(/^\//, '');
+        if (/^[A-Za-z0-9_-]{11}$/.test(sid)) return 'https://www.youtube.com/watch?v=' + sid;
+        return '';
+      }
+      if (host === 'm.youtube.com') host = 'www.youtube.com';
+      // Drop tracking params, keep the video path and id params only.
+      var keep = '';
+      var m = rest.match(/[?&](v=[A-Za-z0-9_-]{11})/);
+      if (m) keep = '?' + m[1];
+      var pathOnly = rest.split('?')[0].split('#')[0] || '/';
+      return 'https://' + host + pathOnly + keep;
+    } catch (e) { return ''; }
   }
 
   // Ask the provider for the real thumbnail image link.
@@ -185,6 +220,7 @@
     fetchProviderThumbnail: fetchProviderThumbnail,
     checkVideoLink: checkVideoLink,
     tiktokLinkAlive: tiktokLinkAlive,
+    cleanVideoUrl: cleanVideoUrl,
     createIframe: createIframe,
   };
 })(window);

@@ -240,16 +240,25 @@
       if (h3) h3.textContent = v.title;
       var p = card.querySelector('p');
       if (p && v.description) p.textContent = v.description;
-      card.href = '/video.html?slug=' + slug;
-      var play = card.querySelector('[data-play]');
-      if (play && v.videoUrl) {
-        play.setAttribute('data-video-url', v.videoUrl);
-        if (v.embedUrl) play.setAttribute('data-embed-url', v.embedUrl);
-        play.addEventListener('click', function (e) {
-          e.preventDefault();
-          e.stopPropagation();
-          if (window.MinimsaahPlayer) window.MinimsaahPlayer.open({ videoUrl: v.videoUrl, embedUrl: v.embedUrl, title: v.title, thumbnail: thumbForVideo(v) });
-        });
+      // Non-YouTube goes straight to the social video (new tab). YouTube stays in-site.
+      var vprov = (window.MinimsaahEmbeds && window.MinimsaahEmbeds.detectProvider(v.videoUrl)) || 'unknown';
+      var vout = (window.MinimsaahEmbeds && window.MinimsaahEmbeds.cleanVideoUrl(v.videoUrl)) || v.videoUrl || '';
+      if (vprov !== 'youtube' && vprov !== 'unknown' && vout) {
+        card.href = vout;
+        card.setAttribute('target', '_blank');
+        card.setAttribute('rel', 'noopener');
+      } else {
+        card.href = '/video.html?slug=' + slug;
+        var play = card.querySelector('[data-play]');
+        if (play && v.videoUrl) {
+          play.setAttribute('data-video-url', v.videoUrl);
+          if (v.embedUrl) play.setAttribute('data-embed-url', v.embedUrl);
+          play.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (window.MinimsaahPlayer) window.MinimsaahPlayer.open({ videoUrl: v.videoUrl, embedUrl: v.embedUrl, title: v.title, thumbnail: thumbForVideo(v) });
+          });
+        }
       }
       } catch (cardErr) {
         try { console.warn('[home videos] skip bad row', v && (v.id || v.slug)); } catch (_) {}
@@ -281,13 +290,22 @@
       if (meta) meta.textContent = 'Documentary • ' + (d.duration ? Math.floor(d.duration/60) + ' min' : '');
       var p = card.querySelector('p');
       if (p && d.description) p.textContent = d.description;
-      card.href = '/documentary.html?slug=' + encodeURIComponent(d.slug);
-      // play overlay should open player modal, not navigate
-      var playBtn = card.querySelector('.rounded-full');
-      if (playBtn && d.videoUrl) {
-        playBtn.setAttribute('data-video-url', d.videoUrl);
-        if (d.embedUrl) playBtn.setAttribute('data-embed-url', d.embedUrl);
-        playBtn.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); window.MinimsaahPlayer && window.MinimsaahPlayer.open({ videoUrl: d.videoUrl, embedUrl: d.embedUrl }); });
+      // Non-YouTube goes straight to the social video (new tab). YouTube stays in-site.
+      var dprov = (window.MinimsaahEmbeds && window.MinimsaahEmbeds.detectProvider(d.videoUrl)) || 'unknown';
+      var dout = (window.MinimsaahEmbeds && window.MinimsaahEmbeds.cleanVideoUrl(d.videoUrl)) || d.videoUrl || '';
+      if (dprov !== 'youtube' && dprov !== 'unknown' && dout) {
+        card.href = dout;
+        card.setAttribute('target', '_blank');
+        card.setAttribute('rel', 'noopener');
+      } else {
+        card.href = '/documentary.html?slug=' + encodeURIComponent(d.slug);
+        // play overlay should open player modal, not navigate
+        var playBtn = card.querySelector('.rounded-full');
+        if (playBtn && d.videoUrl) {
+          playBtn.setAttribute('data-video-url', d.videoUrl);
+          if (d.embedUrl) playBtn.setAttribute('data-embed-url', d.embedUrl);
+          playBtn.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); window.MinimsaahPlayer && window.MinimsaahPlayer.open({ videoUrl: d.videoUrl, embedUrl: d.embedUrl }); });
+        }
       }
     });
   }

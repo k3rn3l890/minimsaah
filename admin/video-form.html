@@ -187,6 +187,15 @@
         }
       }
     }catch(e){}
+    // Non-YouTube needs a real image: no fake defaults on cards.
+    // TikTok auto-fills on paste; Facebook/Instagram must be uploaded.
+    try{
+      var vprov=window.MinimsaahEmbeds?window.MinimsaahEmbeds.detectProvider(videoUrlEl.value.trim()):'unknown';
+      if(vprov!=='youtube'&&vprov!=='unknown'&&!thumbEl.value.trim()){
+        err.textContent='Thumbnail is needed for '+vprov+' videos — wait for auto-fetch or upload an image below.';
+        err.classList.remove('hidden'); btn.textContent='Save Video'; btn.disabled=false; return;
+      }
+    }catch(e){}
     var payload={
       title: document.getElementById('title').value.trim(),
       videoUrl: videoUrlEl.value.trim(),

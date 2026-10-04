@@ -102,6 +102,16 @@
         }
       }
     }catch(e){}
+    // Non-YouTube needs a real image: no fake defaults on cards.
+    // TikTok auto-fills on paste; Facebook/Instagram must be uploaded.
+    try{
+      var dvl2=(document.getElementById('videoUrl').value||'').trim();
+      var dprov=window.MinimsaahEmbeds?window.MinimsaahEmbeds.detectProvider(dvl2):'unknown';
+      if(dvl2&&dprov!=='youtube'&&dprov!=='unknown'&&!coverInput.value.trim()){
+        err.textContent='Cover image is needed for '+dprov+' documentaries — wait for auto-fetch or upload an image.';
+        err.classList.remove('hidden'); btn.textContent='Save Documentary'; btn.disabled=false; return;
+      }
+    }catch(e){}
     var payload={
       title: titleEl.value.trim(),
       slug: slugEl.value.trim()||undefined,

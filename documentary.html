@@ -106,7 +106,38 @@
       var tg=document.getElementById('tags'); (d.tags||[]).forEach(function(t){var s=document.createElement('span');s.className='text-[10px] font-mono tracking-widest border border-white/10 px-2 py-1 text-gray-500 uppercase';s.textContent='#'+t;tg.appendChild(s);});
       // player
       var wrap=document.getElementById('player'); var overlay=document.getElementById('thumb-overlay');
+      function providerName(p){
+        if(p==='youtube')return 'YouTube'; if(p==='tiktok')return 'TikTok';
+        if(p==='facebook')return 'Facebook'; if(p==='instagram')return 'Instagram';
+        return 'the provider site';
+      }
+      // Non-YouTube goes straight out: no frame is ever built, so provider
+      // block pages can never appear. Big watch button to the social video.
+      function watchDirect(){
+        var prov=window.MinimsaahEmbeds?window.MinimsaahEmbeds.detectProvider(d.videoUrl):'unknown';
+        var out=(window.MinimsaahEmbeds&&window.MinimsaahEmbeds.cleanVideoUrl(d.videoUrl))||d.videoUrl||'';
+        var name=providerName(prov);
+        overlay.style.display='none';
+        wrap.innerHTML='';
+        var box=document.createElement('div');
+        box.style.cssText='width:100%;height:100%;min-height:280px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:24px;text-align:center;background:#000;';
+        var p1=document.createElement('p');
+        p1.style.cssText='color:#d1d5db;font-size:14px;';
+        p1.textContent='This documentary plays on '+name+'.';
+        box.appendChild(p1);
+        if(out&&/^https:\/\//i.test(out)){
+          var a=document.createElement('a');
+          a.href=out; a.target='_blank'; a.rel='noopener';
+          a.textContent='Watch on '+name;
+          a.style.cssText='background:#E63946;color:#fff;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;padding:12px 24px;border-radius:4px;text-decoration:none;';
+          box.appendChild(a);
+        }
+        wrap.appendChild(box);
+      }
       function play(){
+        var prov0=window.MinimsaahEmbeds?window.MinimsaahEmbeds.detectProvider(d.videoUrl):'unknown';
+        var out0=(window.MinimsaahEmbeds&&window.MinimsaahEmbeds.cleanVideoUrl(d.videoUrl))||'';
+        if(prov0!=='youtube'&&prov0!=='unknown'&&out0){ watchDirect(); return; }
         var embed=window.MinimsaahEmbeds? window.MinimsaahEmbeds.toEmbedUrl(d.videoUrl, d.embedUrl): (d.embedUrl||d.videoUrl);
         if(!embed){ wrap.innerHTML='<p class="p-8 text-center text-gray-500">No video link.</p>'; overlay.style.display='none'; return; }
         var ok = window.MinimsaahEmbeds ? (window.MinimsaahEmbeds.isAllowedEmbedUrl(embed) || window.MinimsaahEmbeds.isNativeMedia(embed)) : (/^https:\/\//i.test(embed || ''));
