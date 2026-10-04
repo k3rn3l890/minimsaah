@@ -119,7 +119,28 @@
   if(typeof window.Admin==='undefined'||!Admin.requireAuth){location.href='/admin/login.html';}else{Admin.requireAuth().then(function(){document.documentElement.classList.remove('mm-guard');}).catch(function(){});}
   Admin.setActiveNav();
   var u=Admin.getUser();
-  if(u) document.getElementById('user-name').textContent=u.firstName+' '+u.lastName+' ('+u.role+')';
+  function paintName(person){
+    if(!person) return;
+    var el=document.getElementById('user-name');
+    if(el) el.textContent=(person.firstName||'')+' '+(person.lastName||'')+' ('+(person.role||'')+')';
+  }
+  paintName(u);
+  // Refresh the cached name from the users table (profile page writes it
+  // there). Fixes stale names from old logins or other devices. Silent.
+  (function refreshName(){
+    try{
+      if(!Admin.useSupabase()||!u||!u.id) return;
+      Admin.supaOne('users', u.id).then(function(row){
+        var changed=false;
+        var nu=Admin.getUser()||{};
+        var fn=row.firstName||row.first_name||'';
+        var ln=row.lastName||row.last_name||'';
+        if(fn&&fn!==nu.firstName){nu.firstName=fn;changed=true;}
+        if(ln&&ln!==nu.lastName){nu.lastName=ln;changed=true;}
+        if(changed){Admin.setUser(nu);paintName(nu);}
+      }).catch(function(){});
+    }catch(e){}
+  })();
 
   async function loadStats(){
     var items=[];

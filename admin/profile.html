@@ -196,6 +196,12 @@
       var cached = Admin.getUser() || {};
       cached.firstName = fn; cached.lastName = ln;
       Admin.setUser(cached);
+      // Keep the login account data in sync too, so the next fresh login
+      // starts with the right name. Never blocks the save if it fails.
+      try {
+        var mu = await Admin.supa().auth.updateUser({ data: { firstName: fn, lastName: ln } });
+        if (mu.error) throw new Error(mu.error.message);
+      } catch (me) { ok('pok', 'Profile saved (login name sync skipped)'); return; }
       ok('pok', 'Profile saved');
     }catch(e){ perr(e.message); }
     btn.disabled = false; btn.textContent = 'Save Profile';

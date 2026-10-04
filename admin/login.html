@@ -240,7 +240,19 @@
           audit('login_denied', email);
           throw new Error('Access denied — staff only');
         }
-        Admin.setUser({ id: u.id, email: u.email, firstName: (u.user_metadata&&u.user_metadata.firstName)||'', lastName: (u.user_metadata&&u.user_metadata.lastName)||'', role: role });
+        var fn = (u.user_metadata&&u.user_metadata.firstName)||'';
+        var ln = (u.user_metadata&&u.user_metadata.lastName)||'';
+        // True name lives in the users table (profile page writes it there).
+        // Login metadata can be stale, so prefer the table row. Fall back
+        // to metadata so login never breaks if the row read fails.
+        try {
+          var prow = await sb.from('users').select('first_name,last_name').eq('id', u.id).single();
+          if (prow && !prow.error && prow.data) {
+            if (prow.data.first_name) fn = prow.data.first_name;
+            if (prow.data.last_name) ln = prow.data.last_name;
+          }
+        } catch (e) {}
+        Admin.setUser({ id: u.id, email: u.email, firstName: fn, lastName: ln, role: role });
         clearTries(email);
         location.href='/admin/index.html';
         return;
