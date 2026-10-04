@@ -370,12 +370,13 @@
       if (r.error || !r.data || !r.data.length) return;
       var items = r.data.map(normRow).slice(0, 12);
       track.innerHTML = '';
-      items.forEach(function (v) {
-        try { track.appendChild(sponsorChip(v, false)); } catch (e) {}
-      });
-      items.forEach(function (v) {
-        try { track.appendChild(sponsorChip(v, true)); } catch (e) {}
-      });
+      // 4 identical copies (2 twin halves) so the strip stays wider
+      // than big screens — no black tail, endless loop, no jump.
+      for (var copy = 0; copy < 4; copy++) {
+        items.forEach(function (v) {
+          try { track.appendChild(sponsorChip(v, copy > 0)); } catch (e) {}
+        });
+      }
     } catch (e) {
       console.warn('[MINIMSAAH] sponsors using static fallback');
     }
