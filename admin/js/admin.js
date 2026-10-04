@@ -121,15 +121,18 @@
           }
         }
       } catch (e) { fail(); }
+      startIdleWatch();
       return session;
     }
     // Supabase not configured: localhost Nest fallback only. Prod fails closed.
     if (!isLocalhost()) fail();
     if (!getToken()) fail();
+    startIdleWatch();
     return null;
   }
 
   async function logout() {
+    stopIdleWatch();
     if (useSupabase()) {
       try { await supa().auth.signOut(); } catch {}
     }
@@ -137,6 +140,93 @@
     if (rt) fetch(API + '/auth/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }).catch(function(){});
     clearTokens();
     location.href = '/admin/login.html';
+  }
+
+  // Idle auto-logout: warn at 10 min idle, log out at 15 min idle.
+  // Starts only after a staff login passes requireAuth (never on login page).
+  // Any mouse, key, touch or scroll resets the clock. Stay extends it.
+  var IDLE_WARN_MS = 10 * 60 * 1000;
+  var IDLE_OUT_MS = 15 * 60 * 1000;
+  var idleLast = 0, idleTickTimer = null, idleCountTimer = null, idleWarned = false, idleOn = false;
+
+  function idleBump() {
+    if (!idleOn) return;
+    var now = Date.now();
+    if (now - idleLast < 1000) return;
+    idleLast = now;
+    if (idleWarned) hideIdleWarn();
+  }
+
+  function fmtIdleLeft(ms) {
+    var s = Math.max(0, Math.ceil(ms / 1000));
+    return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2);
+  }
+
+  function showIdleWarn() {
+    idleWarned = true;
+    var ov = document.getElementById('idle-warn');
+    if (!ov) {
+      ov = document.createElement('div');
+      ov.id = 'idle-warn';
+      ov.setAttribute('role', 'alertdialog');
+      ov.setAttribute('aria-modal', 'true');
+      ov.setAttribute('aria-label', 'Idle warning');
+      ov.style.cssText = 'position:fixed;inset:0;z-index:10002;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);padding:16px;';
+      ov.innerHTML =
+        '<div style="background:#0A0A0A;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:24px;max-width:360px;width:100%;text-align:center;">' +
+        '<p style="color:#fff;font-size:15px;margin:0 0 6px;">You have been idle.</p>' +
+        '<p style="color:#9ca3af;font-size:13px;margin:0 0 4px;">Logging out in <span id="idle-count" style="color:#E63946;font-weight:bold;">5:00</span></p>' +
+        '<div style="display:flex;gap:8px;margin-top:16px;">' +
+        '<button id="idle-stay" style="flex:1;background:#E63946;color:#fff;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;padding:12px;border-radius:4px;border:0;cursor:pointer;min-height:44px;">Stay Logged In</button>' +
+        '<button id="idle-out" style="flex:1;background:transparent;color:#9ca3af;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;padding:12px;border-radius:4px;border:1px solid rgba(255,255,255,0.15);cursor:pointer;min-height:44px;">Log Out Now</button>' +
+        '</div></div>';
+      document.body.appendChild(ov);
+      document.getElementById('idle-stay').addEventListener('click', function () { idleBump(); });
+      document.getElementById('idle-out').addEventListener('click', function () { logout(); });
+      ov.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') logout();
+      });
+    }
+    ov.style.display = 'flex';
+    try { document.getElementById('idle-stay').focus(); } catch (e) {}
+    if (idleCountTimer) clearInterval(idleCountTimer);
+    idleCountTimer = setInterval(function () {
+      var left = IDLE_OUT_MS - (Date.now() - idleLast);
+      var el = document.getElementById('idle-count');
+      if (el) el.textContent = fmtIdleLeft(left);
+      if (left <= 0) logout();
+    }, 1000);
+  }
+
+  function hideIdleWarn() {
+    idleWarned = false;
+    if (idleCountTimer) { clearInterval(idleCountTimer); idleCountTimer = null; }
+    var ov = document.getElementById('idle-warn');
+    if (ov) ov.style.display = 'none';
+  }
+
+  function stopIdleWatch() {
+    idleOn = false;
+    if (idleTickTimer) { clearInterval(idleTickTimer); idleTickTimer = null; }
+    if (idleCountTimer) { clearInterval(idleCountTimer); idleCountTimer = null; }
+  }
+
+  function startIdleWatch() {
+    if (idleOn) return;
+    idleOn = true;
+    idleLast = Date.now();
+    idleWarned = false;
+    var events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+    events.forEach(function (ev) {
+      window.addEventListener(ev, idleBump, { passive: true });
+    });
+    if (idleTickTimer) clearInterval(idleTickTimer);
+    idleTickTimer = setInterval(function () {
+      if (!idleOn) return;
+      var idleFor = Date.now() - idleLast;
+      if (idleFor >= IDLE_OUT_MS) { logout(); return; }
+      if (idleFor >= IDLE_WARN_MS && !idleWarned) showIdleWarn();
+    }, 15000);
   }
 
   function deletesDisabled() {
