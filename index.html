@@ -54,6 +54,9 @@ a:focus-visible {
   .ticker-track {
     animation: none !important;
   }
+  .sponsor-track {
+    animation: none !important;
+  }
 }
 
 /* ===== Hero Extras ===== */
@@ -72,6 +75,34 @@ a:focus-visible {
 }
 .ticker-track:hover {
   animation-play-state: paused;
+}
+
+/* ===== Partners strip ===== */
+@keyframes sponsor-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.sponsor-track {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  animation: sponsor-scroll 32s linear infinite;
+}
+.sponsor-track > span {
+  margin-right: 2rem;
+}
+@media (min-width: 768px) {
+  .sponsor-track > span {
+    margin-right: 3rem;
+  }
+}
+.sponsor-track:hover {
+  animation-play-state: paused;
+}
+@media (hover: none) {
+  .sponsor-track:active {
+    animation-play-state: paused;
+  }
 }
 </style>
 </head>
@@ -189,6 +220,27 @@ a:focus-visible {
               </div>
             </a>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PARTNERS — brand logo strip -->
+    <section id="partners" class="border-t border-white/5 bg-[#050505] relative z-20 overflow-hidden" aria-label="Partners">
+      <div class="px-4 sm:px-6 md:px-20 pt-8 sm:pt-10 max-w-[1600px] mx-auto">
+        <span class="text-xs font-mono text-[#E63946] tracking-widest block">PARTNERS</span>
+      </div>
+      <div class="py-6 overflow-hidden">
+        <div id="sponsor-track" class="sponsor-track">
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center"><img src="/assets/img/partners/nike.svg" alt="Nike" loading="lazy" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center"><img src="/assets/img/partners/adidas.svg" alt="Adidas" loading="lazy" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center"><img src="/assets/img/partners/puma.svg" alt="Puma" loading="lazy" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center"><img src="/assets/img/partners/fila.svg" alt="Fila" loading="lazy" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center"><img src="/assets/img/partners/under-armour.svg" alt="Under Armour" loading="lazy" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/nike.svg" alt="" loading="lazy" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/adidas.svg" alt="" loading="lazy" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/puma.svg" alt="" loading="lazy" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/fila.svg" alt="" loading="lazy" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/under-armour.svg" alt="" loading="lazy" class="h-7 w-auto"></span>
         </div>
       </div>
     </section>

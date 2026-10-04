@@ -300,7 +300,7 @@
   async function supaList(table, opts) {
     opts = opts || {};
     // Soft guards (code only): table allow list + page caps + search slow-down.
-    var allowedTables = ['articles', 'videos', 'documentaries', 'events', 'tickers', 'media', 'users'];
+    var allowedTables = ['articles', 'videos', 'documentaries', 'events', 'tickers', 'sponsors', 'media', 'users'];
     if (allowedTables.indexOf(table) === -1) throw new Error('Bad table');
     var page = opts.page || 1, limit = opts.limit || 10;
     if (!(page >= 1)) page = 1;

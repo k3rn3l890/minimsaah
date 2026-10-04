@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ticker — MINIMSAAH Admin</title>
+<title>Sponsors — MINIMSAAH Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <style>*:focus-visible{outline:2px solid #E63946;outline-offset:2px}</style>
@@ -24,8 +24,8 @@
       <a href="/admin/videos.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Videos</a>
       <a href="/admin/documentaries.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Documentaries</a>
       <a href="/admin/events.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Events</a>
-      <a data-nav="ticker.html" href="/admin/ticker.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase bg-white/5 text-white">Ticker</a>
-      <a href="/admin/sponsors.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Sponsors</a>
+      <a href="/admin/ticker.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Ticker</a>
+      <a data-nav="sponsors.html" href="/admin/sponsors.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase bg-white/5 text-white">Sponsors</a>
       <a href="/admin/media.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Media</a>
       <a href="/admin/profile.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Profile</a>
     </nav>
@@ -36,17 +36,24 @@
       <a href="/admin/videos.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Videos</a>
       <a href="/admin/documentaries.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Docs</a>
       <a href="/admin/events.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Events</a>
-      <a href="/admin/ticker.html" class="text-xs font-mono tracking-widest bg-white/5 text-white border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0 snap-start">Ticker</a>
-      <a href="/admin/sponsors.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Sponsors</a>
+      <a href="/admin/ticker.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Ticker</a>
+      <a href="/admin/sponsors.html" class="text-xs font-mono tracking-widest bg-white/5 text-white border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0 snap-start">Sponsors</a>
       <a href="/admin/media.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Media</a>
       <a href="/admin/profile.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Profile</a>
     </div>
-    <h1 class="font-['Space_Grotesk',sans-serif] text-xl md:text-2xl font-medium tracking-tight mb-2">News Ticker</h1>
-    <p class="text-xs font-mono text-gray-500 mb-4">Headlines that scroll on the home page.</p>
-    <form id="form" class="bg-[#0A0A0A] border border-white/5 rounded-sm p-4 flex flex-col sm:flex-row gap-2 mb-6">
-      <input id="text" required placeholder="Headline text…" class="flex-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm touch-manipulation">
-      <input id="priority" type="number" value="0" class="w-full sm:w-20 bg-white/5 border border-white/10 rounded-sm px-2 py-3 min-h-[44px] text-sm touch-manipulation" title="Priority">
-      <button type="submit" class="bg-[#E63946] hover:bg-[#c53030] text-white text-xs font-mono tracking-widest uppercase px-4 py-3 min-h-[44px] rounded-sm touch-manipulation">Add</button>
+    <h1 class="font-['Space_Grotesk',sans-serif] text-xl md:text-2xl font-medium tracking-tight mb-2">Sponsors</h1>
+    <p class="text-xs font-mono text-gray-500 mb-4">Brand logos in the moving PARTNERS strip on the home page. Max 12 shown.</p>
+    <form id="form" class="bg-[#0A0A0A] border border-white/5 rounded-sm p-4 flex flex-col gap-2 mb-6">
+      <div class="flex flex-col sm:flex-row gap-2">
+        <input id="name" required placeholder="Brand name…" class="flex-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm touch-manipulation">
+        <input id="priority" type="number" value="0" class="w-full sm:w-20 bg-white/5 border border-white/10 rounded-sm px-2 py-3 min-h-[44px] text-sm touch-manipulation" title="Order">
+      </div>
+      <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
+        <input id="logo" type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.avif" class="flex-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm touch-manipulation file:mr-3 file:bg-white/10 file:border-0 file:px-3 file:py-2 file:text-xs file:font-mono file:text-white">
+        <span class="text-[11px] font-mono text-gray-500">Logo image, max 8 MB. Wide logo on clear back looks best.</span>
+      </div>
+      <button type="submit" id="btn" class="bg-[#E63946] hover:bg-[#c53030] text-white text-xs font-mono tracking-widest uppercase px-4 py-3 min-h-[44px] rounded-sm touch-manipulation">Add Sponsor</button>
+      <p id="ferr" class="hidden text-xs text-[#E63946] bg-[#E63946]/10 border border-[#E63946]/20 rounded-sm px-3 py-2"></p>
     </form>
     <div id="list" class="space-y-2"></div>
   </main>
@@ -54,50 +61,58 @@
 <script>window.__API_BASE__ = window.__API_BASE__ || 'https://minimsaah-api.onrender.com/api/v1';</script><script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2" integrity="sha384-WgXwGL6fUsYJWNaKJgVbrJKGRQwc1vieh2oy4kw9nXqpNDz3tdSsqEYUgeHD/NuF" crossorigin="anonymous"></script><script src="/assets/js/supabase-client.js"></script><script src="/admin/js/admin.js"></script>
 <script>
 (function(){if(typeof window.Admin==='undefined'||!Admin.requireAuth){location.href='/admin/login.html';}else{Admin.requireAuth().then(function(){document.documentElement.classList.remove('mm-guard');}).catch(function(){});}
+  function ferr(m){ var el=document.getElementById('ferr'); el.textContent=m||''; el.classList.toggle('hidden', !m); }
   async function load(){
     try{
       var items=[];
       if(Admin.useSupabase()){
-        var res=await Admin.supaList('tickers',{limit:50,noPager:true,orderBy:'priority',secondaryOrderBy:'created_at'});
+        var res=await Admin.supaList('sponsors',{limit:50,noPager:true,orderBy:'priority',secondaryOrderBy:'created_at'});
         items=res.items;
       } else {
-        items=await Admin.request('/ticker');
+        items=[];
       }
       var el=document.getElementById('list');
       el.innerHTML='';
-      if(!items.length){ el.innerHTML='<p class="text-sm text-gray-600 py-8 text-center">No ticker headlines.</p>'; return; }
+      if(!items.length){ el.innerHTML='<p class="text-sm text-gray-600 py-8 text-center">No sponsors yet. Add your first brand above.</p>'; return; }
       items.forEach(function(it){
         var row=document.createElement('div');
         row.className='bg-[#0A0A0A] border border-white/5 rounded-sm p-3 flex gap-3 items-center '+(it.active?'':'opacity-50');
-        row.innerHTML='<div class="flex-1 min-w-0"><p class="text-sm">'+Admin.escapeHtml(it.text)+'</p><p class="text-xs font-mono text-gray-400 mt-1">Priority '+Admin.escapeHtml(String(it.priority))+' • '+(it.active?'Active':'Hidden')+'</p></div><div class="flex gap-2 shrink-0"><button data-toggle="'+Admin.escapeHtml(it.id)+'" class="text-xs font-mono border border-white/10 px-3 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-white/5">'+(it.active?'Hide':'Show')+'</button><button data-del="'+Admin.escapeHtml(it.id)+'" class="text-xs font-mono border border-[#E63946]/30 text-[#E63946] px-3 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-[#E63946] hover:text-white">Delete</button></div>';
+        var logo=(it.logoUrl||it.logo_url||'');
+        row.innerHTML='<div class="w-24 h-12 bg-white rounded-sm shrink-0 overflow-hidden flex items-center justify-center px-2">'+(logo?'<img src="'+Admin.escapeHtml(logo)+'" alt="" class="max-w-full max-h-full object-contain">':'<span class="text-[10px] font-mono text-gray-500">NO LOGO</span>')+'</div><div class="flex-1 min-w-0"><p class="text-sm">'+Admin.escapeHtml(it.name||'')+'</p><p class="text-xs font-mono text-gray-400 mt-1">Order '+Admin.escapeHtml(String(it.priority))+' • '+(it.active?'Shown':'Hidden')+'</p></div><div class="flex gap-2 shrink-0"><button data-toggle="'+Admin.escapeHtml(it.id)+'" class="text-xs font-mono border border-white/10 px-3 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-white/5">'+(it.active?'Hide':'Show')+'</button><button data-del="'+Admin.escapeHtml(it.id)+'" class="text-xs font-mono border border-[#E63946]/30 text-[#E63946] px-3 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-[#E63946] hover:text-white">Delete</button></div>';
         el.appendChild(row);
       });
       el.querySelectorAll('[data-toggle]').forEach(function(b){ b.onclick=async function(){ try{
         if(Admin.useSupabase()){
           var sb=Admin.supa();
-          var cur=await sb.from('tickers').select('active').eq('id',b.getAttribute('data-toggle')).single();
+          var cur=await sb.from('sponsors').select('active').eq('id',b.getAttribute('data-toggle')).single();
           if(cur.error) throw new Error(cur.error.message);
-          var up=await sb.from('tickers').update({active:!cur.data.active}).eq('id',b.getAttribute('data-toggle'));
+          var up=await sb.from('sponsors').update({active:!cur.data.active}).eq('id',b.getAttribute('data-toggle'));
           if(up.error) throw new Error(up.error.message);
           load(); return;
         }
-        await Admin.request('/ticker/'+b.getAttribute('data-toggle')+'/toggle',{method:'PATCH'}); load(); }catch(e){Admin.toast(e.message,'error');} }; });
-      el.querySelectorAll('[data-del]').forEach(function(b){ b.onclick=async function(){ if(Admin.useSupabase()&&Admin.deletesDisabled()){Admin.toast('Disabled in beta');return;} if(!confirm('Delete ticker?'))return; try{ await Admin.request('/ticker/'+b.getAttribute('data-del'),{method:'DELETE'}); Admin.toast('Deleted'); load(); }catch(e){Admin.toast(e.message,'error');} }; });
+        Admin.toast('Supabase not configured','error'); }catch(e){Admin.toast(e.message,'error');} }; });
+      el.querySelectorAll('[data-del]').forEach(function(b){ b.onclick=async function(){ if(Admin.useSupabase()&&Admin.deletesDisabled()){Admin.toast('Disabled in beta');return;} if(!confirm('Delete sponsor?'))return; try{ await Admin.supaDelete('sponsors',b.getAttribute('data-del')); Admin.toast('Deleted'); load(); }catch(e){Admin.toast(e.message,'error');} }; });
     }catch(e){Admin.toast(e.message,'error');}
   }
   document.getElementById('form').addEventListener('submit', async function(e){
     e.preventDefault();
-    var text=document.getElementById('text').value.trim();
+    ferr('');
+    var btn=document.getElementById('btn');
+    var name=document.getElementById('name').value.trim();
     var priority=parseInt(document.getElementById('priority').value,10)||0;
-    if(!text) return;
+    var file=document.getElementById('logo').files[0];
+    if(!name){ ferr('Brand name is needed.'); return; }
+    if(!file){ ferr('Logo image is needed. Pick a file.'); return; }
+    if(!Admin.useSupabase()){ ferr('Supabase not configured.'); return; }
+    btn.disabled=true; btn.textContent='Adding…';
     try{
-      if(Admin.useSupabase()){
-        var sb=Admin.supa();
-        var ins=await sb.from('tickers').insert({text:text,priority:priority,active:true});
-        if(ins.error) throw new Error(ins.error.message);
-        document.getElementById('text').value=''; Admin.toast('Added'); load(); return;
-      }
-      await Admin.request('/ticker',{method:'POST', body: JSON.stringify({ text:text, priority:priority })}); document.getElementById('text').value=''; Admin.toast('Added'); load(); }catch(ex){Admin.toast(ex.message,'error');}
+      var up=await Admin.supaUpload(file, { alt: name }, { imagesOnly: true });
+      var sb=Admin.supa();
+      var ins=await sb.from('sponsors').insert({ id: ('sp-'+Date.now().toString(36)), name: name, logo_url: up.url, priority: priority, active: true });
+      if(ins.error) throw new Error(ins.error.message);
+      document.getElementById('name').value=''; document.getElementById('logo').value=''; Admin.toast('Added'); load();
+    }catch(ex){ ferr(ex.message||'Could not add sponsor.'); }
+    btn.disabled=false; btn.textContent='Add Sponsor';
   });
   load();
 })();

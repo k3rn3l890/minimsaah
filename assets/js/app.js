@@ -333,6 +333,54 @@
     });
   }
 
+  // ─── Hydrate Partners strip ───────────────────────────────────
+  // Shown sponsors from DB (max 12). If DB is empty/offline, the static
+  // fallback logos in the HTML keep showing — never an empty strip.
+  function sponsorChip(v, hideFromReader) {
+    var name = (v && v.name) || 'Partner';
+    var logo = (v && (v.logoUrl || v.logo_url)) || '';
+    var span = document.createElement('span');
+    span.className = 'shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center';
+    if (hideFromReader) span.setAttribute('aria-hidden', 'true');
+    if (logo) {
+      var img = document.createElement('img');
+      img.src = logo;
+      img.alt = hideFromReader ? '' : name;
+      img.setAttribute('loading', 'lazy');
+      img.className = 'h-7 w-auto';
+      img.onerror = function () {
+        span.textContent = hideFromReader ? '' : name;
+        span.className += ' font-[Space_Grotesk,sans-serif] text-sm text-gray-800';
+      };
+      span.appendChild(img);
+    } else {
+      span.textContent = hideFromReader ? '' : name;
+      span.className += ' font-[Space_Grotesk,sans-serif] text-sm text-gray-800';
+    }
+    return span;
+  }
+
+  async function hydrateSponsors() {
+    var track = qs('#sponsor-track');
+    if (!track || !useSupabase()) return;
+    try {
+      var sb = window.SupabaseDB.client();
+      if (!sb) return;
+      var r = await sb.from('sponsors').select('*').eq('active', true).order('priority', { ascending: false }).limit(12);
+      if (r.error || !r.data || !r.data.length) return;
+      var items = r.data.map(normRow).slice(0, 12);
+      track.innerHTML = '';
+      items.forEach(function (v) {
+        try { track.appendChild(sponsorChip(v, false)); } catch (e) {}
+      });
+      items.forEach(function (v) {
+        try { track.appendChild(sponsorChip(v, true)); } catch (e) {}
+      });
+    } catch (e) {
+      console.warn('[MINIMSAAH] sponsors using static fallback');
+    }
+  }
+
   // ─── Fix nav hrefs (remove localhost) ───────────────────────────
   function fixNav() {
     var map = {
@@ -359,6 +407,7 @@
     hydrateDocs();
     hydrateNews();
     hydrateEvents();
+    hydrateSponsors();
 
     // Expose for manual refresh
     window.MinimsaahHydrate = {
@@ -368,6 +417,7 @@
       docs: hydrateDocs,
       news: hydrateNews,
       events: hydrateEvents,
+      sponsors: hydrateSponsors,
     };
   });
 })();

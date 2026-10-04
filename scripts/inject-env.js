@@ -30,6 +30,7 @@ const files = [
   'admin/documentaries.html',
   'admin/events.html',
   'admin/ticker.html',
+  'admin/sponsors.html',
   'admin/media.html',
   'admin/profile.html',
   'admin/article-form.html',
