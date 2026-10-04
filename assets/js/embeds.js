@@ -84,6 +84,43 @@
     return fallback || 'https://images.pexels.com/photos/31471420/pexels-photo-31471420.jpeg?auto=compress&cs=tinysrgb&w=800';
   }
 
+  // Ask the provider for the real thumbnail image link.
+  // YouTube: built locally, no network. TikTok: free info door, no key.
+  // Anything else (Facebook/Instagram have no free door): ''.
+  // Never throws, never blocks — '' means "ask staff to upload one".
+  function fetchProviderThumbnail(videoUrl) {
+    var provider = detectProvider(videoUrl);
+    if (provider === 'youtube') {
+      var id = extractYouTubeId(videoUrl);
+      return Promise.resolve(id ? 'https://img.youtube.com/vi/' + id + '/hqdefault.jpg' : '');
+    }
+    if (provider === 'tiktok') {
+      var done = false;
+      return new Promise(function (resolve) {
+        var timer = setTimeout(function () { if (!done) { done = true; resolve(''); } }, 8000);
+        fetch('https://www.tiktok.com/oembed?url=' + encodeURIComponent(videoUrl), { method: 'GET' })
+          .then(function (res) {
+            if (!res.ok) throw new Error('oembed ' + res.status);
+            return res.json();
+          })
+          .then(function (j) {
+            if (done) return;
+            done = true;
+            clearTimeout(timer);
+            var t = j && j.thumbnail_url;
+            resolve(typeof t === 'string' && t.indexOf('https://') === 0 ? t : '');
+          })
+          .catch(function () {
+            if (done) return;
+            done = true;
+            clearTimeout(timer);
+            resolve('');
+          });
+      });
+    }
+    return Promise.resolve('');
+  }
+
   function createIframe(embedUrl, provider) {
     // Defense in depth: never frame a URL the allowlist rejects. Direct
     // media files get a native <video> (controls, no iframe weirdness).
@@ -115,6 +152,29 @@
     return iframe;
   }
 
+  // Check a video link before save. Returns { ok, message }.
+  // Shape is checked at once (no wait). TikTok aliveness is checked
+  // against its free info door; a dead link warns but never blocks save.
+  function checkVideoLink(videoUrl) {
+    var provider = detectProvider(videoUrl);
+    if (provider === 'unknown') {
+      return { ok: false, message: 'Paste a YouTube, TikTok, Facebook or Instagram link.' };
+    }
+    if (provider === 'youtube' && !extractYouTubeId(videoUrl)) {
+      return { ok: false, message: 'YouTube link looks bad — open the video and copy its link again.' };
+    }
+    if (provider === 'tiktok' && !/tiktok\.com\/.*\/video\/(\d{8,})/.test(videoUrl || '')) {
+      return { ok: false, message: 'TikTok link looks bad — open the video, use Share > Copy link.' };
+    }
+    return { ok: true, message: '' };
+  }
+
+  // Ask TikTok if a link points at a real video. Resolves true/false,
+  // never rejects — a door failure means "unknown", not "dead".
+  function tiktokLinkAlive(videoUrl) {
+    return fetchProviderThumbnail(videoUrl).then(function (t) { return !!t; }).catch(function () { return false; });
+  }
+
   global.MinimsaahEmbeds = {
     detectProvider: detectProvider,
     extractYouTubeId: extractYouTubeId,
@@ -122,6 +182,9 @@
     isAllowedEmbedUrl: isAllowedEmbedUrl,
     isNativeMedia: isNativeMedia,
     thumbnailUrl: thumbnailUrl,
+    fetchProviderThumbnail: fetchProviderThumbnail,
+    checkVideoLink: checkVideoLink,
+    tiktokLinkAlive: tiktokLinkAlive,
     createIframe: createIframe,
   };
 })(window);

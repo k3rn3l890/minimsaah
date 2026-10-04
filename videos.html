@@ -123,8 +123,10 @@
     try { return encodeURIComponent(String(s)); } catch (e) { return ''; }
   }
   function sortNewestFirst(items){
-    // Empty dates sort last so real newest videos show first.
+    // Featured rows first, then newest date, empty dates last.
     return (items || []).slice().sort(function(a, b){
+      var fa = !!(a && a.featured), fb = !!(b && b.featured);
+      if (fa !== fb) return fa ? -1 : 1;
       var ta = a && (a.publishedAt || a.createdAt) ? Date.parse(a.publishedAt || a.createdAt) : NaN;
       var tb = b && (b.publishedAt || b.createdAt) ? Date.parse(b.publishedAt || b.createdAt) : NaN;
       if (isNaN(ta) && isNaN(tb)) return 0;
@@ -152,7 +154,7 @@
       a.innerHTML = '<div class="absolute inset-0 overflow-hidden">' + (t ? '<img src="'+esc(t)+'" alt="" loading="lazy" class="w-full h-full object-cover opacity-60 group-hover:opacity-70 transition-all duration-700">' : '') + '</div><div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/90 via-[#0A0A0A]/40 to-transparent"></div>' + (it.videoUrl ? '<div class="absolute inset-0 flex items-center justify-center"><div class="rounded-full w-14 h-14 bg-[#E63946]/90 flex items-center justify-center" data-video-url="'+esc(it.videoUrl)+'"'+(it.embedUrl ? ' data-embed-url="'+esc(it.embedUrl)+'"' : '')+'><svg class="w-6 h-6 text-white ml-1 pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>' : '') + '<div class="absolute bottom-0 left-0 right-0 p-5"><span class="text-[10px] font-mono text-[#E63946] tracking-widest uppercase">'+esc((it.category||'Feature').replace(/_/g,' '))+(durLabel(it.duration) ? ' • '+durLabel(it.duration) : '')+'</span><h3 class="font-[Space_Grotesk,sans-serif] text-lg md:text-xl font-medium mt-1 group-hover:text-[#E63946]">'+esc(it.title)+'</h3>' + (it.description ? '<p class="text-xs text-gray-400 mt-1 line-clamp-2">'+esc(it.description)+'</p>' : '') + '</div>';
       if (it.videoUrl) {
         var play = a.querySelector('[data-video-url]');
-        if (play) play.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); if (window.MinimsaahPlayer) window.MinimsaahPlayer.open({ videoUrl: it.videoUrl, embedUrl: it.embedUrl }); });
+        if (play) play.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); if (window.MinimsaahPlayer) window.MinimsaahPlayer.open({ videoUrl: it.videoUrl, embedUrl: it.embedUrl, title: it.title, thumbnail: t }); });
       }
       grid.appendChild(a);
       shown++;
@@ -164,7 +166,7 @@
       try { console.error('[videos] all rows skipped, first row keys:', items[0] ? Object.keys(items[0]).join(',') : 'none'); } catch (_) {}
     }
   }
-  async function load(){
+    async function load(){
     try{
       all = sortNewestFirst(await fetchAll());
       document.getElementById('loading').classList.add('hidden');

@@ -94,6 +94,38 @@
     return v;
   }
   var current=null;
+  function providerName(p){
+    if(p==='youtube')return 'YouTube'; if(p==='tiktok')return 'TikTok';
+    if(p==='facebook')return 'Facebook'; if(p==='instagram')return 'Instagram';
+    return 'the provider site';
+  }
+  // Friendly handover when the provider blocks in-site playback:
+  // message + Try Again + watch-on-provider link (new tab). Never a dead box.
+  function showPlayerBlocked(v, provider){
+    var wrap=document.getElementById('player');
+    var name=providerName(provider);
+    var link=(v&&v.videoUrl&&/^https:\/\//i.test(v.videoUrl))?v.videoUrl:'';
+    wrap.innerHTML='';
+    var box=document.createElement('div');
+    box.style.cssText='width:100%;height:100%;min-height:280px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:24px;text-align:center;background:#000;';
+    var p1=document.createElement('p');
+    p1.style.cssText='color:#d1d5db;font-size:14px;';
+    p1.textContent='This video cannot play here right now'+(provider&&provider!=='unknown'?' ('+name+' is blocking in-site playback)':'')+'.';
+    box.appendChild(p1);
+    var retry=document.createElement('button');
+    retry.textContent='Try Again';
+    retry.style.cssText='background:#E63946;color:#fff;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;padding:12px 24px;border-radius:4px;border:0;cursor:pointer;';
+    retry.onclick=function(){ loadPlayer(v); };
+    box.appendChild(retry);
+    if(link){
+      var a=document.createElement('a');
+      a.href=link; a.target='_blank'; a.rel='noopener';
+      a.textContent=(provider&&provider!=='unknown')?('Watch on '+name):'Watch on provider site';
+      a.style.cssText='color:#9ca3af;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:underline;';
+      box.appendChild(a);
+    }
+    wrap.appendChild(box);
+  }
   function loadPlayer(v){
     var wrap=document.getElementById('player');
     var thumbO=document.getElementById('thumb-overlay');
@@ -103,12 +135,18 @@
     function play(){
       var embed = window.MinimsaahEmbeds? window.MinimsaahEmbeds.toEmbedUrl(v.videoUrl, v.embedUrl): (v.embedUrl||v.videoUrl);
       var ok = window.MinimsaahEmbeds ? (window.MinimsaahEmbeds.isAllowedEmbedUrl(embed) || window.MinimsaahEmbeds.isNativeMedia(embed)) : (/^https:\/\//i.test(embed || ''));
-      if(!embed || !ok) return;
       var provider= window.MinimsaahEmbeds? window.MinimsaahEmbeds.detectProvider(v.videoUrl):'unknown';
+      if(!embed || !ok){ showPlayerBlocked(v, provider); thumbO.style.display='none'; return; }
       var iframe= window.MinimsaahEmbeds? window.MinimsaahEmbeds.createIframe(embed, provider): (function(){var f=document.createElement('iframe');f.src=embed;f.style.width='100%';f.style.height='100%';f.setAttribute('allowfullscreen','true');f.setAttribute('allow','autoplay; fullscreen; encrypted-media');return f;})();
-      if(!iframe) return;
+      if(!iframe){ showPlayerBlocked(v, provider); thumbO.style.display='none'; return; }
       wrap.innerHTML=''; wrap.appendChild(iframe);
       thumbO.style.display='none';
+      // If the frame never reports back, hand over friendly options (no dead box).
+      var settled=false;
+      try{
+        iframe.addEventListener('load', function(){ settled=true; });
+      }catch(e){}
+      setTimeout(function(){ if(!settled) showPlayerBlocked(v, provider); }, 15000);
       // TikTok needs taller wrap — cap to viewport on phone
       if(provider==='tiktok'){ var pw=document.getElementById('player-wrap'); pw.style.aspectRatio='9/16'; pw.style.maxWidth='min(420px, 90vw)'; pw.style.margin='0 auto'; }
     }

@@ -76,6 +76,22 @@
 
   function readingTimeLabel(n) { return (n || 5) + ' min read'; }
 
+  // Featured rows first, then newest date, empty dates last.
+  // Home only takes 3, so we fetch extra and slice after sorting —
+  // a featured item is never stuck in 4th place off-screen.
+  function sortFeaturedFirst(items) {
+    return (items || []).slice().sort(function (a, b) {
+      var fa = !!(a && a.featured), fb = !!(b && b.featured);
+      if (fa !== fb) return fa ? -1 : 1;
+      var ta = a && (a.publishedAt || a.createdAt) ? Date.parse(a.publishedAt || a.createdAt) : NaN;
+      var tb = b && (b.publishedAt || b.createdAt) ? Date.parse(b.publishedAt || b.createdAt) : NaN;
+      if (isNaN(ta) && isNaN(tb)) return 0;
+      if (isNaN(ta)) return 1;
+      if (isNaN(tb)) return -1;
+      return tb - ta;
+    });
+  }
+
   function escapeHtml(s) {
     if (!s) return '';
     return s.replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]); });
@@ -197,10 +213,10 @@
     var section = qs('#videos');
     if (!section) return;
     var data = useSupabase()
-      ? await fetchSupabase('videos', { status: 'PUBLISHED', limit: 3, orderBy: 'published_at' })
-      : await fetchJSON('/videos?status=PUBLISHED&limit=3');
+      ? await fetchSupabase('videos', { status: 'PUBLISHED', limit: 20, orderBy: 'published_at' })
+      : await fetchJSON('/videos?status=PUBLISHED&limit=20');
     if (!data || !data.items || !data.items.length) return;
-    var videos = data.items;
+    var videos = sortFeaturedFirst(data.items);
     var cards = qsa('#videos .grid > a', document);
     videos.slice(0, cards.length).forEach(function (v, idx) {
       try {
@@ -232,7 +248,7 @@
         play.addEventListener('click', function (e) {
           e.preventDefault();
           e.stopPropagation();
-          if (window.MinimsaahPlayer) window.MinimsaahPlayer.open({ videoUrl: v.videoUrl, embedUrl: v.embedUrl });
+          if (window.MinimsaahPlayer) window.MinimsaahPlayer.open({ videoUrl: v.videoUrl, embedUrl: v.embedUrl, title: v.title, thumbnail: thumbForVideo(v) });
         });
       }
       } catch (cardErr) {
@@ -246,10 +262,10 @@
     var section = qs('#docs');
     if (!section) return;
     var data = useSupabase()
-      ? await fetchSupabase('documentaries', { status: 'PUBLISHED', limit: 3, orderBy: 'published_at' })
-      : await fetchJSON('/documentaries?status=PUBLISHED&limit=3');
+      ? await fetchSupabase('documentaries', { status: 'PUBLISHED', limit: 20, orderBy: 'published_at' })
+      : await fetchJSON('/documentaries?status=PUBLISHED&limit=20');
     if (!data || !data.items || !data.items.length) return;
-    var docs = data.items;
+    var docs = sortFeaturedFirst(data.items);
     var cards = qsa('#docs .grid > a', document);
     docs.forEach(function (d, i) {
       var card = cards[i];
