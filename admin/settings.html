@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings — MINIMSAAH Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>*:focus-visible{outline:2px solid #E63946;outline-offset:2px}</style>
+<style>html.mm-guard body{visibility:hidden}</style>
+<script>document.documentElement.className+=' mm-guard';</script>
+<noscript><meta http-equiv="refresh" content="0;url=/admin/login.html"></noscript>
+</head>
+<body class="bg-[#050505] text-white font-['Inter',sans-serif] min-h-screen">
+<nav class="sticky top-0 z-40 bg-[#050505]/90 backdrop-blur-md border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between">
+  <a href="/index.html" class="font-['Space_Grotesk',sans-serif] text-lg tracking-[0.2em] uppercase">MINIMSAAH</a>
+  <button onclick="Admin.logout()" class="text-xs font-mono border border-white/10 px-3 py-3 min-h-[44px] inline-flex items-center uppercase">Logout</button>
+</nav>
+<div class="flex min-h-[calc(100vh-56px)]">
+  <aside class="hidden md:block w-56 shrink-0 border-r border-white/5 bg-[#0A0A0A] p-4">
+    <nav class="space-y-1">
+      <a href="/admin/index.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Dashboard</a>
+      <a href="/admin/articles.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Articles</a>
+      <a href="/admin/videos.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Videos</a>
+      <a href="/admin/documentaries.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Documentaries</a>
+      <a href="/admin/events.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Events</a>
+      <a href="/admin/ticker.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Ticker</a>
+      <a href="/admin/sponsors.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Sponsors</a>
+      <a data-nav="settings.html" href="/admin/settings.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase bg-white/5 text-white">Settings</a>
+      <a href="/admin/media.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Media</a>
+      <a href="/admin/profile.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Profile</a>
+    </nav>
+  </aside>
+  <main class="flex-1 p-4 md:p-6 max-w-[800px] w-full">
+    <div class="md:hidden flex gap-2 mb-4 overflow-auto snap-x scrollbar-hide -mx-4 px-4">
+      <a href="/admin/articles.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Articles</a>
+      <a href="/admin/videos.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Videos</a>
+      <a href="/admin/documentaries.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Docs</a>
+      <a href="/admin/events.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Events</a>
+      <a href="/admin/ticker.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Ticker</a>
+      <a href="/admin/sponsors.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Sponsors</a>
+      <a href="/admin/settings.html" class="text-xs font-mono tracking-widest bg-white/5 text-white border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0 snap-start">Settings</a>
+      <a href="/admin/media.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Media</a>
+      <a href="/admin/profile.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Profile</a>
+    </div>
+    <h1 class="font-['Space_Grotesk',sans-serif] text-xl md:text-2xl font-medium tracking-tight mb-2">Section Titles</h1>
+    <p class="text-xs font-mono text-gray-500 mb-4">Big names on the home page. Bosses only. Max 40 letters each.</p>
+    <div id="locked" class="hidden bg-[#E63946]/10 border border-[#E63946]/20 rounded-sm px-4 py-3 text-xs font-mono text-[#E63946] mb-4">Bosses only — OWNER or EDITOR role needed to change titles.</div>
+    <form id="form" class="bg-[#0A0A0A] border border-white/5 rounded-sm p-4 flex flex-col gap-4 mb-6">
+      <div>
+        <label for="in-featured" class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Featured story</label>
+        <input id="in-featured" data-key="section_featured" maxlength="40" placeholder="FEATURED STORY" autocomplete="off" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm touch-manipulation">
+      </div>
+      <div>
+        <label for="in-videos" class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Video stories</label>
+        <input id="in-videos" data-key="section_videos" maxlength="40" placeholder="VIDEO STORIES" autocomplete="off" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm touch-manipulation">
+      </div>
+      <div>
+        <label for="in-docs" class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Documentaries</label>
+        <input id="in-docs" data-key="section_docs" maxlength="40" placeholder="DOCUMENTARIES" autocomplete="off" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm touch-manipulation">
+      </div>
+      <div>
+        <label for="in-news" class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">News and articles</label>
+        <input id="in-news" data-key="section_news" maxlength="40" placeholder="NEWS & ARTICLES" autocomplete="off" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm touch-manipulation">
+      </div>
+      <div>
+        <label for="in-events" class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Events and promos</label>
+        <input id="in-events" data-key="section_events" maxlength="40" placeholder="EVENTS & PROMOS" autocomplete="off" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm touch-manipulation">
+      </div>
+      <div>
+        <label for="in-partners" class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Partners strip</label>
+        <input id="in-partners" data-key="section_partners" maxlength="40" placeholder="PARTNERS" autocomplete="off" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm touch-manipulation">
+      </div>
+      <button type="submit" id="btn" class="bg-[#E63946] hover:bg-[#c53030] text-white text-xs font-mono tracking-widest uppercase px-4 py-3 min-h-[44px] rounded-sm touch-manipulation">Save Titles</button>
+      <p id="ferr" class="hidden text-xs text-[#E63946] bg-[#E63946]/10 border border-[#E63946]/20 rounded-sm px-3 py-2"></p>
+    </form>
+  </main>
+</div>
+<script>window.__API_BASE__ = window.__API_BASE__ || 'https://minimsaah-api.onrender.com/api/v1';</script><script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2" integrity="sha384-WgXwGL6fUsYJWNaKJgVbrJKGRQwc1vieh2oy4kw9nXqpNDz3tdSsqEYUgeHD/NuF" crossorigin="anonymous"></script><script src="/assets/js/supabase-client.js"></script><script src="/admin/js/admin.js"></script>
+<script>
+(function(){if(typeof window.Admin==='undefined'||!Admin.requireAuth){location.href='/admin/login.html';}else{Admin.requireAuth().then(function(){document.documentElement.classList.remove('mm-guard');init();}).catch(function(){});}
+  var BOSS_ROLES = ['OWNER', 'EDITOR'];
+  var DEFAULTS = { section_featured: 'FEATURED STORY', section_videos: 'VIDEO STORIES', section_docs: 'DOCUMENTARIES', section_news: 'NEWS & ARTICLES', section_events: 'EVENTS & PROMOS', section_partners: 'PARTNERS' };
+  function ferr(m){ var el=document.getElementById('ferr'); el.textContent=m||''; el.classList.toggle('hidden', !m); }
+  function clean(v){
+    v = String(v == null ? '' : v).replace(/[<>"']/g, '').trim().replace(/\s+/g, ' ');
+    return v.slice(0, 40);
+  }
+  async function init(){
+    var isBoss = false;
+    try {
+      if (Admin.useSupabase()) {
+        var ur = await Admin.supa().auth.getUser();
+        var u = ur.data && ur.data.user;
+        var role = u && u.user_metadata && u.user_metadata.role;
+        isBoss = BOSS_ROLES.indexOf(role) !== -1;
+      }
+    } catch (e) { isBoss = false; }
+    if (!isBoss) {
+      document.getElementById('locked').classList.remove('hidden');
+      document.getElementById('btn').disabled = true;
+      document.getElementById('btn').classList.add('opacity-40');
+    }
+    try {
+      if (Admin.useSupabase()) {
+        var res = await Admin.supaList('site_settings', { limit: 50, noPager: true });
+        (res.items || []).forEach(function (it) {
+          var key = it.key || it.id;
+          var box = document.querySelector('input[data-key="' + key + '"]');
+          if (box && it.value) box.value = it.value;
+        });
+      }
+    } catch (e) { Admin.toast(e.message, 'error'); }
+  }
+  document.getElementById('form').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    ferr('');
+    if (!Admin.useSupabase()) { ferr('Supabase not configured.'); return; }
+    var btn = document.getElementById('btn');
+    if (btn.disabled) return;
+    var rows = [];
+    var bad = '';
+    document.querySelectorAll('input[data-key]').forEach(function (box) {
+      var v = clean(box.value);
+      if (!v && !bad) bad = 'Titles cannot be empty. Fill every box.';
+      rows.push({ key: box.getAttribute('data-key'), value: v || DEFAULTS[box.getAttribute('data-key')] });
+      box.value = v || DEFAULTS[box.getAttribute('data-key')];
+    });
+    if (bad) { ferr(bad); return; }
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      var sb = Admin.supa();
+      for (var i = 0; i < rows.length; i++) {
+        var up = await sb.from('site_settings').upsert({ key: rows[i].key, value: rows[i].value });
+        if (up.error) throw new Error(up.error.message);
+      }
+      Admin.toast('Saved');
+    } catch (ex) { ferr(ex.message || 'Could not save. Bosses only.'); }
+    btn.disabled = false; btn.textContent = 'Save Titles';
+  });
+})();
+</script>
+</body>
+</html>

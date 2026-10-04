@@ -382,6 +382,40 @@
     }
   }
 
+  // ─── Hydrate section titles (boss-editable) ───────────────────
+  // Reads site_settings once. Missing/odd values keep the fixed words.
+  var TITLE_IDS = {
+    section_featured: 'title-featured',
+    section_videos: 'title-videos',
+    section_docs: 'title-docs',
+    section_news: 'title-news',
+    section_events: 'title-events',
+    section_partners: 'title-partners',
+  };
+
+  async function hydrateTitles() {
+    if (!useSupabase()) return;
+    try {
+      var sb = window.SupabaseDB.client();
+      if (!sb) return;
+      var r = await sb.from('site_settings').select('key,value').limit(20);
+      if (r.error || !r.data) return;
+      r.data.forEach(function (row) {
+        try {
+          if (!row || typeof row.key !== 'string' || typeof row.value !== 'string') return;
+          var id = TITLE_IDS[row.key];
+          if (!id) return;
+          var v = row.value.replace(/[<>"']/g, '').trim().replace(/\s+/g, ' ').slice(0, 40);
+          if (!v) return;
+          var el = document.getElementById(id);
+          if (el) el.textContent = v;
+        } catch (e) {}
+      });
+    } catch (e) {
+      console.warn('[MINIMSAAH] titles using fixed words');
+    }
+  }
+
   // ─── Fix nav hrefs (remove localhost) ───────────────────────────
   function fixNav() {
     var map = {
@@ -402,6 +436,7 @@
   // ─── Init ────────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', function () {
     fixNav();
+    hydrateTitles();
     hydrateHero();
     hydrateFeatured();
     hydrateVideos();
@@ -412,6 +447,7 @@
 
     // Expose for manual refresh
     window.MinimsaahHydrate = {
+      titles: hydrateTitles,
       hero: hydrateHero,
       featured: hydrateFeatured,
       videos: hydrateVideos,
