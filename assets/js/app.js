@@ -203,8 +203,12 @@
     var videos = data.items;
     var cards = qsa('#videos .grid > a', document);
     videos.slice(0, cards.length).forEach(function (v, idx) {
-      var card = cards[idx];
-      if (!card) return;
+      try {
+        var card = cards[idx];
+        if (!card) return;
+        var slug = null;
+        try { slug = encodeURIComponent(String(v.slug || v.id || '')); } catch (e) { slug = ''; }
+        if (!slug) return;
       var img = card.querySelector('img');
       if (img) {
         var t = thumbForVideo(v);
@@ -220,7 +224,7 @@
       if (h3) h3.textContent = v.title;
       var p = card.querySelector('p');
       if (p && v.description) p.textContent = v.description;
-      card.href = '/video.html?slug=' + encodeURIComponent(v.slug);
+      card.href = '/video.html?slug=' + slug;
       var play = card.querySelector('[data-play]');
       if (play && v.videoUrl) {
         play.setAttribute('data-video-url', v.videoUrl);
@@ -230,6 +234,9 @@
           e.stopPropagation();
           if (window.MinimsaahPlayer) window.MinimsaahPlayer.open({ videoUrl: v.videoUrl, embedUrl: v.embedUrl });
         });
+      }
+      } catch (cardErr) {
+        try { console.warn('[home videos] skip bad row', v && (v.id || v.slug)); } catch (_) {}
       }
     });
   }
