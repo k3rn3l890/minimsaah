@@ -7,7 +7,9 @@
     "dev": "npx vercel dev",
     "deploy": "vercel --prod"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.2"
+  },
   "devDependencies": {},
   "engines": {
     "node": ">=18.0.0"
