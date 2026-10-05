@@ -21,8 +21,14 @@
         <input id="email" type="email" required placeholder="you@minimsaah.com" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-2.5 text-sm placeholder:text-gray-600 focus:border-[#E63946]/50 focus:outline-none">
       </div>
       <div>
-        <label class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Password</label>
-        <input id="password" type="password" required placeholder="••••••••" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-2.5 text-sm placeholder:text-gray-600 focus:border-[#E63946]/50 focus:outline-none">
+        <label for="password" class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Password</label>
+        <div class="relative mt-1">
+          <input id="password" type="password" required placeholder="••••••••" autocomplete="current-password" class="w-full bg-white/5 border border-white/10 rounded-sm pl-3 pr-12 py-2.5 text-sm placeholder:text-gray-600 focus:border-[#E63946]/50 focus:outline-none">
+          <button type="button" id="pw-eye" aria-label="Show password" aria-pressed="false" class="absolute right-1 top-1/2 -translate-y-1/2 w-11 h-11 inline-flex items-center justify-center text-gray-500 hover:text-white touch-manipulation">
+            <svg id="pw-eye-open" class="hidden w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg id="pw-eye-shut" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/><path d="M4 4l16 16"/></svg>
+          </button>
+        </div>
       </div>
       <div id="mfa-box" class="hidden">
         <label class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Authenticator code</label>
@@ -142,6 +148,21 @@
       if(r.ok) location.href='/admin/index.html';
     });
   }
+  // Show/hide password eye. Keeps focus in the box. Screen reader told.
+  (function(){
+    var box=document.getElementById('password'), eye=document.getElementById('pw-eye');
+    if(!box||!eye) return;
+    eye.addEventListener('click', function(){
+      var showIt=box.type==='password';
+      box.type=showIt?'text':'password';
+      eye.setAttribute('aria-label', showIt?'Hide password':'Show password');
+      eye.setAttribute('aria-pressed', showIt?'true':'false');
+      document.getElementById('pw-eye-open').classList.toggle('hidden', !showIt);
+      document.getElementById('pw-eye-shut').classList.toggle('hidden', showIt);
+      eye.classList.toggle('text-[#E63946]', showIt);
+      try{ box.focus(); }catch(e){}
+    });
+  })();
   form.addEventListener('submit', async function(e){
     e.preventDefault();
     err.classList.add('hidden');

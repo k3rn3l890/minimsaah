@@ -84,11 +84,23 @@
           <p class="text-xs text-gray-500 mb-4">Changing it here keeps you signed in on this device.</p>
           <div>
             <label for="pw1" class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">New password</label>
-            <input id="pw1" type="password" autocomplete="new-password" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm focus:border-[#E63946]/50 focus:outline-none">
+            <div class="relative mt-1">
+              <input id="pw1" type="password" autocomplete="new-password" class="w-full bg-white/5 border border-white/10 rounded-sm pl-3 pr-12 py-3 min-h-[44px] text-sm focus:border-[#E63946]/50 focus:outline-none">
+              <button type="button" id="pw1-eye" aria-label="Show password" aria-pressed="false" class="absolute right-1 top-1/2 -translate-y-1/2 w-11 h-11 inline-flex items-center justify-center text-gray-500 hover:text-white touch-manipulation">
+                <svg class="pw-eye-open hidden w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="pw-eye-shut w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/><path d="M4 4l16 16"/></svg>
+              </button>
+            </div>
           </div>
           <div class="mt-3">
             <label for="pw2" class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Confirm new password</label>
-            <input id="pw2" type="password" autocomplete="new-password" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm focus:border-[#E63946]/50 focus:outline-none">
+            <div class="relative mt-1">
+              <input id="pw2" type="password" autocomplete="new-password" class="w-full bg-white/5 border border-white/10 rounded-sm pl-3 pr-12 py-3 min-h-[44px] text-sm focus:border-[#E63946]/50 focus:outline-none">
+              <button type="button" id="pw2-eye" aria-label="Show password" aria-pressed="false" class="absolute right-1 top-1/2 -translate-y-1/2 w-11 h-11 inline-flex items-center justify-center text-gray-500 hover:text-white touch-manipulation">
+                <svg class="pw-eye-open hidden w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="pw-eye-shut w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/><path d="M4 4l16 16"/></svg>
+              </button>
+            </div>
           </div>
           <p id="pwerr" class="hidden text-xs text-[#E63946] bg-[#E63946]/10 border border-[#E63946]/20 rounded-sm px-3 py-2 mt-3" role="alert"></p>
           <p id="pwok" class="hidden text-xs text-green-400 bg-green-900/20 border border-green-800 rounded-sm px-3 py-2 mt-3" role="status"></p>
@@ -137,6 +149,22 @@
   function show(el, on){ el.classList.toggle('hidden', !on); }
   function perr(m){ var e=document.getElementById('perr'); e.textContent=m; show(e,true); }
   function pwErr(m){ var e=document.getElementById('pwerr'); e.textContent=m; show(e,true); document.getElementById('pw1').focus(); }
+  // Show/hide eyes for both new-password boxes. Each works alone. Focus kept.
+  [['pw1','pw1-eye'],['pw2','pw2-eye']].forEach(function(pair){
+    var box=document.getElementById(pair[0]), eye=document.getElementById(pair[1]);
+    if(!box||!eye) return;
+    eye.addEventListener('click', function(){
+      var showIt=box.type==='password';
+      box.type=showIt?'text':'password';
+      eye.setAttribute('aria-label', showIt?'Hide password':'Show password');
+      eye.setAttribute('aria-pressed', showIt?'true':'false');
+      var o=eye.querySelector('.pw-eye-open'), s=eye.querySelector('.pw-eye-shut');
+      if(o) o.classList.toggle('hidden', !showIt);
+      if(s) s.classList.toggle('hidden', showIt);
+      if(showIt) eye.classList.add('text-[#E63946]'); else eye.classList.remove('text-[#E63946]');
+      try{ box.focus(); }catch(e){}
+    });
+  });
   function mfaErr(m){ var e=document.getElementById('mfaerr'); e.textContent=m; show(e,true); }
   function ok(id, m){ var e=document.getElementById(id); e.textContent=m; show(e,true); setTimeout(function(){ show(e,false); }, 4000); }
 
