@@ -404,10 +404,7 @@
       global.__msSearchTimes = global.__msSearchTimes || [];
       global.__msSearchTimes = global.__msSearchTimes.filter(function (t) { return (nowS - t) < 60 * 1000; });
       if (global.__msSearchTimes.length >= 30) {
-        try {
-          var logSb = supa();
-          if (logSb) logSb.rpc('log_admin_event', { p_event: 'limit_hit', p_email: '', p_success: false, p_detail: ('search cap ' + table).slice(0, 100) });
-        } catch (e) {}
+        try { auditRemote('limit_hit', '', false, ('search cap ' + table).slice(0, 100)); } catch (e) {}
         throw new Error('Slow down. Wait a bit and try search again.');
       }
       global.__msSearchTimes.push(nowS);
@@ -463,6 +460,51 @@
     return String(s).replace(/[&<>"']/g, function (c) {
       return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]);
     });
+  }
+
+  // Best-effort audit with caller address. Tries the server door first
+  // (it stamps the real address); falls back to the direct database
+  // writer (no address). Never throws, never blocks the caller.
+  function auditRemote(event, email, success, detail) {
+    try {
+      var payload = {
+        event: event,
+        email: String(email || '').slice(0, 320),
+        success: success === true,
+        detail: String(detail || '').slice(0, 500),
+      };
+      var p = null;
+      try {
+        var ctl = null;
+        if (typeof AbortController !== 'undefined') {
+          ctl = new AbortController();
+          setTimeout(function () { try { ctl.abort(); } catch (e) {} }, 6000);
+        }
+        p = fetch('/api/log-event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: ctl ? ctl.signal : undefined,
+        }).then(function (res) {
+          if (!res.ok) throw new Error('door ' + res.status);
+          return true;
+        });
+      } catch (e) { p = null; }
+      Promise.resolve(p).then(
+        function (ok) {
+          if (ok) return;
+          throw new Error('door unavailable');
+        }
+      ).catch(function () {
+        try {
+          if (window.SupabaseDB && window.SupabaseDB.isEnabled()) {
+            window.SupabaseDB.client()
+              .rpc('log_admin_event', { p_event: event, p_email: payload.email })
+              .then(null, function () {});
+          }
+        } catch (e) {}
+      });
+    } catch (e) {}
   }
 
   // Shared input checker. Block-hard: returns {ok:true,value} or
@@ -544,6 +586,7 @@
     isStaffRole: isStaffRole,
     STAFF_ROLES: STAFF_ROLES,
     escapeHtml: escapeHtml,
+    auditRemote: auditRemote,
     cleanField: cleanField,
     cleanSearch: cleanSearch,
     budget: budget,

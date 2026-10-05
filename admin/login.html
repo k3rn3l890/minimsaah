@@ -95,9 +95,12 @@
   }
   async function signOutQuiet(){ try { await window.SupabaseDB.client().auth.signOut(); } catch (e) {} }
   // Best-effort audit (never blocks login; audit table may not exist yet).
+  // Server door first so the row carries the caller address; direct writer as fallback.
   function audit(event, email){
     try{
-      if (window.SupabaseDB && window.SupabaseDB.isEnabled()) {
+      if (window.Admin && window.Admin.auditRemote) {
+        window.Admin.auditRemote(event, email || '');
+      } else if (window.SupabaseDB && window.SupabaseDB.isEnabled()) {
         window.SupabaseDB.client().rpc('log_admin_event', { p_event: event, p_email: email || '' }).then(null, function(){});
       }
     }catch(e){}
