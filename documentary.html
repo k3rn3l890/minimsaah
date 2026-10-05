@@ -68,7 +68,7 @@
     var res = await sb.from('documentaries').select('*').eq('slug', slug).eq('status','PUBLISHED').single();
     if (res.error) throw new Error('not found');
     var d = normRow(res.data);
-    try { await sb.rpc('increment_view', { table_name: 'documentaries', row_id: d.id }); } catch {}
+    try { await window.SupabaseDB.throttledRpc('increment_view', { table_name: 'documentaries', row_id: d.id }, 'view_documentaries_' + d.id); } catch {}
     return d;
   }
   async function load(){

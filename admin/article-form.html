@@ -140,15 +140,41 @@
     var err=document.getElementById('err'); var ok=document.getElementById('ok');
     err.classList.add('hidden'); ok.classList.add('hidden');
     var btn=document.getElementById('btn'); btn.textContent='Saving…'; btn.disabled=true;
+    // Hard input checks. First bad box stops save and gets focus.
+    function bad(boxId, msg){ err.textContent=msg; err.classList.remove('hidden'); btn.textContent='Save Article'; btn.disabled=false; try{ document.getElementById(boxId).focus(); }catch(e){} return null; }
+    var cTitle=Admin.cleanField(titleEl.value, { label:'Title', max:200, noCode:true });
+    if(!cTitle.ok) return bad('title', cTitle.message);
+    var rawSlug=slugEl.value.trim();
+    var cSlug=rawSlug ? Admin.cleanField(rawSlug, { label:'Slug', max:120, slug:true }) : { ok:true, value:'' };
+    if(!cSlug.ok) return bad('slug', cSlug.message);
+    var cExcerpt=Admin.cleanField(document.getElementById('excerpt').value, { label:'Excerpt', max:2000, allowEmpty:true });
+    if(!cExcerpt.ok) return bad('excerpt', cExcerpt.message);
+    var cBody=Admin.cleanField(document.getElementById('body').value, { label:'Body', max:100000 });
+    if(!cBody.ok) return bad('body', cBody.message);
+    var cCover=Admin.cleanField(coverInput.value, { label:'Cover image link', max:2000, allowEmpty:true, urlHttps:true });
+    if(!cCover.ok) return bad('coverImage', cCover.message);
+    var rawTags=document.getElementById('tags').value.split(',').map(function(s){return s.trim();}).filter(Boolean);
+    if(rawTags.length>10) return bad('tags', 'Tags must be 10 or less.');
+    var cTags=[];
+    for(var ti=0; ti<rawTags.length; ti++){
+      var ct=Admin.cleanField(rawTags[ti], { label:'Tag '+(ti+1), max:40, noCode:true });
+      if(!ct.ok) return bad('tags', ct.message);
+      if(!/^[A-Za-z0-9 \-]+$/.test(ct.value)) return bad('tags', 'Tag '+(ti+1)+' must be letters, numbers, space and dash only.');
+      cTags.push(ct.value);
+    }
+    var cCat=Admin.cleanField(document.getElementById('category').value, { label:'Category', oneOf:['FEATURE','MATCH_REPORT','ANALYSIS','INTERVIEW','OPINION','BREAKING'] });
+    if(!cCat.ok) return bad('category', cCat.message);
+    var cStatus=Admin.cleanField(document.getElementById('status').value, { label:'Status', oneOf:['DRAFT','PUBLISHED','REVIEW','ARCHIVED'] });
+    if(!cStatus.ok) return bad('status', cStatus.message);
     var payload={
-      title: titleEl.value.trim(),
-      slug: slugEl.value.trim()||undefined,
-      excerpt: document.getElementById('excerpt').value.trim()||undefined,
-      body: document.getElementById('body').value,
-      coverImage: coverInput.value.trim()||undefined,
-      category: document.getElementById('category').value,
-      tags: document.getElementById('tags').value.split(',').map(function(s){return s.trim();}).filter(Boolean),
-      status: document.getElementById('status').value,
+      title: cTitle.value,
+      slug: cSlug.value||undefined,
+      excerpt: cExcerpt.value||undefined,
+      body: cBody.value,
+      coverImage: cCover.value||undefined,
+      category: cCat.value,
+      tags: cTags,
+      status: cStatus.value,
       featured: document.getElementById('featured').checked,
     };
     try{

@@ -196,15 +196,39 @@
         err.classList.remove('hidden'); btn.textContent='Save Video'; btn.disabled=false; return;
       }
     }catch(e){}
+    // Hard input checks. First bad box stops save and gets focus.
+    function vbad(boxId, msg){ err.textContent=msg; err.classList.remove('hidden'); btn.textContent='Save Video'; btn.disabled=false; try{ document.getElementById(boxId).focus(); }catch(e){} return null; }
+    var vcTitle=Admin.cleanField(document.getElementById('title').value, { label:'Title', max:200, noCode:true });
+    if(!vcTitle.ok) return vbad('title', vcTitle.message);
+    var vcThumb=Admin.cleanField(thumbEl.value, { label:'Thumbnail link', max:2000, allowEmpty:true, urlHttps:true });
+    if(!vcThumb.ok) return vbad('thumbnail', vcThumb.message);
+    var rawDur=document.getElementById('duration').value.trim();
+    var vcDur=rawDur ? Admin.cleanField(rawDur, { label:'Duration', intRange:[0,86400] }) : { ok:true, value:'' };
+    if(!vcDur.ok) return vbad('duration', vcDur.message);
+    var vcDesc=Admin.cleanField(document.getElementById('description').value, { label:'Description', max:2000, allowEmpty:true });
+    if(!vcDesc.ok) return vbad('description', vcDesc.message);
+    var vRawTags=document.getElementById('tags').value.split(',').map(function(s){return s.trim();}).filter(Boolean);
+    if(vRawTags.length>10) return vbad('tags', 'Tags must be 10 or less.');
+    var vcTags=[];
+    for(var vti=0; vti<vRawTags.length; vti++){
+      var vct=Admin.cleanField(vRawTags[vti], { label:'Tag '+(vti+1), max:40, noCode:true });
+      if(!vct.ok) return vbad('tags', vct.message);
+      if(!/^[A-Za-z0-9 \-]+$/.test(vct.value)) return vbad('tags', 'Tag '+(vti+1)+' must be letters, numbers, space and dash only.');
+      vcTags.push(vct.value);
+    }
+    var vcCat=Admin.cleanField(document.getElementById('category').value, { label:'Category', oneOf:['HIGHLIGHT','INTERVIEW','DOCUMENTARY','BEHIND_SCENES','TUTORIAL'] });
+    if(!vcCat.ok) return vbad('category', vcCat.message);
+    var vcStatus=Admin.cleanField(document.getElementById('status').value, { label:'Status', oneOf:['DRAFT','PUBLISHED'] });
+    if(!vcStatus.ok) return vbad('status', vcStatus.message);
     var payload={
-      title: document.getElementById('title').value.trim(),
+      title: vcTitle.value,
       videoUrl: videoUrlEl.value.trim(),
-      thumbnail: thumbEl.value.trim()||undefined,
-      category: document.getElementById('category').value,
-      duration: document.getElementById('duration').value? parseInt(document.getElementById('duration').value,10):undefined,
-      description: document.getElementById('description').value.trim()||undefined,
-      tags: document.getElementById('tags').value.split(',').map(function(s){return s.trim();}).filter(Boolean),
-      status: document.getElementById('status').value,
+      thumbnail: vcThumb.value||undefined,
+      category: vcCat.value,
+      duration: vcDur.value? parseInt(vcDur.value,10):undefined,
+      description: vcDesc.value||undefined,
+      tags: vcTags,
+      status: vcStatus.value,
       featured: document.getElementById('featured').checked,
     };
     try{

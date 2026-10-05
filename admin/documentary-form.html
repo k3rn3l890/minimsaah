@@ -112,15 +112,40 @@
         err.classList.remove('hidden'); btn.textContent='Save Documentary'; btn.disabled=false; return;
       }
     }catch(e){}
+    // Hard input checks. First bad box stops save and gets focus.
+    function dbad(boxId, msg){ err.textContent=msg; err.classList.remove('hidden'); btn.textContent='Save Documentary'; btn.disabled=false; try{ document.getElementById(boxId).focus(); }catch(e){} return null; }
+    var dcTitle=Admin.cleanField(titleEl.value, { label:'Title', max:200, noCode:true });
+    if(!dcTitle.ok) return dbad('title', dcTitle.message);
+    var dcRawSlug=slugEl.value.trim();
+    var dcSlug=dcRawSlug ? Admin.cleanField(dcRawSlug, { label:'Slug', max:120, slug:true }) : { ok:true, value:'' };
+    if(!dcSlug.ok) return dbad('slug', dcSlug.message);
+    var dcDesc=Admin.cleanField(document.getElementById('description').value, { label:'Description', max:2000, allowEmpty:true });
+    if(!dcDesc.ok) return dbad('description', dcDesc.message);
+    var dcCover=Admin.cleanField(coverInput.value, { label:'Cover image link', max:2000, allowEmpty:true, urlHttps:true });
+    if(!dcCover.ok) return dbad('coverImage', dcCover.message);
+    var dcRawDur=document.getElementById('duration').value.trim();
+    var dcDur=dcRawDur ? Admin.cleanField(dcRawDur, { label:'Duration', intRange:[0,86400] }) : { ok:true, value:'' };
+    if(!dcDur.ok) return dbad('duration', dcDur.message);
+    var dcRawTags=document.getElementById('tags').value.split(',').map(function(s){return s.trim();}).filter(Boolean);
+    if(dcRawTags.length>10) return dbad('tags', 'Tags must be 10 or less.');
+    var dcTags=[];
+    for(var dti=0; dti<dcRawTags.length; dti++){
+      var dct=Admin.cleanField(dcRawTags[dti], { label:'Tag '+(dti+1), max:40, noCode:true });
+      if(!dct.ok) return dbad('tags', dct.message);
+      if(!/^[A-Za-z0-9 \-]+$/.test(dct.value)) return dbad('tags', 'Tag '+(dti+1)+' must be letters, numbers, space and dash only.');
+      dcTags.push(dct.value);
+    }
+    var dcStatus=Admin.cleanField(document.getElementById('status').value, { label:'Status', oneOf:['DRAFT','PUBLISHED'] });
+    if(!dcStatus.ok) return dbad('status', dcStatus.message);
     var payload={
-      title: titleEl.value.trim(),
-      slug: slugEl.value.trim()||undefined,
-      description: document.getElementById('description').value.trim()||undefined,
+      title: dcTitle.value,
+      slug: dcSlug.value||undefined,
+      description: dcDesc.value||undefined,
       videoUrl: document.getElementById('videoUrl').value.trim()||undefined,
-      coverImage: coverInput.value.trim()||undefined,
-      duration: document.getElementById('duration').value? parseInt(document.getElementById('duration').value,10):undefined,
-      tags: document.getElementById('tags').value.split(',').map(function(s){return s.trim();}).filter(Boolean),
-      status: document.getElementById('status').value,
+      coverImage: dcCover.value||undefined,
+      duration: dcDur.value? parseInt(dcDur.value,10):undefined,
+      tags: dcTags,
+      status: dcStatus.value,
       featured: document.getElementById('featured').checked,
     };
     try{

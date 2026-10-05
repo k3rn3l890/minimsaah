@@ -90,7 +90,7 @@
     if (res.error) throw new Error('not found');
     var v = normRow(res.data);
     if (v.author) v.author = normRow(v.author);
-    try { await sb.rpc('increment_view', { table_name: 'videos', row_id: v.id }); } catch {}
+    try { await window.SupabaseDB.throttledRpc('increment_view', { table_name: 'videos', row_id: v.id }, 'view_videos_' + v.id); } catch {}
     return v;
   }
   var current=null;

@@ -215,10 +215,17 @@
     try{
       var fn = document.getElementById('firstName').value.trim();
       var ln = document.getElementById('lastName').value.trim();
-      if (!fn || !ln) throw new Error('First and last name are required');
+      // Hard input checks. Bad names stop the save.
+      var pfn=Admin.cleanField(fn, { label:'First name', max:200, noCode:true });
+      if(!pfn.ok){ perr(pfn.message); btn.disabled=false; btn.textContent='Save Profile'; return; }
+      var pln=Admin.cleanField(ln, { label:'Last name', max:200, noCode:true });
+      if(!pln.ok){ perr(pln.message); btn.disabled=false; btn.textContent='Save Profile'; return; }
+      var pbio=Admin.cleanField(document.getElementById('bio').value, { label:'Bio', max:2000, allowEmpty:true });
+      if(!pbio.ok){ perr(pbio.message); btn.disabled=false; btn.textContent='Save Profile'; return; }
+      fn=pfn.value; ln=pln.value;
       await Admin.supaSave('users', uid, true, {
         firstName: fn, lastName: ln,
-        bio: document.getElementById('bio').value.trim() || null,
+        bio: pbio.value || null,
         avatarUrl: avatarUrl || null,
       });
       var cached = Admin.getUser() || {};
@@ -295,7 +302,13 @@
       var qr = document.getElementById('mfa-qr');
       var svg = (en.data.totp && en.data.totp.qr_code) || '';
       qr.innerHTML = '';
-      if (svg.indexOf('<svg') === 0) { qr.innerHTML = svg; }
+      // QR art comes from the server. Place it only after stripping anything
+      // that can run code (event hooks, scripts). Anything else shows as text.
+      if (svg.indexOf('<svg') === 0) {
+        var safe = svg.replace(/<script[\s\S]*?<\/script\s*>/gi, '').replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+        if (/<svg/i.test(safe)) qr.innerHTML = safe;
+        else qr.textContent = 'QR art blocked — type the code below instead.';
+      }
       else if (svg.indexOf('data:') === 0) {
         var img = document.createElement('img');
         img.src = svg; img.alt = 'Authenticator QR code'; img.style.width = '180px'; img.style.height = '180px';
@@ -328,6 +341,7 @@
     try{
       var code = document.getElementById('mfa-code').value.trim();
       if (!code) throw new Error('Enter the 6-digit code');
+      if (!/^\d{6,8}$/.test(code)) throw new Error('Code must be digits only');
       var ch = await Admin.supa().auth.mfa.challenge({ factorId: pendingFactorId });
       if (ch.error) throw new Error(ch.error.message);
       var vr = await Admin.supa().auth.mfa.verify({ factorId: pendingFactorId, challengeId: ch.data.id, code: code });

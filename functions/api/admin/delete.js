@@ -6,17 +6,22 @@
  */
 import { createClient } from '@supabase/supabase-js';
 
-// Soft delete cap (code only, memory only): max 10 deletes per hour per user.
-// Resets when server sleeps. Soft way: slows abuse, does not hard block pros.
+// Delete caps (code only, memory only): max 10 per hour AND max 50 per
+// day per user. Resets when server sleeps. Slows abuse, no hard server bill.
 const deleteTimesByUser = new Map();
 function deleteAllowed(userId) {
   const now = Date.now();
   const hour = 60 * 60 * 1000;
-  const list = (deleteTimesByUser.get(userId) || []).filter((t) => (now - t) < hour);
-  if (list.length >= 10) {
+  const day = 24 * hour;
+  const list = (deleteTimesByUser.get(userId) || []).filter((t) => (now - t) < day);
+  const lastHour = list.filter((t) => (now - t) < hour);
+  if (lastHour.length >= 10) {
+    const oldest = lastHour[0] || now;
+    return { ok: false, retrySec: Math.ceil((oldest + hour - now) / 1000) };
+  }
+  if (list.length >= 50) {
     const oldest = list[0] || now;
-    const retrySec = Math.ceil((oldest + hour - now) / 1000);
-    return { ok: false, retrySec };
+    return { ok: false, retrySec: Math.ceil((oldest + day - now) / 1000) };
   }
   list.push(now);
   deleteTimesByUser.set(userId, list);
@@ -77,10 +82,12 @@ async function handleDelete(request, env) {
   if (table === 'media') {
     // also remove storage object if filename matches id? caller passes filename as id for media
     const { error: sErr } = await supaAdmin.storage.from('minimsaah-media').remove([id]);
-    if (sErr) return Response.json({ error: sErr.message }, { status: 400 });
+    // Fixed words only — raw database words never leave the server.
+    if (sErr) return Response.json({ error: 'Delete failed' }, { status: 400 });
   }
 
   const { error } = await supaAdmin.from(table).delete().eq('id', id);
-  if (error) return Response.json({ error: error.message }, { status: 400 });
+  // Fixed words only — raw database words never leave the server.
+  if (error) return Response.json({ error: 'Delete failed' }, { status: 400 });
   return Response.json({ ok: true });
 }

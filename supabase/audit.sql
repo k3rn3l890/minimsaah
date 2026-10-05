@@ -28,7 +28,7 @@ create policy "staff_read_audit" on public.admin_audit for select using (public.
 create or replace function public.log_admin_event(p_event text, p_email text default null, p_success boolean default false, p_detail text default null)
 returns void language plpgsql security definer set search_path = public as $$
 begin
-  if p_event not in ('login_failed', 'login_denied', 'guard_denied', 'upload_rejected', 'delete_blocked') then
+  if p_event not in ('login_failed', 'login_denied', 'guard_denied', 'upload_rejected', 'delete_blocked', 'limit_hit', 'input_blocked') then
     raise exception 'invalid event';
   end if;
   if length(coalesce(p_email, '')) > 320 then

@@ -116,6 +116,7 @@
     e.preventDefault();
     ferr('');
     if (!Admin.useSupabase()) { ferr('Supabase not configured.'); return; }
+    if (!Admin.budget('settings_write', 20, 60*60*1000)) { ferr('Slow down. Too many saves this hour.'); return; }
     var btn = document.getElementById('btn');
     if (btn.disabled) return;
     var rows = [];

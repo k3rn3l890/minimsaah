@@ -348,6 +348,8 @@
     var sb = supa();
     if (!sb) throw new Error('Supabase not configured — set Vercel env SUPABASE_URL / SUPABASE_ANON_KEY and redeploy');
     if (!file) throw new Error('No file selected');
+    // Max 5 uploads per 10 minutes per browser. Stops batch spam.
+    if (!budget('upload', 5, 10 * 60 * 1000)) throw new Error('Slow down. Too many uploads — wait a bit.');
     if (opts && opts.imagesOnly) {
       var mime = file.type || '';
       var imgExt = (file.name.match(/\.[a-z0-9]+$/i) || [''])[0].toLowerCase();
@@ -401,7 +403,13 @@
       var nowS = Date.now();
       global.__msSearchTimes = global.__msSearchTimes || [];
       global.__msSearchTimes = global.__msSearchTimes.filter(function (t) { return (nowS - t) < 60 * 1000; });
-      if (global.__msSearchTimes.length >= 30) throw new Error('Slow down. Wait a bit and try search again.');
+      if (global.__msSearchTimes.length >= 30) {
+        try {
+          var logSb = supa();
+          if (logSb) logSb.rpc('log_admin_event', { p_event: 'limit_hit', p_email: '', p_success: false, p_detail: ('search cap ' + table).slice(0, 100) });
+        } catch (e) {}
+        throw new Error('Slow down. Wait a bit and try search again.');
+      }
       global.__msSearchTimes.push(nowS);
     }
     var sb = supa();
@@ -411,7 +419,7 @@
     if (opts.active !== undefined) q = q.eq('active', opts.active);
     if (opts.category) q = q.eq('category', opts.category);
     if (opts.search) {
-      var clean = String(opts.search).replace(/[%(),]/g, '');
+      var clean = String(opts.search).slice(0, 100).replace(/[%_(),<>"']/g, '');
       var fields = opts.searchFields || ['title'];
       q = q.or(fields.map(function (f) { return f + '.ilike.%' + clean + '%'; }).join(','));
     }
@@ -457,6 +465,62 @@
     });
   }
 
+  // Shared input checker. Block-hard: returns {ok:true,value} or
+  // {ok:false,message}. Call per box on submit; first bad box stops save.
+  // opts: {label, max, min, allowEmpty, noCode, slug, email, urlHttps,
+  //        digits, intRange:[lo,hi], oneOf:[...]}
+  function cleanField(value, opts) {
+    opts = opts || {};
+    var label = opts.label || 'This field';
+    var v = (value === null || value === undefined) ? '' : String(value);
+    v = v.replace(/^\s+|\s+$/g, '');
+    if (v === '') {
+      if (opts.allowEmpty) return { ok: true, value: '' };
+      return { ok: false, message: label + ' is needed.' };
+    }
+    if (opts.max && v.length > opts.max) return { ok: false, message: label + ' must be ' + opts.max + ' letters or less.' };
+    if (opts.min && v.length < opts.min) return { ok: false, message: label + ' must be at least ' + opts.min + ' letters.' };
+    if (opts.noCode && /[<>"']/.test(v)) return { ok: false, message: label + ' cannot hold < > " or \'.' };
+    if (opts.slug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(v)) return { ok: false, message: label + ' must be small letters, numbers and dash only.' };
+    if (opts.email) {
+      v = v.toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return { ok: false, message: label + ' must look like name@site.' };
+    }
+    if (opts.urlHttps && !/^https:\/\//i.test(v)) return { ok: false, message: label + ' must start with https://.' };
+    if (opts.digits && !/^\d+$/.test(v)) return { ok: false, message: label + ' must be digits only.' };
+    if (opts.intRange) {
+      var n = parseInt(v, 10);
+      if (isNaN(n) || n < opts.intRange[0] || n > opts.intRange[1]) return { ok: false, message: label + ' must be a whole number from ' + opts.intRange[0] + ' to ' + opts.intRange[1] + '.' };
+      v = String(n);
+    }
+    if (opts.oneOf && opts.oneOf.indexOf(v) === -1) return { ok: false, message: label + ' has a bad choice.' };
+    return { ok: true, value: v };
+  }
+
+  // Search-box cleaner for public and admin lists. Caps length and strips
+  // database wildcard + code signs. Returns safe string (may be empty).
+  function cleanSearch(q, max) {
+    var v = (q === null || q === undefined) ? '' : String(q);
+    v = v.replace(/^\s+|\s+$/g, '').slice(0, max || 100);
+    return v.replace(/[%_(),<>"']/g, '');
+  }
+
+  // Browser-memory budget: max N actions per windowMs per key.
+  // Returns true if allowed (and counts it), false if over budget.
+  function budget(key, max, windowMs) {
+    try {
+      var now = Date.now();
+      var k = 'ms_budget_' + key;
+      var list = [];
+      try { list = JSON.parse(localStorage.getItem(k) || '[]'); } catch (e) { list = []; }
+      list = list.filter(function (t) { return (now - t) < windowMs; });
+      if (list.length >= max) return false;
+      list.push(now);
+      localStorage.setItem(k, JSON.stringify(list));
+      return true;
+    } catch (e) { return true; }
+  }
+
   // Sidebar active — works under cleanUrls (/admin, /admin/videos, /admin/videos.html)
   function setActiveNav() {
     var seg = location.pathname.split('/').pop() || '';
@@ -480,6 +544,9 @@
     isStaffRole: isStaffRole,
     STAFF_ROLES: STAFF_ROLES,
     escapeHtml: escapeHtml,
+    cleanField: cleanField,
+    cleanSearch: cleanSearch,
+    budget: budget,
     logout: logout,
     slugify: slugify,
     fmtDate: fmtDate,

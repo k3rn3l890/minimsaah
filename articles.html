@@ -104,7 +104,7 @@
     return data.items || data;
   }
   function filtered(){
-    var needle = q.trim().toLowerCase();
+    var needle = q.trim().toLowerCase().slice(0, 100).replace(/[%_(),<>"']/g, '');
     return all.filter(function(it){
       if (cat && it.category !== cat) return false;
       if (!needle) return true;

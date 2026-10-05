@@ -112,7 +112,7 @@
     var a = normRow(res.data);
     if (a.author) a.author = normRow(a.author);
     // fire-and-forget viewCount via RPC (backend increment parity)
-    try { await sb.rpc('increment_view', { table_name: 'articles', row_id: a.id }); } catch {}
+    try { await window.SupabaseDB.throttledRpc('increment_view', { table_name: 'articles', row_id: a.id }, 'view_articles_' + a.id); } catch {}
     return a;
   }
   async function load(){

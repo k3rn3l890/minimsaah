@@ -105,7 +105,7 @@
     return data.items || data;
   }
   function filtered(){
-    var needle = q.trim().toLowerCase();
+    var needle = q.trim().toLowerCase().slice(0, 100).replace(/[%_(),<>"']/g, '');
     if (!needle) return all;
     return all.filter(function(it){
       return ((it.title||'')+' '+(it.description||'')).toLowerCase().indexOf(needle) !== -1;

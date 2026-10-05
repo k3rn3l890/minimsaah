@@ -69,26 +69,61 @@
     e.preventDefault();
     var err=document.getElementById('err'), ok=document.getElementById('ok'); err.classList.add('hidden'); ok.classList.add('hidden');
     var btn=document.getElementById('btn'); btn.textContent='Saving…'; btn.disabled=true;
+    // Hard input checks. First bad box stops save and gets focus.
+    function ebad(boxId, msg){ err.textContent=msg; err.classList.remove('hidden'); btn.textContent='Save Event'; btn.disabled=false; try{ document.getElementById(boxId).focus(); }catch(e){} return null; }
+    var ecTitle=Admin.cleanField(titleEl.value, { label:'Title', max:200, noCode:true });
+    if(!ecTitle.ok) return ebad('title', ecTitle.message);
+    var ecRawSlug=slugEl.value.trim();
+    var ecSlug=ecRawSlug ? Admin.cleanField(ecRawSlug, { label:'Slug', max:120, slug:true }) : { ok:true, value:'' };
+    if(!ecSlug.ok) return ebad('slug', ecSlug.message);
+    var ecDesc=Admin.cleanField(document.getElementById('description').value, { label:'Description', max:2000, allowEmpty:true });
+    if(!ecDesc.ok) return ebad('description', ecDesc.message);
+    var ecCover=Admin.cleanField(coverInput.value, { label:'Cover image link', max:2000, allowEmpty:true, urlHttps:true });
+    if(!ecCover.ok) return ebad('coverImage', ecCover.message);
+    var dateRaw=document.getElementById('date').value;
+    if(!dateRaw) return ebad('date', 'Date is needed.');
+    var dCheck=new Date(dateRaw);
+    if(isNaN(dCheck.getTime())) return ebad('date', 'Date has a bad shape.');
+    var dateIso=dCheck.toISOString();
+    var endRaw=document.getElementById('endDate').value;
+    var endIso=undefined;
+    if(endRaw){
+      var dEnd=new Date(endRaw);
+      if(isNaN(dEnd.getTime())) return ebad('endDate', 'End date has a bad shape.');
+      endIso=dEnd.toISOString();
+    }
+    var ecLoc=Admin.cleanField(document.getElementById('location').value, { label:'Location', max:200, allowEmpty:true, noCode:true });
+    if(!ecLoc.ok) return ebad('location', ecLoc.message);
+    var ecVenue=Admin.cleanField(document.getElementById('venue').value, { label:'Venue', max:200, allowEmpty:true, noCode:true });
+    if(!ecVenue.ok) return ebad('venue', ecVenue.message);
     var ticketRaw=document.getElementById('ticketUrl').value.trim();
     // Ticket links render as clickable href on the public page: allow only
     // https: (blocks javascript:/data:/ftp:/protocol-relative). Empty = hidden.
-    if(ticketRaw && !/^https:\/\//i.test(ticketRaw)){
-      err.textContent='Ticket URL must start with https:// (or leave empty)';
-      err.classList.remove('hidden'); btn.textContent='Save Event'; btn.disabled=false;
-      return;
+    var ecTicket=ticketRaw ? Admin.cleanField(ticketRaw, { label:'Ticket URL', max:2000, urlHttps:true }) : { ok:true, value:'' };
+    if(!ecTicket.ok) return ebad('ticketUrl', ecTicket.message);
+    var ecRawTags=document.getElementById('tags').value.split(',').map(function(s){return s.trim();}).filter(Boolean);
+    if(ecRawTags.length>10) return ebad('tags', 'Tags must be 10 or less.');
+    var ecTags=[];
+    for(var eti=0; eti<ecRawTags.length; eti++){
+      var ect=Admin.cleanField(ecRawTags[eti], { label:'Tag '+(eti+1), max:40, noCode:true });
+      if(!ect.ok) return ebad('tags', ect.message);
+      if(!/^[A-Za-z0-9 \-]+$/.test(ect.value)) return ebad('tags', 'Tag '+(eti+1)+' must be letters, numbers, space and dash only.');
+      ecTags.push(ect.value);
     }
+    var ecStatus=Admin.cleanField(document.getElementById('status').value, { label:'Status', oneOf:['DRAFT','PUBLISHED'] });
+    if(!ecStatus.ok) return ebad('status', ecStatus.message);
     var payload={
-      title: titleEl.value.trim(),
-      slug: slugEl.value.trim()||undefined,
-      description: document.getElementById('description').value.trim()||undefined,
-      coverImage: coverInput.value.trim()||undefined,
-      date: document.getElementById('date').value? new Date(document.getElementById('date').value).toISOString(): undefined,
-      endDate: document.getElementById('endDate').value? new Date(document.getElementById('endDate').value).toISOString(): undefined,
-      location: document.getElementById('location').value.trim()||undefined,
-      venue: document.getElementById('venue').value.trim()||undefined,
-      ticketUrl: document.getElementById('ticketUrl').value.trim()||undefined,
-      tags: document.getElementById('tags').value.split(',').map(function(s){return s.trim();}).filter(Boolean),
-      status: document.getElementById('status').value,
+      title: ecTitle.value,
+      slug: ecSlug.value||undefined,
+      description: ecDesc.value||undefined,
+      coverImage: ecCover.value||undefined,
+      date: dateIso,
+      endDate: endIso,
+      location: ecLoc.value||undefined,
+      venue: ecVenue.value||undefined,
+      ticketUrl: ecTicket.value||undefined,
+      tags: ecTags,
+      status: ecStatus.value,
     };
     try{
       if(Admin.useSupabase()){ await Admin.supaSave('events',id,isEdit,payload); }

@@ -104,6 +104,14 @@
     var priority=parseInt(document.getElementById('priority').value,10)||0;
     var file=document.getElementById('logo').files[0];
     if(!name){ ferr('Brand name is needed.'); return; }
+    // Hard input checks. Bad name or order stops the add.
+    var sc=Admin.cleanField(name, { label:'Brand name', max:200, noCode:true });
+    if(!sc.ok){ ferr(sc.message); return; }
+    name=sc.value;
+    var spc=Admin.cleanField(String(priority), { label:'Order', intRange:[-999,9999] });
+    if(!spc.ok){ ferr(spc.message); return; }
+    priority=parseInt(spc.value,10);
+    if(!Admin.budget('sponsor_write', 20, 60*60*1000)){ ferr('Slow down. Too many sponsor saves this hour.'); return; }
     if(!file){ ferr('Logo image is needed. Pick a file.'); return; }
     if(!Admin.useSupabase()){ ferr('Supabase not configured.'); return; }
     btn.disabled=true; btn.textContent='Adding…';

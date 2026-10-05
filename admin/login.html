@@ -168,6 +168,14 @@
     err.classList.add('hidden');
     var email = document.getElementById('email').value.trim();
     var password = document.getElementById('password').value;
+    // Hard email shape check first. Password is never altered, only sent.
+    try{
+      if (window.Admin && window.Admin.cleanField) {
+        var ec = window.Admin.cleanField(email, { label: 'Email', max: 320, email: true });
+        if (!ec.ok) { err.textContent = ec.message; err.classList.remove('hidden'); return; }
+        email = ec.value;
+      }
+    }catch(ce){}
     // Soft try limit (code only, no server change).
     // 3 fails -> wait 30 sec. 5 fails in 15 min -> wait 15 min. Friendly, not hard block.
     function tryKey(em){ return 'ms_login_tries_' + String(em||'').toLowerCase(); }
@@ -244,6 +252,7 @@
               var code = await waitCode();
               if (code === null) { await signOutQuiet(); mfaReset(); throw new Error('Sign-in cancelled'); }
               if (!code) { mfaNote('Enter the 6-digit code'); continue; }
+              if (!/^\d{6,8}$/.test(code)) { mfaNote('Code must be digits only'); continue; }
               var vr = await sb.auth.mfa.verify({ factorId: fid, challengeId: ch.data.id, code: code });
               if (!vr.error) { verified = true; break; }
               mfaNote('Code rejected (' + attempts + '/3) — check your app clock and retry');

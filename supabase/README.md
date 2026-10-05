@@ -28,3 +28,11 @@ Single project `minimsaah` holds DB + Storage. Data persists, `pg_dump` ready fo
 ## 6. Keep Nest for later
 - `main` is Pages-only. Nest lives in branch `render-backend`.
 - On beta success: point `DATABASE_URL` to Supabase pooled, `npm run start:prod`, swap Pages reads back to `window.__API_BASE__`.
+
+## 7. Safety rules for staff (read this before touching anything)
+- `service_role` key lives ONLY in server doors (`functions/api/*` env) and local `auth-migrate.js`. NEVER paste it into pages, HTML, or `inject-env`. Pages use the `anon` key only — safe by design because door rules hold.
+- Run `supabase/hardening.sql` in SQL Editor any time. It changes nothing. It raises on the first gap (door off, open write/delete, unpinned writer). `HARDENING OK` means pass.
+- New tables need: RLS on, public read narrow, staff write, no public delete. Copy the tickers block in `rls.sql` as the pattern.
+- Audit table: only bosses can read it. Watch for repeated `input_blocked` and `limit_hit` rows — same email again and again means attack. Suspend that user. Keep 30-day cleanup (see `audit.sql` bottom).
+- Backups: weekly full export from Dashboard > Database > Backups (or `pg_dump` via `DIRECT_URL`). Test one restore on a throwaway project per quarter.
+- Nest return checklist (do all before going live): password max 72, no fallback secret (refuse start if missing), close `/docs` on live, max length on every text field, generic error words only.
