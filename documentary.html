@@ -7,6 +7,20 @@
 <link rel="apple-touch-icon" href="/assets/img/logo.png">
 <title>Documentary | MINIMSAAH</title>
 <meta name="description" content="Long-form documentary storytelling from Ghana.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<!--META:HEAD-START-->
+<meta property="og:type" content="video.movie">
+<meta property="og:title" content="Documentary | MINIMSAAH">
+<meta property="og:description" content="Long-form documentary storytelling from Ghana.">
+<meta property="og:image" content="https://dndiajfohpmnmocmmokt.supabase.co/storage/v1/object/public/minimsaah-media/0be6735e-acf2-4513-aacb-71189871230c.jpg">
+<meta property="og:url" content="https://minimsaah.vercel.app/documentaries">
+<meta property="og:site_name" content="MINIMSAAH">
+<meta property="og:locale" content="en_GH">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Documentary | MINIMSAAH">
+<meta name="twitter:description" content="Long-form documentary storytelling from Ghana.">
+<meta name="twitter:image" content="https://dndiajfohpmnmocmmokt.supabase.co/storage/v1/object/public/minimsaah-media/0be6735e-acf2-4513-aacb-71189871230c.jpg">
+<!--META:HEAD-END-->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
@@ -33,7 +47,7 @@
     <div id="player-wrap" class="relative rounded-sm overflow-hidden bg-black border border-white/10 aspect-video mb-6">
       <div id="player" class="w-full h-full"></div>
       <div id="thumb-overlay" class="absolute inset-0 cursor-pointer group">
-        <img id="thumb" src="" class="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition">
+        <img id="thumb" src="" alt="Documentary" class="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition">
         <div class="absolute inset-0 flex items-center justify-center">
           <div class="w-20 h-20 rounded-full bg-[#E63946]/90 flex items-center justify-center group-hover:scale-110 transition"><svg class="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
         </div>
@@ -84,10 +98,10 @@
       document.getElementById('bc-title').textContent=d.title;
       document.getElementById('title').textContent=d.title;
       document.getElementById('desc').textContent=d.description||'';
-      if(d.coverImage) document.getElementById('thumb').src=d.coverImage;
-      else if(d.thumbnail) document.getElementById('thumb').src=d.thumbnail;
+      if(d.coverImage){ document.getElementById('thumb').src=d.coverImage; document.getElementById('thumb').alt=d.title||'Documentary'; }
+      else if(d.thumbnail){ document.getElementById('thumb').src=d.thumbnail; document.getElementById('thumb').alt=d.title||'Documentary'; }
       if(!d.coverImage && !d.thumbnail && d.videoUrl && window.MinimsaahEmbeds){
-        var t=window.MinimsaahEmbeds.thumbnailUrl(d); if(t) document.getElementById('thumb').src=t;
+        var t=window.MinimsaahEmbeds.thumbnailUrl(d); if(t){ document.getElementById('thumb').src=t; document.getElementById('thumb').alt=d.title||'Documentary'; }
       }
       document.getElementById('loading').classList.add('hidden');
       document.getElementById('content').classList.remove('hidden');

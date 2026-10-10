@@ -10,6 +10,12 @@ out/
 frontend/.next/
 frontend/out/
 build/
+# Generated SEO files (rebuilt every deploy by scripts/sitemap.js)
+sitemap.xml
+article/
+video/
+documentary/
+event/
 
 # Env & secrets - NEVER push
 .env

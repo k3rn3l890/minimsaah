@@ -7,7 +7,20 @@
 <link rel="apple-touch-icon" href="/assets/img/logo.png">
 <title>Article | MINIMSAAH</title>
 <meta name="description" content="Read in-depth sports journalism from Accra, Ghana.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<!--META:HEAD-START-->
 <meta property="og:type" content="article">
+<meta property="og:title" content="Article | MINIMSAAH">
+<meta property="og:description" content="Read in-depth sports journalism from Accra, Ghana.">
+<meta property="og:image" content="https://dndiajfohpmnmocmmokt.supabase.co/storage/v1/object/public/minimsaah-media/0be6735e-acf2-4513-aacb-71189871230c.jpg">
+<meta property="og:url" content="https://minimsaah.vercel.app/articles">
+<meta property="og:site_name" content="MINIMSAAH">
+<meta property="og:locale" content="en_GH">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Article | MINIMSAAH">
+<meta name="twitter:description" content="Read in-depth sports journalism from Accra, Ghana.">
+<meta name="twitter:image" content="https://dndiajfohpmnmocmmokt.supabase.co/storage/v1/object/public/minimsaah-media/0be6735e-acf2-4513-aacb-71189871230c.jpg">
+<!--META:HEAD-END-->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
@@ -177,7 +190,7 @@
         var a=document.createElement('a');
         a.href='/article.html?slug='+encodeURIComponent(it.slug);
         a.className='group block rounded-sm overflow-hidden border border-white/5 bg-[#0A0A0A]';
-        a.innerHTML='<div class="aspect-[16/9] overflow-hidden bg-[#111]">'+(it.coverImage? '<img src="'+esc(it.coverImage)+'" alt="" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">':'')+'</div><div class="p-4"><span class="text-[10px] font-mono tracking-widest text-[#E63946] uppercase">'+esc((it.category||'').replace(/_/g,' '))+'</span><h3 class="font-[Space_Grotesk,sans-serif] text-sm font-medium mt-1 group-hover:text-[#E63946] line-clamp-2">'+esc(it.title)+'</h3><span class="text-[11px] font-mono text-gray-600 mt-1 block">'+fmt(it.publishedAt||it.createdAt)+'</span></div>';
+        a.innerHTML='<div class="aspect-[16/9] overflow-hidden bg-[#111]">'+(it.coverImage? '<img src="'+esc(it.coverImage)+'" alt="'+esc(it.title)+'" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">':'')+'</div><div class="p-4"><span class="text-[10px] font-mono tracking-widest text-[#E63946] uppercase">'+esc((it.category||'').replace(/_/g,' '))+'</span><h3 class="font-[Space_Grotesk,sans-serif] text-sm font-medium mt-1 group-hover:text-[#E63946] line-clamp-2">'+esc(it.title)+'</h3><span class="text-[11px] font-mono text-gray-600 mt-1 block">'+fmt(it.publishedAt||it.createdAt)+'</span></div>';
         grid.appendChild(a);
       });
       document.getElementById('related').classList.remove('hidden');

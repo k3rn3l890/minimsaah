@@ -7,6 +7,20 @@
 <link rel="apple-touch-icon" href="/assets/img/logo.png">
 <title>All Videos | MINIMSAAH</title>
 <meta name="description" content="Every MINIMSAAH video story — features, interviews and football culture from Accra, Ghana.">
+<link rel="canonical" href="https://minimsaah.vercel.app/videos">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:title" content="All Videos | MINIMSAAH">
+<meta property="og:description" content="Every MINIMSAAH video story — features, interviews and football culture from Accra, Ghana.">
+<meta property="og:image" content="https://dndiajfohpmnmocmmokt.supabase.co/storage/v1/object/public/minimsaah-media/0be6735e-acf2-4513-aacb-71189871230c.jpg">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://minimsaah.vercel.app/videos">
+<meta property="og:site_name" content="MINIMSAAH">
+<meta property="og:locale" content="en_GH">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="All Videos | MINIMSAAH">
+<meta name="twitter:description" content="Every MINIMSAAH video story — features, interviews and football culture from Accra, Ghana.">
+<meta name="twitter:image" content="https://dndiajfohpmnmocmmokt.supabase.co/storage/v1/object/public/minimsaah-media/0be6735e-acf2-4513-aacb-71189871230c.jpg">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"CollectionPage","name":"All Videos | MINIMSAAH","url":"https://minimsaah.vercel.app/videos","description":"Every MINIMSAAH video story.","inLanguage":"en","isPartOf":{"@id":"https://minimsaah.vercel.app/#website"}}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
@@ -156,7 +170,7 @@
         if (goOut) { a.href = iout; a.setAttribute('target', '_blank'); a.setAttribute('rel', 'noopener'); }
         else a.href = '/video.html?slug=' + slug;
       a.className = 'group relative block overflow-hidden rounded-sm border border-white/5 bg-[#0A0A0A] min-h-[250px]';
-      a.innerHTML = '<div class="absolute inset-0 overflow-hidden">' + (t ? '<img src="'+esc(t)+'" alt="" loading="lazy" class="w-full h-full object-cover opacity-60 group-hover:opacity-70 transition-all duration-700">' : '') + '</div><div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/90 via-[#0A0A0A]/40 to-transparent"></div>' + (it.videoUrl && !goOut ? '<div class="absolute inset-0 flex items-center justify-center"><div class="rounded-full w-14 h-14 bg-[#E63946]/90 flex items-center justify-center" data-video-url="'+esc(it.videoUrl)+'"'+(it.embedUrl ? ' data-embed-url="'+esc(it.embedUrl)+'"' : '')+'><svg class="w-6 h-6 text-white ml-1 pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>' : (!goOut ? '' : '<div class="absolute inset-0 flex items-center justify-center"><div class="rounded-full w-14 h-14 bg-[#E63946]/90 flex items-center justify-center"><svg class="w-6 h-6 text-white ml-1 pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><span class="sr-only">Watch on provider</span></div></div>')) + '<div class="absolute bottom-0 left-0 right-0 p-5"><span class="text-[10px] font-mono text-[#E63946] tracking-widest uppercase">'+esc((it.category||'Feature').replace(/_/g,' '))+(durLabel(it.duration) ? ' • '+durLabel(it.duration) : '')+'</span><h3 class="font-[Space_Grotesk,sans-serif] text-lg md:text-xl font-medium mt-1 group-hover:text-[#E63946]">'+esc(it.title)+'</h3>' + (it.description ? '<p class="text-xs text-gray-400 mt-1 line-clamp-2">'+esc(it.description)+'</p>' : '') + '</div>';
+      a.innerHTML = '<div class="absolute inset-0 overflow-hidden">' + (t ? '<img src="'+esc(t)+'" alt="'+esc(it.title)+'" loading="lazy" class="w-full h-full object-cover opacity-60 group-hover:opacity-70 transition-all duration-700">' : '') + '</div><div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/90 via-[#0A0A0A]/40 to-transparent"></div>' + (it.videoUrl && !goOut ? '<div class="absolute inset-0 flex items-center justify-center"><div class="rounded-full w-14 h-14 bg-[#E63946]/90 flex items-center justify-center" data-video-url="'+esc(it.videoUrl)+'"'+(it.embedUrl ? ' data-embed-url="'+esc(it.embedUrl)+'"' : '')+'><svg class="w-6 h-6 text-white ml-1 pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>' : (!goOut ? '' : '<div class="absolute inset-0 flex items-center justify-center"><div class="rounded-full w-14 h-14 bg-[#E63946]/90 flex items-center justify-center"><svg class="w-6 h-6 text-white ml-1 pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><span class="sr-only">Watch on provider</span></div></div>')) + '<div class="absolute bottom-0 left-0 right-0 p-5"><span class="text-[10px] font-mono text-[#E63946] tracking-widest uppercase">'+esc((it.category||'Feature').replace(/_/g,' '))+(durLabel(it.duration) ? ' • '+durLabel(it.duration) : '')+'</span><h3 class="font-[Space_Grotesk,sans-serif] text-lg md:text-xl font-medium mt-1 group-hover:text-[#E63946]">'+esc(it.title)+'</h3>' + (it.description ? '<p class="text-xs text-gray-400 mt-1 line-clamp-2">'+esc(it.description)+'</p>' : '') + '</div>';
       if (it.videoUrl && !goOut) {
         var play = a.querySelector('[data-video-url]');
         if (play) play.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); if (window.MinimsaahPlayer) window.MinimsaahPlayer.open({ videoUrl: it.videoUrl, embedUrl: it.embedUrl, title: it.title, thumbnail: t }); });

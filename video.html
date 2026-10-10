@@ -7,6 +7,20 @@
 <link rel="apple-touch-icon" href="/assets/img/logo.png">
 <title>Video | MINIMSAAH</title>
 <meta name="description" content="Watch video stories from Accra, Ghana — stays on MINIMSAAH, no redirect.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<!--META:HEAD-START-->
+<meta property="og:type" content="video.other">
+<meta property="og:title" content="Video | MINIMSAAH">
+<meta property="og:description" content="Watch video stories from Accra, Ghana.">
+<meta property="og:image" content="https://dndiajfohpmnmocmmokt.supabase.co/storage/v1/object/public/minimsaah-media/0be6735e-acf2-4513-aacb-71189871230c.jpg">
+<meta property="og:url" content="https://minimsaah.vercel.app/videos">
+<meta property="og:site_name" content="MINIMSAAH">
+<meta property="og:locale" content="en_GH">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Video | MINIMSAAH">
+<meta name="twitter:description" content="Watch video stories from Accra, Ghana.">
+<meta name="twitter:image" content="https://dndiajfohpmnmocmmokt.supabase.co/storage/v1/object/public/minimsaah-media/0be6735e-acf2-4513-aacb-71189871230c.jpg">
+<!--META:HEAD-END-->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
@@ -168,7 +182,7 @@
     }catch(e){}
     // thumbnail
     var t= (window.MinimsaahEmbeds? window.MinimsaahEmbeds.thumbnailUrl(v): (v.thumbnail||'')) || '';
-    if(t) document.getElementById('thumb').src=t;
+    if(t){ var thEl=document.getElementById('thumb'); thEl.src=t; thEl.alt=v.title||'Video'; }
     function play(){
       var provider= window.MinimsaahEmbeds? window.MinimsaahEmbeds.detectProvider(v.videoUrl):'unknown';
       var out=(window.MinimsaahEmbeds&&window.MinimsaahEmbeds.cleanVideoUrl(v.videoUrl))||'';
@@ -246,7 +260,7 @@
         var a=document.createElement('a');
         a.href='/video.html?slug='+encodeURIComponent(it.slug);
         a.className='group block rounded-sm overflow-hidden border border-white/5 bg-[#0A0A0A]';
-        a.innerHTML='<div class="aspect-[16/9] overflow-hidden bg-[#111] relative">'+(t? '<img src="'+esc(t)+'" alt="" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">':'')+'<div class="absolute inset-0 flex items-center justify-center"><div class="w-10 h-10 rounded-full bg-[#E63946]/90 flex items-center justify-center"><svg class="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div></div><div class="p-3"><h3 class="text-sm font-medium line-clamp-2 group-hover:text-[#E63946]">'+esc(it.title)+'</h3><span class="text-[11px] font-mono text-gray-600">'+fmt(it.publishedAt||it.createdAt)+'</span></div>';
+        a.innerHTML='<div class="aspect-[16/9] overflow-hidden bg-[#111] relative">'+(t? '<img src="'+esc(t)+'" alt="'+esc(it.title)+'" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">':'')+'<div class="absolute inset-0 flex items-center justify-center"><div class="w-10 h-10 rounded-full bg-[#E63946]/90 flex items-center justify-center"><svg class="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div></div><div class="p-3"><h3 class="text-sm font-medium line-clamp-2 group-hover:text-[#E63946]">'+esc(it.title)+'</h3><span class="text-[11px] font-mono text-gray-600">'+fmt(it.publishedAt||it.createdAt)+'</span></div>';
         grid.appendChild(a);
       });
       document.getElementById('related').classList.remove('hidden');

@@ -1,5 +1,5 @@
 {
-  "buildCommand": "node scripts/inject-env.js",
+  "buildCommand": "node scripts/inject-env.js && node scripts/sitemap.js",
   "outputDirectory": ".",
   "devCommand": "",
   "framework": null,

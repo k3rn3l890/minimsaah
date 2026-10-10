@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" class="antialiased">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="/assets/img/logo.png">
+<link rel="apple-touch-icon" href="/assets/img/logo.png">
+<title>Lost on the Pitch | MINIMSAAH</title>
+<meta name="description" content="This page does not exist. Find MINIMSAAH stories, videos and documentaries from Accra, Ghana.">
+<meta name="robots" content="noindex, follow">
+<link rel="canonical" href="https://minimsaah.vercel.app/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Lost on the Pitch | MINIMSAAH">
+<meta property="og:description" content="This page does not exist. Find MINIMSAAH stories, videos and documentaries.">
+<meta property="og:url" content="https://minimsaah.vercel.app/">
+<meta property="og:site_name" content="MINIMSAAH">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>*:focus-visible{outline:2px solid #E63946;outline-offset:2px;border-radius:4px}</style>
+</head>
+<body class="bg-[#050505] text-white font-['Inter',sans-serif] m-0 overflow-x-hidden selection:bg-[#E63946] selection:text-white">
+<div style="position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:0.04;background-image:url('data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E');"></div>
+<nav class="px-4 sm:px-6 py-4 md:px-12 md:py-6 flex items-center">
+  <a href="/index.html" class="flex items-center">
+    <img src="/assets/img/logo.png" alt="MINIMSAAH" width="3834" height="1093" class="h-10 sm:h-10 md:h-14 w-auto max-w-[200px] sm:max-w-[280px] md:max-w-none"><span class="sr-only">MINIMSAAH</span>
+  </a>
+</nav>
+<main class="px-4 sm:px-6 md:px-12 max-w-[900px] mx-auto py-20 sm:py-28 text-center">
+  <span class="text-xs font-mono text-[#E63946] tracking-widest block mb-4">404 — OFFSIDE</span>
+  <h1 class="font-['Space_Grotesk',sans-serif] text-4xl sm:text-5xl md:text-6xl font-medium tracking-tight leading-tight mb-4">Lost on the Pitch</h1>
+  <p class="text-gray-400 text-sm sm:text-base leading-relaxed mb-8">This page does not exist or was moved. The stories play on — pick a side below.</p>
+  <div class="flex flex-col sm:flex-row gap-3 justify-center mb-10">
+    <a href="/index.html" class="bg-[#E63946] hover:bg-[#c53030] text-white text-xs font-mono tracking-widest uppercase px-6 py-3.5 rounded-sm transition-colors touch-manipulation">Home</a>
+    <a href="/articles" class="border border-white/10 hover:border-white/30 text-white text-xs font-mono tracking-widest uppercase px-6 py-3.5 rounded-sm transition-colors touch-manipulation">News</a>
+    <a href="/videos" class="border border-white/10 hover:border-white/30 text-white text-xs font-mono tracking-widest uppercase px-6 py-3.5 rounded-sm transition-colors touch-manipulation">Videos</a>
+  </div>
+  <form id="f404" class="max-w-xl mx-auto" role="search" aria-label="Site search">
+    <label for="q404" class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Search stories</label>
+    <input id="q404" type="search" placeholder="Title or excerpt…" autocomplete="off" class="w-full mt-2 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm placeholder:text-gray-600 focus:border-[#E63946]/50 focus:outline-none">
+  </form>
+</main>
+<footer class="border-t border-white/5 bg-[#0A0A0A] py-10 px-6 md:px-12 text-center">
+  <a href="/index.html" class="font-['Space_Grotesk',sans-serif] text-xl tracking-[0.25em] uppercase">MINIMSAAH</a>
+  <p class="text-xs text-gray-600 mt-2 font-mono tracking-widest">© 2026 MINIMSAAH — ACCRA, GHANA</p>
+</footer>
+<script>
+(function(){
+  document.getElementById('f404').addEventListener('submit', function(e){
+    e.preventDefault();
+    var q = document.getElementById('q404').value.trim().slice(0, 100);
+    location.href = '/articles' + (q ? '#search=' + encodeURIComponent(q) : '#news');
+  });
+})();
+</script>
+</body>
+</html>
