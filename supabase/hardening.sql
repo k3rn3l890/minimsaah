@@ -11,7 +11,7 @@ begin
   -- 1. RLS must be ON for every app table.
   for t in select unnest(array[
     'users','articles','videos','documentaries','events',
-    'tickers','media','sessions','sponsors','site_settings','admin_audit'
+    'tickers','media','sessions','sponsors','site_settings','admin_audit','contact_messages'
   ]) loop
     if not exists (
       select 1 from pg_tables
@@ -28,7 +28,7 @@ begin
     where schemaname = 'public'
       and tablename in (
         'users','articles','videos','documentaries','events',
-        'tickers','media','sessions','sponsors','site_settings','admin_audit'
+        'tickers','media','sessions','sponsors','site_settings','admin_audit','contact_messages'
       )
       and cmd in ('INSERT','UPDATE','DELETE')
       and (qual = 'true' or with_check = 'true')
@@ -54,3 +54,4 @@ begin
   raise notice 'HARDENING OK: all tables gated, no public writes/deletes, RPCs pinned.';
 end;
 $$;
+

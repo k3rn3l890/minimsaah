@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Events — MINIMSAAH Admin</title>
+<title>Inbox — MINIMSAAH Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <style>*:focus-visible{outline:2px solid #E63946;outline-offset:2px}</style>
@@ -14,7 +14,7 @@
 <body class="bg-[#050505] text-white font-['Inter',sans-serif] min-h-screen">
 <nav class="sticky top-0 z-40 bg-[#050505]/90 backdrop-blur-md border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between">
   <a href="/index.html" class="font-['Space_Grotesk',sans-serif] text-lg tracking-[0.2em] uppercase">MINIMSAAH</a>
-  <div class="flex gap-2"><a href="/admin/event-form.html" class="bg-[#E63946] hover:bg-[#c53030] text-white text-xs font-mono tracking-widest uppercase px-4 py-3 min-h-[44px] inline-flex items-center rounded-sm touch-manipulation">+ New Event</a><button onclick="Admin.logout()" class="text-xs font-mono border border-white/10 px-3 py-3 min-h-[44px] inline-flex items-center uppercase">Logout</button></div>
+  <button onclick="Admin.logout()" class="text-xs font-mono border border-white/10 px-3 py-3 min-h-[44px] inline-flex items-center uppercase">Logout</button>
 </nav>
 <div class="flex min-h-[calc(100vh-56px)]">
   <aside class="hidden md:block w-56 shrink-0 border-r border-white/5 bg-[#0A0A0A] p-4">
@@ -23,56 +23,84 @@
       <a href="/admin/articles.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Articles</a>
       <a href="/admin/videos.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Videos</a>
       <a href="/admin/documentaries.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Documentaries</a>
-      <a data-nav="events.html" href="/admin/events.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase bg-white/5 text-white">Events</a>
+      <a href="/admin/events.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Events</a>
       <a href="/admin/ticker.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Ticker</a>
       <a href="/admin/sponsors.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Sponsors</a>
-      <a href="/admin/inbox.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Inbox</a>
       <a href="/admin/settings.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Settings</a>
+      <a data-nav="inbox.html" href="/admin/inbox.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase bg-white/5 text-white">Inbox <span id="nav-unread" class="hidden ml-auto bg-[#E63946] text-white text-[10px] px-1.5 py-0.5 rounded-full"></span></a>
       <a href="/admin/media.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Media</a>
       <a href="/admin/profile.html" class="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white">Profile</a>
     </nav>
   </aside>
-  <main class="flex-1 p-4 md:p-6 max-w-[1100px] w-full">
+  <main class="flex-1 p-4 md:p-6 max-w-[800px] w-full">
     <div class="md:hidden flex gap-2 mb-4 overflow-auto snap-x scrollbar-hide -mx-4 px-4">
       <a href="/admin/articles.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Articles</a>
       <a href="/admin/videos.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Videos</a>
       <a href="/admin/documentaries.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Docs</a>
-      <a href="/admin/events.html" class="text-xs font-mono tracking-widest bg-white/5 text-white border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0 snap-start">Events</a>
+      <a href="/admin/events.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Events</a>
       <a href="/admin/ticker.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Ticker</a>
       <a href="/admin/sponsors.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Sponsors</a>
-      <a href="/admin/inbox.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Inbox</a>
       <a href="/admin/settings.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Settings</a>
+      <a href="/admin/inbox.html" class="text-xs font-mono tracking-widest bg-white/5 text-white border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0 snap-start">Inbox</a>
       <a href="/admin/media.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Media</a>
       <a href="/admin/profile.html" class="text-xs font-mono tracking-widest border border-white/10 px-3.5 py-3 min-h-[44px] inline-flex items-center touch-manipulation uppercase shrink-0">Profile</a>
     </div>
-    <div class="flex justify-between items-center mb-4"><h1 class="font-['Space_Grotesk',sans-serif] text-xl md:text-2xl font-medium tracking-tight">Events & Promos</h1></div>
+    <h1 class="font-['Space_Grotesk',sans-serif] text-xl md:text-2xl font-medium tracking-tight mb-2">Inbox <span id="unread" class="text-xs font-mono text-[#E63946] tracking-widest"></span></h1>
+    <p class="text-xs font-mono text-gray-500 mb-4">Messages from the site chat button. Newest first.</p>
     <div id="list" class="space-y-2"></div>
   </main>
 </div>
 <script>window.__API_BASE__ = window.__API_BASE__ || 'https://minimsaah-api.onrender.com/api/v1';</script><script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2" integrity="sha384-WgXwGL6fUsYJWNaKJgVbrJKGRQwc1vieh2oy4kw9nXqpNDz3tdSsqEYUgeHD/NuF" crossorigin="anonymous"></script><script src="/assets/js/supabase-client.js"></script><script src="/admin/js/admin.js"></script>
 <script>
 (function(){if(typeof window.Admin==='undefined'||!Admin.requireAuth){location.href='/admin/login.html';}else{Admin.requireAuth().then(function(){document.documentElement.classList.remove('mm-guard');}).catch(function(){});}
+  function fmtDate(d){ try{ return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }catch(e){ return d; } }
   async function load(){
     try{
-      var items=[];
-      if(Admin.useSupabase()){
-        var res=await Admin.supaList('events',{limit:20,noPager:true,orderBy:'date',asc:true});
-        items=res.items;
-      } else {
-        var data=await Admin.request('/events?limit=20');
-        items=data.items||[];
-      }
+      if(!Admin.useSupabase()){ Admin.toast('Supabase not configured','error'); return; }
+      var sb=Admin.supa();
+      var r=await sb.from('contact_messages').select('*').order('created_at',{ascending:false}).limit(100);
+      if(r.error) throw new Error(r.error.message);
+      var items=r.data||[];
+      var unread=items.filter(function(x){return !x.is_read;}).length;
+      document.getElementById('unread').textContent=unread?('('+unread+' new)'):'';
+      var nav=document.getElementById('nav-unread');
+      if(nav&&unread){ nav.textContent=String(unread); nav.classList.remove('hidden'); }
       var el=document.getElementById('list');
       el.innerHTML='';
-      if(!items.length){ el.innerHTML='<p class="text-sm text-gray-600 py-8 text-center">No events.</p>'; return; }
+      if(!items.length){ el.innerHTML='<p class="text-sm text-gray-600 py-8 text-center">No messages yet.</p>'; return; }
       items.forEach(function(it){
-        var d=new Date(it.date);
         var row=document.createElement('div');
-        row.className='bg-[#0A0A0A] border border-white/5 rounded-sm p-3 flex gap-3 items-center flex-wrap sm:flex-nowrap';
-        row.innerHTML='<div class="w-14 h-14 bg-[#111] border border-white/5 rounded-sm flex flex-col items-center justify-center shrink-0"><span class="text-lg font-medium text-[#E63946] leading-none">'+d.getDate()+'</span><span class="text-xs font-mono tracking-widest text-gray-400">'+d.toLocaleDateString('en-US',{month:'short'}).toUpperCase()+'</span></div><div class="flex-1 min-w-0"><a href="/admin/event-form.html?id='+encodeURIComponent(it.id)+'" class="text-sm font-medium hover:text-[#E63946] line-clamp-1">'+Admin.escapeHtml(it.title)+'</a><div class="text-xs font-mono text-gray-400 mt-1"><span class="'+(it.status==='PUBLISHED'?'text-green-400':'text-yellow-500')+'">'+Admin.escapeHtml(it.status)+'</span> • '+Admin.escapeHtml(it.location||it.venue||'')+' • '+Admin.fmtDate(it.date)+' • <a href="/event/'+encodeURIComponent(it.slug)+'" target="_blank" class="underline hover:text-white">View →</a></div></div><div class="flex gap-2 shrink-0 w-full sm:w-auto justify-end"><a href="/admin/event-form.html?id='+encodeURIComponent(it.id)+'" class="text-xs font-mono border border-white/10 px-3 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:border-white/20">Edit</a><button data-del="'+Admin.escapeHtml(it.id)+'" class="text-xs font-mono border border-[#E63946]/30 text-[#E63946] px-3 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-[#E63946] hover:text-white">Delete</button></div>';
+        row.className='bg-[#0A0A0A] border border-white/5 rounded-sm p-3 '+(it.is_read?'':'border-l-2 border-l-[#E63946]');
+        var head=document.createElement('button');
+        head.className='w-full text-left flex gap-3 items-center touch-manipulation';
+        head.setAttribute('aria-expanded','false');
+        head.innerHTML='<div class="flex-1 min-w-0"><p class="text-sm font-medium truncate">'+Admin.escapeHtml(it.name||'')+'</p><p class="text-xs font-mono text-gray-400 truncate">'+Admin.escapeHtml(it.email||'')+' • '+Admin.escapeHtml(fmtDate(it.created_at))+'</p></div><span class="text-[11px] font-mono '+(it.is_read?'text-gray-600':'text-[#E63946]')+' shrink-0">'+(it.is_read?'READ':'NEW')+'</span>';
+        var body=document.createElement('div');
+        body.className='hidden mt-3 pt-3 border-t border-white/5';
+        var p=document.createElement('p');
+        p.className='text-sm text-gray-200 leading-relaxed whitespace-pre-wrap break-words';
+        p.textContent=it.message||'';
+        body.appendChild(p);
+        var btns=document.createElement('div');
+        btns.className='flex gap-2 mt-3';
+        if(!it.is_read){
+          var rd=document.createElement('button');
+          rd.className='text-xs font-mono border border-white/10 px-3 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-white/5';
+          rd.textContent='Mark read';
+          rd.onclick=async function(ev){ ev.stopPropagation(); try{ var u=await sb.from('contact_messages').update({is_read:true}).eq('id',it.id); if(u.error) throw new Error(u.error.message); load(); }catch(e){ Admin.toast(e.message,'error'); } };
+          btns.appendChild(rd);
+        }
+        var del=document.createElement('button');
+        del.className='text-xs font-mono border border-[#E63946]/30 text-[#E63946] px-3 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-[#E63946] hover:text-white';
+        del.textContent='Delete';
+        del.onclick=async function(ev){ ev.stopPropagation(); if(!confirm('Delete this message?'))return; try{ var d=await sb.from('contact_messages').delete().eq('id',it.id); if(d.error) throw new Error(d.error.message); load(); }catch(e){ Admin.toast(e.message,'error'); } };
+        btns.appendChild(del);
+        body.appendChild(btns);
+        head.onclick=function(){ var open=body.classList.toggle('hidden'); head.setAttribute('aria-expanded', open?'false':'true'); };
+        row.appendChild(head);
+        row.appendChild(body);
         el.appendChild(row);
       });
-      el.querySelectorAll('[data-del]').forEach(function(b){b.onclick=async function(){if(Admin.useSupabase()&&Admin.deletesDisabled()){Admin.toast('Disabled in beta');return;}if(!confirm('Delete event?'))return;try{await Admin.request('/events/'+b.getAttribute('data-del'),{method:'DELETE'});Admin.toast('Deleted');load();}catch(e){Admin.toast(e.message,'error');}};});
     }catch(e){Admin.toast(e.message,'error');}
   }
   load();

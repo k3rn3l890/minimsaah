@@ -31,6 +31,7 @@ const files = [
   'admin/events.html',
   'admin/ticker.html',
   'admin/sponsors.html',
+  'admin/inbox.html',
   'admin/settings.html',
   'admin/media.html',
   'admin/profile.html',

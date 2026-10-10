@@ -67,7 +67,7 @@ async function handleDelete(request, env) {
     : (request.body || {});
   const table = bodyData.table;
   const id = bodyData.id;
-  const allowed = ['articles', 'videos', 'documentaries', 'events', 'tickers', 'sponsors', 'media'];
+  const allowed = ['articles', 'videos', 'documentaries', 'events', 'tickers', 'sponsors', 'contact_messages', 'media'];
   if (!allowed.includes(table) || typeof id !== 'string' || id.length < 1 || id.length > 128 || !/^[A-Za-z0-9._-]+$/.test(id)) return Response.json({ error: 'Bad request' }, { status: 400 });
 
   const cap = deleteAllowed(user.id);
