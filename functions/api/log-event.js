@@ -16,6 +16,7 @@ const ALLOWED_EVENTS = [
   'delete_blocked',
   'limit_hit',
   'input_blocked',
+  'site_error',
 ];
 
 // Memory caps: 60 total per minute (mirrors the DB writer) + 10 per

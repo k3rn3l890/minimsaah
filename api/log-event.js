@@ -17,6 +17,7 @@ const ALLOWED_EVENTS = [
   'delete_blocked',
   'limit_hit',
   'input_blocked',
+  'site_error',
 ];
 
 const stampTimes = [];
