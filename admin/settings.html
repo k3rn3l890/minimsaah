@@ -105,7 +105,7 @@
     }
     try {
       if (Admin.useSupabase()) {
-        var res = await Admin.supaList('site_settings', { limit: 50, noPager: true });
+        var res = await Admin.supaList('site_settings', { limit: 50, noPager: true, orderBy: 'key', asc: true });
         (res.items || []).forEach(function (it) {
           var key = it.key || it.id;
           var box = document.querySelector('input[data-key="' + key + '"]');
@@ -133,8 +133,9 @@
     btn.disabled = true; btn.textContent = 'Saving…';
     try {
       var sb = Admin.supa();
+      var stamp = new Date().toISOString();
       for (var i = 0; i < rows.length; i++) {
-        var up = await sb.from('site_settings').upsert({ key: rows[i].key, value: rows[i].value });
+        var up = await sb.from('site_settings').upsert({ key: rows[i].key, value: rows[i].value, updated_at: stamp });
         if (up.error) throw new Error(up.error.message);
       }
       Admin.toast('Saved');

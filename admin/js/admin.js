@@ -389,6 +389,8 @@
   // Supabase list with pager parity to the Nest API.
   // opts: {status, active, search, searchFields, category, orderBy, asc, secondaryOrderBy, page, limit, noPager}
   // returns {items (normalized), meta:{total,page,limit,totalPages}}
+  // NOTE: orderBy defaults to created_at — callers must pass a column the
+  // table really has (e.g. site_settings has no created_at: pass orderBy:'key').
   async function supaList(table, opts) {
     opts = opts || {};
     // Soft guards (code only): table allow list + page caps + search slow-down.
