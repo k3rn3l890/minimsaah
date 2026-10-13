@@ -61,6 +61,13 @@ a:focus-visible {
   .ticker-track {
     animation: none !important;
   }
+  .live-veil {
+    animation: none !important;
+  }
+  [data-live-zone][data-live="ready"] .live-content {
+    animation: none !important;
+  }
+}
   .sponsor-track {
     animation: none !important;
   }
@@ -82,6 +89,67 @@ a:focus-visible {
 }
 .ticker-track:hover {
   animation-play-state: paused;
+}
+
+/* ===== Live zones: shimmer until truth arrives, never demo ===== */
+[data-live-zone] {
+  position: relative;
+}
+[data-live-zone] .live-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: none;
+  border-radius: 0.25rem;
+  background: linear-gradient(100deg, #0A0A0A 30%, #141414 45%, #0A0A0A 60%);
+  background-size: 200% 100%;
+  animation: liveShimmer 1.4s linear infinite;
+  pointer-events: none;
+}
+[data-live-zone][data-live="waiting"] .live-veil {
+  display: block;
+}
+[data-live-zone][data-live="waiting"] .live-content {
+  visibility: hidden;
+}
+[data-live-zone][data-live="ready"] .live-content {
+  animation: liveIn 0.45s ease-out;
+}
+@keyframes liveShimmer {
+  0% { background-position: 180% 0; }
+  100% { background-position: -80% 0; }
+}
+@keyframes liveIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.live-err {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  background: rgba(5, 5, 5, 0.92);
+}
+[data-live-zone][data-live="failed"] .live-err {
+  display: flex;
+}
+[data-live-zone][data-live="failed"] .live-veil {
+  display: none;
+}
+[data-live-zone][data-live="failed"] .live-content {
+  visibility: hidden;
+}
+.live-img {
+  transition: opacity 0.5s ease;
+}
+.live-img.is-loading {
+  opacity: 0 !important;
 }
 
 /* ===== Partners strip ===== */
@@ -114,7 +182,7 @@ a:focus-visible {
 </style>
 </head>
 
-<noscript><style>body{opacity:1!important;overflow:auto!important}#loader{display:none!important}</style></noscript>
+<noscript><style>body{opacity:1!important;overflow:auto!important}#loader{display:none!important}[data-live-zone] .live-veil{display:none!important}[data-live-zone] .live-content{visibility:visible!important}</style></noscript>
   <body class="bg-[#050505] text-[#FFFFFF] font-['Inter',sans-serif] m-0 overflow-x-hidden cursor-default selection:bg-[#E63946] selection:text-white text-sm sm:text-base leading-relaxed" style="opacity: 0; overflow-y: auto;">
 
   <!-- NOISE OVERLAY -->

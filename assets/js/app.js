@@ -102,13 +102,93 @@
     return v.thumbnail || v.coverImage || '';
   }
 
+  // ─── Live zones: shimmer until truth, never demo ────────────────
+  // Each dynamic home section is wrapped at runtime: a shimmer veil covers
+  // it while live data loads, then content fades in. On failure a small
+  // note + Try Again shows instead of stale demo. Text stays in the HTML
+  // for crawlers and no-JS readers (see noscript rule); eyes never see it.
+  var ZONE_TIMEOUT = 8000;
+  var zoneRetry = {};
+  var titlesReady = null;
+  function withTimeout(promise, ms) {
+    return Promise.race([promise, new Promise(function (_, rej) {
+      setTimeout(function () { rej(new Error('zone timeout')); }, ms || ZONE_TIMEOUT);
+    })]);
+  }
+  function armZone(id, retryFn) {
+    var sec = document.getElementById(id);
+    if (!sec) return null;
+    if (retryFn) zoneRetry[id] = retryFn;
+    if (sec.getAttribute('data-live-armed')) return sec;
+    sec.setAttribute('data-live-armed', '1');
+    sec.setAttribute('data-live-zone', '');
+    var wrap = document.createElement('div');
+    wrap.className = 'live-content';
+    while (sec.firstChild) wrap.appendChild(sec.firstChild);
+    sec.appendChild(wrap);
+    var veil = document.createElement('div');
+    veil.className = 'live-veil';
+    veil.setAttribute('aria-hidden', 'true');
+    sec.appendChild(veil);
+    var err = document.createElement('div');
+    err.className = 'live-err';
+    var msg = document.createElement('p');
+    msg.className = 'text-sm text-gray-400';
+    msg.textContent = 'Could not load this section.';
+    err.appendChild(msg);
+    var btn = document.createElement('button');
+    btn.textContent = 'Try Again';
+    btn.className = 'bg-[#E63946] hover:bg-[#c53030] text-white text-xs font-mono tracking-widest uppercase px-5 py-3 min-h-[44px] rounded-sm transition-colors touch-manipulation';
+    btn.addEventListener('click', function () {
+      var fn = zoneRetry[id];
+      if (fn) fn();
+    });
+    err.appendChild(btn);
+    sec.appendChild(err);
+    sec.setAttribute('data-live', 'waiting');
+    return sec;
+  }
+  function zoneReady(id) {
+    var sec = document.getElementById(id);
+    if (!sec) return;
+    sec.setAttribute('data-live', 'ready');
+    try { if (window.ScrollTrigger) setTimeout(function () { window.ScrollTrigger.refresh(); }, 80); } catch (e) {}
+  }
+  // Reveal only after section titles have settled, so headings never swap visibly.
+  function titlesThenReady(id) {
+    try {
+      Promise.resolve(titlesReady).then(function () { zoneReady(id); });
+    } catch (e) { zoneReady(id); }
+  }
+  function zoneFail(id) {
+    var sec = document.getElementById(id);
+    if (!sec) return;
+    sec.setAttribute('data-live', 'failed');
+    try { if (window.ScrollTrigger) setTimeout(function () { window.ScrollTrigger.refresh(); }, 80); } catch (e) {}
+  }
+  // Swap an image without a pop: new photo fades in only when loaded.
+  function setLiveImg(img, src, alt) {
+    if (!img || !src) return;
+    try {
+      img.classList.add('live-img', 'is-loading');
+      if (alt) img.alt = alt;
+      var done = function () { try { img.classList.remove('is-loading'); } catch (e) {} };
+      img.onload = done;
+      img.onerror = done;
+      if (img.getAttribute('src') !== src) img.src = src;
+      else done();
+    } catch (e) {}
+  }
+
   // ─── Hydrate Hero (featured article) ─────────────────────────────
   async function hydrateHero() {
-    var data = useSupabase()
-      ? await fetchSupabase('articles', { status: 'PUBLISHED', limit: 2, orderBy: 'published_at' })
-      : await fetchJSON('/articles?status=PUBLISHED&limit=2');
-    if (!data || !data.items || !data.items.length) return;
-    var a = data.items[0];
+    if (!armZone('hero', hydrateHero)) return;
+    try {
+      var data = await withTimeout(useSupabase()
+        ? fetchSupabase('articles', { status: 'PUBLISHED', limit: 2, orderBy: 'published_at' })
+        : fetchJSON('/articles?status=PUBLISHED&limit=2'));
+      if (!data || !data.items || !data.items.length) throw new Error('empty');
+      var a = data.items[0];
     var heroTitle = qs('#hero-title');
     var heroDeck = qs('#hero-deck');
     var heroBadge = qs('#hero-badge');
@@ -134,10 +214,7 @@
       heroMeta.innerHTML = '<span class="text-xs font-mono text-gray-400">By <span class="text-white">' + escapeHtml((a.author && (a.author.firstName + ' ' + a.author.lastName)) || 'MINIMSAAH') + '</span></span><span class="w-1 h-1 rounded-full bg-[#E63946]"></span><span class="text-xs font-mono text-gray-500">' + escapeHtml(readingTimeLabel(a.readingTime)) + '</span>';
     }
     if (heroCta) heroCta.href = '/article.html?slug=' + encodeURIComponent(a.slug);
-    if (heroImg && a.coverImage) {
-      heroImg.src = a.coverImage;
-      heroImg.alt = a.title;
-    }
+    if (heroImg && a.coverImage) setLiveImg(heroImg, a.coverImage, a.title);
     // Secondary story (same hydrate pattern as side cards). Honest empty
     // state: hide the block when there is no second story instead of
     // leaving a placeholder that links nowhere.
@@ -145,7 +222,7 @@
     var second = data.items[1];
     if (sec && second) {
       var secImg = sec.querySelector('img');
-      if (secImg && second.coverImage) { secImg.src = second.coverImage; secImg.alt = second.title; }
+      if (secImg && second.coverImage) setLiveImg(secImg, second.coverImage, second.title);
       var secCat = sec.querySelector('span');
       if (secCat) secCat.textContent = (second.category || 'Feature').replace(/_/g, ' ').toUpperCase();
       var secTitle = sec.querySelector('h3');
@@ -158,29 +235,33 @@
       var secWrap = qs('#hero-secondary');
       if (secWrap) secWrap.style.display = 'none';
     }
+    titlesThenReady('hero');
     // refresh ScrollTrigger if present
     if (window.ScrollTrigger) setTimeout(function () { window.ScrollTrigger.refresh(); }, 80);
+    } catch (e) { zoneFail('hero'); }
   }
 
   // ─── Hydrate Featured Section ────────────────────────────────────
   async function hydrateFeatured() {
+    if (!armZone('featured', hydrateFeatured)) return;
+    try {
     var section = qs('#featured');
-    if (!section) return;
-    var data = useSupabase()
-      ? await fetchSupabase('articles', { status: 'PUBLISHED', limit: 4, orderBy: 'published_at' })
-      : await fetchJSON('/articles?status=PUBLISHED&limit=4');
-    if (!data || !data.items || data.items.length < 2) return;
+    if (!section) throw new Error('missing');
+    var data = await withTimeout(useSupabase()
+      ? fetchSupabase('articles', { status: 'PUBLISHED', limit: 4, orderBy: 'published_at' })
+      : fetchJSON('/articles?status=PUBLISHED&limit=4'));
+    if (!data || !data.items || data.items.length < 2) throw new Error('empty');
     var featured = data.items[0];
     var sides = data.items.slice(1, 4);
 
     var grid = section.querySelector('.grid');
-    if (!grid) return;
+    if (!grid) throw new Error('missing');
 
     // Large card (first col)
     var large = grid.children[0];
     if (large && featured) {
       var img = large.querySelector('img');
-      if (img && featured.coverImage) { img.src = featured.coverImage; img.alt = featured.title; }
+      if (img && featured.coverImage) setLiveImg(img, featured.coverImage, featured.title);
       var h3 = large.querySelector('h3');
       if (h3) { h3.textContent = featured.title; large.style.cursor = 'pointer'; }
       var p = large.querySelector('p.text-gray-400');
@@ -196,7 +277,7 @@
         var card = cards[i];
         if (!card) return;
         var img = card.querySelector('img');
-        if (img && art.coverImage) { img.src = art.coverImage; img.alt = art.title; }
+        if (img && art.coverImage) setLiveImg(img, art.coverImage, art.title);
         var h4 = card.querySelector('h4');
         if (h4) h4.textContent = art.title;
         var cat = card.querySelector('span.text-\\[10px\\]');
@@ -206,16 +287,20 @@
         card.href = '/article.html?slug=' + encodeURIComponent(art.slug);
       });
     }
+    titlesThenReady('featured');
+    } catch (e) { zoneFail('featured'); }
   }
 
   // ─── Hydrate Video Stories (Docs-style grid) ────────────────────
   async function hydrateVideos() {
+    if (!armZone('videos', hydrateVideos)) return;
+    try {
     var section = qs('#videos');
-    if (!section) return;
-    var data = useSupabase()
-      ? await fetchSupabase('videos', { status: 'PUBLISHED', limit: 20, orderBy: 'published_at' })
-      : await fetchJSON('/videos?status=PUBLISHED&limit=20');
-    if (!data || !data.items || !data.items.length) return;
+    if (!section) throw new Error('missing');
+    var data = await withTimeout(useSupabase()
+      ? fetchSupabase('videos', { status: 'PUBLISHED', limit: 20, orderBy: 'published_at' })
+      : fetchJSON('/videos?status=PUBLISHED&limit=20'));
+    if (!data || !data.items || !data.items.length) throw new Error('empty');
     var videos = sortFeaturedFirst(data.items);
     var cards = qsa('#videos .grid > a', document);
     videos.slice(0, cards.length).forEach(function (v, idx) {
@@ -228,7 +313,7 @@
       var img = card.querySelector('img');
       if (img) {
         var t = thumbForVideo(v);
-        if (t) { img.src = t; img.alt = v.title; }
+        if (t) setLiveImg(img, t, v.title);
       }
       var label = card.querySelector('span.text-\\[10px\\]');
       if (label) {
@@ -264,16 +349,20 @@
         try { console.warn('[home videos] skip bad row', v && (v.id || v.slug)); } catch (_) {}
       }
     });
+    titlesThenReady('videos');
+    } catch (e) { zoneFail('videos'); }
   }
 
   // ─── Hydrate Documentaries ──────────────────────────────────────
   async function hydrateDocs() {
+    if (!armZone('docs', hydrateDocs)) return;
+    try {
     var section = qs('#docs');
-    if (!section) return;
-    var data = useSupabase()
-      ? await fetchSupabase('documentaries', { status: 'PUBLISHED', limit: 20, orderBy: 'published_at' })
-      : await fetchJSON('/documentaries?status=PUBLISHED&limit=20');
-    if (!data || !data.items || !data.items.length) return;
+    if (!section) throw new Error('missing');
+    var data = await withTimeout(useSupabase()
+      ? fetchSupabase('documentaries', { status: 'PUBLISHED', limit: 20, orderBy: 'published_at' })
+      : fetchJSON('/documentaries?status=PUBLISHED&limit=20'));
+    if (!data || !data.items || !data.items.length) throw new Error('empty');
     var docs = sortFeaturedFirst(data.items);
     var cards = qsa('#docs .grid > a', document);
     docs.forEach(function (d, i) {
@@ -282,7 +371,7 @@
       var img = card.querySelector('img');
       if (img) {
         var src = d.coverImage || d.thumbnail || thumbForVideo(d);
-        if (src) { img.src = src; img.alt = d.title; }
+        if (src) setLiveImg(img, src, d.title);
       }
       var h3 = card.querySelector('h3');
       if (h3) h3.textContent = d.title;
@@ -308,16 +397,20 @@
         }
       }
     });
+    titlesThenReady('docs');
+    } catch (e) { zoneFail('docs'); }
   }
 
   // ─── Hydrate News ───────────────────────────────────────────────
   async function hydrateNews() {
+    if (!armZone('news', hydrateNews)) return;
+    try {
     var section = qs('#news');
-    if (!section) return;
-    var data = useSupabase()
-      ? await fetchSupabase('articles', { status: 'PUBLISHED', limit: 6, orderBy: 'published_at' })
-      : await fetchJSON('/articles?status=PUBLISHED&limit=6');
-    if (!data || !data.items || !data.items.length) return;
+    if (!section) throw new Error('missing');
+    var data = await withTimeout(useSupabase()
+      ? fetchSupabase('articles', { status: 'PUBLISHED', limit: 6, orderBy: 'published_at' })
+      : fetchJSON('/articles?status=PUBLISHED&limit=6'));
+    if (!data || !data.items || !data.items.length) throw new Error('empty');
     var items = data.items;
     var cards = qsa('#news .grid > a', document);
     // first card spans 2 cols, rest singles
@@ -325,7 +418,7 @@
       var card = cards[i];
       if (!card) return;
       var img = card.querySelector('img');
-      if (img && art.coverImage) { img.src = art.coverImage; img.alt = art.title; }
+      if (img && art.coverImage) setLiveImg(img, art.coverImage, art.title);
       var h3 = card.querySelector('h3');
       if (h3) h3.textContent = art.title;
       var cat = card.querySelector('span.text-\\[10px\\]');
@@ -338,16 +431,20 @@
       });
       card.href = '/article.html?slug=' + encodeURIComponent(art.slug);
     });
+    titlesThenReady('news');
+    } catch (e) { zoneFail('news'); }
   }
 
   // ─── Hydrate Events ─────────────────────────────────────────────
   async function hydrateEvents() {
+    if (!armZone('events', hydrateEvents)) return;
+    try {
     var section = qs('#events');
-    if (!section) return;
-    var data = useSupabase()
-      ? await fetchSupabase('events', { status: 'PUBLISHED', limit: 3, orderBy: 'date' })
-      : await fetchJSON('/events?status=PUBLISHED&limit=3');
-    if (!data || !data.items || !data.items.length) return;
+    if (!section) throw new Error('missing');
+    var data = await withTimeout(useSupabase()
+      ? fetchSupabase('events', { status: 'PUBLISHED', limit: 3, orderBy: 'date' })
+      : fetchJSON('/events?status=PUBLISHED&limit=3'));
+    if (!data || !data.items || !data.items.length) throw new Error('empty');
     var evs = data.items;
     var rows = qsa('#events .flex.flex-col > a', document);
     evs.forEach(function (ev, i) {
@@ -365,6 +462,8 @@
       if (loc) loc.textContent = (ev.location || ev.venue || '') + ' • ' + fmtDate(ev.date);
       row.href = '/event.html?slug=' + encodeURIComponent(ev.slug);
     });
+    titlesThenReady('events');
+    } catch (e) { zoneFail('events'); }
   }
 
   // ─── Hydrate Partners strip ───────────────────────────────────
@@ -470,7 +569,8 @@
   // ─── Init ────────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', function () {
     fixNav();
-    hydrateTitles();
+    // Titles settle first so section reveals never swap headings visibly.
+    try { titlesReady = hydrateTitles(); } catch (e) { titlesReady = null; }
     hydrateHero();
     hydrateFeatured();
     hydrateVideos();
