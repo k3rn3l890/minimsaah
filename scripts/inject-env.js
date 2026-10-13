@@ -86,3 +86,39 @@ function injectIntoFile(relPath) {
 files.forEach(injectIntoFile);
 
 console.log('Supabase config injected into all HTML files');
+
+// Asset version stamps: every local script link becomes
+// /assets/js/app.js?v=<save-id> so browsers fetch fresh files after
+// each deploy. The 1-year freeze rule in vercel.json stays correct.
+// Re-running replaces the old stamp (idempotent). Pre-rendered story
+// pages inherit stamps because sitemap.js runs after this script.
+function buildTag() {
+  try {
+    const out = require('child_process').execSync('git rev-parse --short HEAD', {
+      cwd: path.join(__dirname, '..'),
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    const tag = String(out).trim();
+    if (/^[A-Za-z0-9]+$/.test(tag)) return tag;
+  } catch (e) {}
+  return Date.now().toString(36);
+}
+
+function stampVersions() {
+  const tag = buildTag();
+  const re = /(\/(?:assets\/js|admin\/js)\/[A-Za-z0-9-]+\.js)(\?v=[A-Za-z0-9]+)?/g;
+  let n = 0;
+  files.forEach(function (relPath) {
+    const fullPath = path.join(__dirname, '..', relPath);
+    if (!fs.existsSync(fullPath)) return;
+    const content = fs.readFileSync(fullPath, 'utf8');
+    const updated = content.replace(re, '$1?v=' + tag);
+    if (updated !== content) {
+      fs.writeFileSync(fullPath, updated);
+      n++;
+    }
+  });
+  console.log(`Stamped asset versions (?v=${tag}) in ${n} files`);
+}
+
+stampVersions();
