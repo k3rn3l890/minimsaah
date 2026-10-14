@@ -135,6 +135,7 @@
   <script src="/assets/js/contact.js"></script>
 <script src="/assets/js/watch.js"></script>
 <script src="/assets/js/supabase-client.js"></script>
+<script src="/assets/js/lib.js"></script>
 <script src="/assets/js/player.js"></script>
 <script>
 // mobile drawer for archive
@@ -142,58 +143,26 @@
 </script>
 <script>
 (function(){
-  var API = location.hostname==='localhost'||location.hostname==='127.0.0.1' ? 'http://localhost:3000/api/v1' : (window.__API_BASE__||'');
-  function useSupabase(){ return window.SupabaseDB && window.SupabaseDB.isEnabled(); }
-  function esc(s){ if(s===null||s===undefined) return ''; return String(s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);}); }
-  function normRow(r){ if(!r||typeof r!=='object'||Array.isArray(r)) return r; var o={}; for(var k in r){ o[k]=r[k]; var ck=k.replace(/_([a-z])/g,function(m,c){return c.toUpperCase();}); if(ck!==k&&o[ck]===undefined) o[ck]=r[k]; } return o; }
-  function thumbFor(d){
+  var L = window.MinimsaahLib;
+  if (!L) {
     try {
-      if (d && (d.coverImage || d.thumbnail)) return d.coverImage || d.thumbnail;
-      if (window.MinimsaahEmbeds && typeof window.MinimsaahEmbeds.thumbnailUrl === 'function') return window.MinimsaahEmbeds.thumbnailUrl(d) || '';
-    } catch (e) { try { console.warn('[videos] thumb failed for', d && d.id); } catch (_) {} }
-    return '';
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('error').classList.remove('hidden');
+    } catch (e) {}
+    return;
   }
+  var useSupabase = L.useSupabase, esc = L.esc, normRow = L.normRow, show = L.show;
+  var thumbFor = L.thumbFor, durLabel = L.durLabel, safeSlug = L.safeSlug;
+  var sortNewestFirst = L.sortFeaturedFirst;
   var all = [], q = '';
-  function show(el, on){ el.classList.toggle('hidden', !on); }
   async function fetchAll(){
-    if (useSupabase()) {
-      var sb = window.SupabaseDB.client();
-      var r = await sb.from('videos').select('*').eq('status','PUBLISHED').order('published_at',{ascending:false}).limit(100);
-      if (r.error) throw new Error(r.error.message);
-      return (r.data||[]).map(normRow);
-    }
-    var res = await fetch(API+'/videos?status=PUBLISHED&limit=100');
-    if (!res.ok) throw new Error('not found');
-    var data = await res.json();
-    return data.items || data;
+    return L.fetchPublished('videos', 'published_at', 100, { strict: true });
   }
   function filtered(){
-    var needle = q.trim().toLowerCase().slice(0, 100).replace(/[%_(),<>"']/g, '');
+    var needle = L.cleanQuery(q);
     if (!needle) return all;
     return all.filter(function(it){
       return ((it.title||'')+' '+(it.description||'')).toLowerCase().indexOf(needle) !== -1;
-    });
-  }
-  function durLabel(v){
-    var n = Number(v && typeof v === 'object' ? v.duration : v);
-    if (!isFinite(n) || n <= 0) return '';
-    return Math.floor(n/60) + ':' + String(Math.floor(n)%60).padStart(2,'0');
-  }
-  function safeSlug(it){
-    var s = it && (it.slug || it.id);
-    try { return encodeURIComponent(String(s)); } catch (e) { return ''; }
-  }
-  function sortNewestFirst(items){
-    // Featured rows first, then newest date, empty dates last.
-    return (items || []).slice().sort(function(a, b){
-      var fa = !!(a && a.featured), fb = !!(b && b.featured);
-      if (fa !== fb) return fa ? -1 : 1;
-      var ta = a && (a.publishedAt || a.createdAt) ? Date.parse(a.publishedAt || a.createdAt) : NaN;
-      var tb = b && (b.publishedAt || b.createdAt) ? Date.parse(b.publishedAt || b.createdAt) : NaN;
-      if (isNaN(ta) && isNaN(tb)) return 0;
-      if (isNaN(ta)) return 1;
-      if (isNaN(tb)) return -1;
-      return tb - ta;
     });
   }
   function render(){

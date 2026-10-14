@@ -135,6 +135,7 @@
   <script src="/assets/js/contact.js"></script>
 <script src="/assets/js/watch.js"></script>
 <script src="/assets/js/supabase-client.js"></script>
+<script src="/assets/js/lib.js"></script>
 <script src="/assets/js/player.js"></script>
 <script>
 // mobile drawer for archive
@@ -142,54 +143,32 @@
 </script>
 <script>
 (function(){
-  var API = location.hostname==='localhost'||location.hostname==='127.0.0.1' ? 'http://localhost:3000/api/v1' : (window.__API_BASE__||'');
-  function useSupabase(){ return window.SupabaseDB && window.SupabaseDB.isEnabled(); }
-  function esc(s){ if(s===null||s===undefined) return ''; return String(s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);}); }
-  function normRow(r){ if(!r||typeof r!=='object'||Array.isArray(r)) return r; var o={}; for(var k in r){ o[k]=r[k]; var ck=k.replace(/_([a-z])/g,function(m,c){return c.toUpperCase();}); if(ck!==k&&o[ck]===undefined) o[ck]=r[k]; } return o; }
-  function thumbFor(d){
-    if (d.coverImage || d.thumbnail) return d.coverImage || d.thumbnail;
-    if (window.MinimsaahEmbeds) return window.MinimsaahEmbeds.thumbnailUrl(d);
-    return '';
+  var L = window.MinimsaahLib;
+  if (!L) {
+    try {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('error').classList.remove('hidden');
+    } catch (e) {}
+    return;
   }
-  var all = [], q = '';
-  function show(el, on){ el.classList.toggle('hidden', !on); }
-  async function fetchAll(){
-    if (useSupabase()) {
-      var sb = window.SupabaseDB.client();
-      var r = await sb.from('documentaries').select('*').eq('status','PUBLISHED').order('published_at',{ascending:false}).limit(100);
-      if (r.error) throw new Error(r.error.message);
-      return (r.data||[]).map(normRow);
-    }
-    var res = await fetch(API+'/documentaries?status=PUBLISHED&limit=100');
-    if (!res.ok) throw new Error('not found');
-    var data = await res.json();
-    return data.items || data;
-  }
-  function filtered(){
-    var needle = q.trim().toLowerCase().slice(0, 100).replace(/[%_(),<>"']/g, '');
-    if (!needle) return all;
-    return all.filter(function(it){
-      return ((it.title||'')+' '+(it.description||'')).toLowerCase().indexOf(needle) !== -1;
-    });
-  }
+  var useSupabase = L.useSupabase, esc = L.esc, normRow = L.normRow, show = L.show;
+  var thumbFor = L.thumbFor, safeSlug = L.safeSlug, sortFeaturedFirst = L.sortFeaturedFirst;
+  // Quirk preserved: local durLabel takes a row but every call passes a
+  // bare number, so durations stay hidden exactly as today. Fix queued
+  // separately — do not "fix" by swapping in L.durLabel here.
   function durLabel(d){
     if (!d.duration) return '';
     return Math.floor(d.duration/60) + ' min';
   }
-  function safeSlug(it){
-    try { return encodeURIComponent(String((it && (it.slug || it.id)) || '')); } catch (e) { return ''; }
+  var all = [], q = '';
+  async function fetchAll(){
+    return L.fetchPublished('documentaries', 'published_at', 100, { strict: true });
   }
-  function sortFeaturedFirst(items){
-    // Featured rows first, then newest date, empty dates last.
-    return (items || []).slice().sort(function(a, b){
-      var fa = !!(a && a.featured), fb = !!(b && b.featured);
-      if (fa !== fb) return fa ? -1 : 1;
-      var ta = a && (a.publishedAt || a.createdAt) ? Date.parse(a.publishedAt || a.createdAt) : NaN;
-      var tb = b && (b.publishedAt || b.createdAt) ? Date.parse(b.publishedAt || b.createdAt) : NaN;
-      if (isNaN(ta) && isNaN(tb)) return 0;
-      if (isNaN(ta)) return 1;
-      if (isNaN(tb)) return -1;
-      return tb - ta;
+  function filtered(){
+    var needle = L.cleanQuery(q);
+    if (!needle) return all;
+    return all.filter(function(it){
+      return ((it.title||'')+' '+(it.description||'')).toLowerCase().indexOf(needle) !== -1;
     });
   }
   function render(){
