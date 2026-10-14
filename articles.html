@@ -138,34 +138,29 @@
   <script src="/assets/js/contact.js"></script>
 <script src="/assets/js/watch.js"></script>
 <script src="/assets/js/supabase-client.js"></script>
+<script src="/assets/js/lib.js"></script>
 <script>
 // mobile drawer for archive
 (function(){ var t=document.getElementById('menu-toggle-detail'), d=document.getElementById('mobile-drawer-detail'), c=document.getElementById('menu-close-detail'); if(!t||!d) return; function open(){ d.classList.remove('hidden'); requestAnimationFrame(function(){ d.classList.remove('opacity-0'); }); t.setAttribute('aria-expanded','true'); document.body.style.overflow='hidden'; } function close(){ d.classList.add('opacity-0'); setTimeout(function(){ d.classList.add('hidden'); },200); t.setAttribute('aria-expanded','false'); document.body.style.overflow=''; } t.onclick=open; if(c) c.onclick=close; d.onclick=function(e){ if(e.target===d) close(); }; })();
 </script>
 <script>
 (function(){
-  var API = location.hostname==='localhost'||location.hostname==='127.0.0.1' ? 'http://localhost:3000/api/v1' : (window.__API_BASE__||'');
-  function useSupabase(){ return window.SupabaseDB && window.SupabaseDB.isEnabled(); }
-  function esc(s){ if(s===null||s===undefined) return ''; return String(s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);}); }
-  function normRow(r){ if(!r||typeof r!=='object'||Array.isArray(r)) return r; var o={}; for(var k in r){ o[k]=r[k]; var ck=k.replace(/_([a-z])/g,function(m,c){return c.toUpperCase();}); if(ck!==k&&o[ck]===undefined) o[ck]=r[k]; } return o; }
-  function fmt(d){ try{ return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}catch{return d;} }
+  var L = window.MinimsaahLib;
+  if (!L) {
+    try {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('error').classList.remove('hidden');
+    } catch (e) {}
+    return;
+  }
+  var useSupabase = L.useSupabase, esc = L.esc, normRow = L.normRow, fmt = L.fmtDate, show = L.show;
   var CATS = ['FEATURE','MATCH_REPORT','ANALYSIS','INTERVIEW','OPINION','BREAKING'];
   var all = [], q = '', cat = '';
-  function show(el, on){ el.classList.toggle('hidden', !on); }
   async function fetchAll(){
-    if (useSupabase()) {
-      var sb = window.SupabaseDB.client();
-      var r = await sb.from('articles').select('*').eq('status','PUBLISHED').order('published_at',{ascending:false}).limit(100);
-      if (r.error) throw new Error(r.error.message);
-      return (r.data||[]).map(normRow);
-    }
-    var res = await fetch(API+'/articles?status=PUBLISHED&limit=100');
-    if (!res.ok) throw new Error('not found');
-    var data = await res.json();
-    return data.items || data;
+    return L.fetchPublished('articles', 'published_at', 100, { strict: true });
   }
   function filtered(){
-    var needle = q.trim().toLowerCase().slice(0, 100).replace(/[%_(),<>"']/g, '');
+    var needle = L.cleanQuery(q);
     return all.filter(function(it){
       if (cat && it.category !== cat) return false;
       if (!needle) return true;

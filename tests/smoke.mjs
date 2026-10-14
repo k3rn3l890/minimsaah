@@ -48,9 +48,11 @@ function loadBrowserScript(relPath, stubs) {
 
 let Admin;
 let Embeds;
+let Lib;
 before(() => {
   Admin = loadBrowserScript('admin/js/admin.js', browserStubs()).Admin;
   Embeds = loadBrowserScript('assets/js/embeds.js', browserStubs()).MinimsaahEmbeds;
+  Lib = loadBrowserScript('assets/js/lib.js', browserStubs()).MinimsaahLib;
 });
 
 // ---- 1. sitemap helpers ----
@@ -193,6 +195,73 @@ describe('MinimsaahEmbeds', () => {
 
   it('thumbnailUrl has no fake default (unknown means empty)', () => {
     assert.equal(Embeds.thumbnailUrl({}), '');
+  });
+});
+
+// ---- 8. shared page library (Phase 4) ----
+describe('MinimsaahLib', () => {
+  it('esc matches the per-page original', () => {
+    assert.equal(Lib.esc('<b>"x"&</b>'), '&lt;b&gt;&quot;x&quot;&amp;&lt;/b&gt;');
+    assert.equal(Lib.esc(null), '');
+    assert.equal(Lib.esc(undefined), '');
+  });
+
+  it('normRow maps snake_case to camelCase, keeps both', () => {
+    const r = Lib.normRow({ first_name: 'A', title: 'T' });
+    assert.equal(r.firstName, 'A');
+    assert.equal(r.first_name, 'A');
+    assert.equal(r.title, 'T');
+    assert.equal(Lib.normRow(null), null);
+    assert.deepEqual(Lib.normRow([1]), [1]);
+  });
+
+  it('fmtDate formats en-GB or returns input', () => {
+    assert.equal(Lib.fmtDate('2026-01-05'), '5 Jan 2026');
+  });
+
+  it('show toggles hidden', () => {
+    let v = null;
+    Lib.show({ classList: { toggle: (c, off) => { v = off; } } }, false);
+    assert.equal(v, true);
+  });
+
+  it('safeSlug encodes slug-or-id, empty on bad', () => {
+    assert.equal(Lib.safeSlug({ slug: 'a-b' }), 'a-b');
+    assert.equal(Lib.safeSlug({ id: 'x' }), 'x');
+    assert.equal(Lib.safeSlug({}), '');
+  });
+
+  it('durLabel formats m:ss, empty when unknown', () => {
+    assert.equal(Lib.durLabel(312), '5:12');
+    assert.equal(Lib.durLabel({ duration: 486 }), '8:06');
+    assert.equal(Lib.durLabel(null), '');
+    assert.equal(Lib.durLabel(0), '');
+  });
+
+  it('cleanQuery matches the page filter cleaner', () => {
+    assert.equal(Lib.cleanQuery('  Hello%_World  '), 'hello%_world'.replace(/[%_]/g, ''));
+    assert.equal(Lib.cleanQuery('y'.repeat(500)).length, 100);
+  });
+
+  it('sortFeaturedFirst puts featured first, dateless last', () => {
+    const rows = [
+      { t: 'plain-new', publishedAt: '2026-09-19' },
+      { t: 'feat-old', featured: true, publishedAt: '2020-01-01' },
+      { t: 'nodate' },
+    ];
+    assert.deepEqual(Lib.sortFeaturedFirst(rows).map((x) => x.t), ['feat-old', 'plain-new', 'nodate']);
+  });
+
+  it('fetchPublished strict throws on failure, [] when empty', async () => {
+    const stubs = browserStubs();
+    stubs.stubWindow.SupabaseDB = {
+      isEnabled: () => true,
+      client: () => ({ from: () => { throw new Error('down'); } }),
+    };
+    const L2 = loadBrowserScript('assets/js/lib.js', stubs).MinimsaahLib;
+    await assert.rejects(L2.fetchPublished('articles', 'published_at', 100, { strict: true }), /not found/);
+    const calm = await L2.fetchPublished('articles', 'published_at', 100);
+    assert.deepEqual(calm, []);
   });
 });
 
