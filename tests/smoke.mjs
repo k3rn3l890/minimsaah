@@ -1359,12 +1359,15 @@ describe('supabase RLS static guards', () => {
   });
 
   it('increment_view is revoked from anon/authenticated (door-only counts)', () => {
+    // PUBLIC must be named: Postgres grants new functions to PUBLIC by
+    // default, which covers everyone even after named roles are revoked.
+    // Missing PUBLIC once caused a live HARDENING GAPS: RPC-OPEN failure.
     assert.ok(
-      rls.includes('revoke execute on function public.increment_view(text, text) from anon, authenticated;'),
-      'rls.sql must revoke direct RPC access'
+      rls.includes('revoke execute on function public.increment_view(text, text) from public, anon, authenticated;'),
+      'rls.sql must revoke direct RPC access including PUBLIC'
     );
     assert.ok(
-      audit.includes('revoke execute on function public.increment_view(text, text) from anon, authenticated;'),
+      audit.includes('revoke execute on function public.increment_view(text, text) from public, anon, authenticated;'),
       'audit.sql re-asserts the revoke after its redefine'
     );
     assert.ok(hardening.includes('RPC-OPEN:increment_view'), 'hardening must detect an open RPC');

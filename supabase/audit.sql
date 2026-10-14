@@ -68,7 +68,8 @@ end;
 $$;
 
 -- Re-assert after the redefine: counts flow only through POST /api/view.
-revoke execute on function public.increment_view(text, text) from anon, authenticated;
+-- PUBLIC included: default grants cover everyone unless revoked.
+revoke execute on function public.increment_view(text, text) from public, anon, authenticated;
 
 -- Retention (requires pg_cron; leave commented if unavailable):
 -- select cron.schedule('audit-retention', '0 3 * * *',

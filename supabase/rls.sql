@@ -216,5 +216,7 @@ $$;
 
 -- Browsers count via POST /api/view only. Direct anon/authenticated
 -- execution is revoked so the RPC cannot be replayed outside the door's
--- per-IP caps. service_role (the door) bypasses grants, unaffected.
-revoke execute on function public.increment_view(text, text) from anon, authenticated;
+-- per-IP caps. PUBLIC is revoked too: Postgres grants new functions to
+-- PUBLIC by default, which covers everyone even after named roles go.
+-- service_role (the door) bypasses grants, unaffected.
+revoke execute on function public.increment_view(text, text) from public, anon, authenticated;
