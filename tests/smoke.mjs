@@ -532,3 +532,107 @@ describe('api/admin/delete door', () => {
     }
   });
 });
+
+// ---- 10. chat widget self-build (Phase 4) ----
+describe('MinimsaahContact widget', () => {
+  function fakeEl(id) {
+    return {
+      id,
+      dataset: {},
+      style: {},
+      textContent: '',
+      value: '',
+      handlers: {},
+      classList: {
+        toggle() {}, add() {}, remove() {},
+        contains: () => false,
+      },
+      setAttribute() {},
+      addEventListener(ev, fn) { this.handlers[ev] = fn; },
+      appendChild() {},
+      focus() {},
+    };
+  }
+
+  function widgetStubs() {
+    const registry = {};
+    const el = (id) => (registry[id] || (registry[id] = fakeEl(id)));
+    let injected = '';
+    const doc = {
+      readyState: 'complete',
+      getElementById: (id) => registry[id] || null,
+      createElement: () => fakeEl(''),
+      head: { appendChild() {} },
+      body: {
+        appendChild() {},
+        insertAdjacentHTML(pos, html) { injected += html; },
+      },
+      addEventListener() {},
+    };
+    return { registry, el, doc, getInjected: () => injected };
+  }
+
+  function loadWidget(stubs) {
+    const src = fs.readFileSync(path.join(ROOT, 'assets/js/contact.js'), 'utf8');
+    const fn = new Function('window', 'location', 'document', 'localStorage', 'fetch', src);
+    const win = { SupabaseDB: null };
+    const loc = { hostname: 'test', pathname: '/', search: '' };
+    const store = {};
+    const ls = {
+      getItem: (k) => (k in store ? store[k] : null),
+      setItem: (k, v) => { store[k] = String(v); },
+      removeItem: (k) => { delete store[k]; },
+    };
+    fn(win, loc, stubs.doc, ls, () => { throw new Error('network disabled in tests'); });
+    return win.MinimsaahContact;
+  }
+
+  it('injects identical widget markup when the page has none', () => {
+    const stubs = widgetStubs();
+    loadWidget(stubs);
+    const html = stubs.getInjected();
+    assert.ok(html.includes('id="contact-fab"'));
+    assert.ok(html.includes('id="contact-panel"'));
+    assert.ok(html.includes('id="contact-form"'));
+    assert.ok(html.includes('Chat with MINIMSAAH'));
+  });
+
+  it('skips injection when the page already carries the widget', () => {
+    const stubs = widgetStubs();
+    ['contact-fab', 'contact-panel', 'contact-close', 'contact-done-close',
+     'contact-form-view', 'contact-done-view', 'contact-name', 'contact-email',
+     'contact-msg', 'contact-count', 'contact-err', 'contact-send',
+     'contact-form'].forEach((id) => stubs.el(id));
+    loadWidget(stubs);
+    assert.equal(stubs.getInjected(), '');
+  });
+
+  it('blocks empty name with friendly words', () => {
+    const stubs = widgetStubs();
+    ['contact-fab', 'contact-panel', 'contact-close', 'contact-done-close',
+     'contact-form-view', 'contact-done-view', 'contact-name', 'contact-email',
+     'contact-msg', 'contact-count', 'contact-err', 'contact-send',
+     'contact-form'].forEach((id) => stubs.el(id));
+    stubs.el('contact-msg').value = 'Hello there, this is long enough.';
+    stubs.el('contact-email').value = 'a@b.co';
+    loadWidget(stubs);
+    const form = stubs.el('contact-form');
+    assert.ok(form.handlers.submit, 'submit wired');
+    form.handlers.submit({ preventDefault() {} });
+    assert.equal(stubs.el('contact-err').textContent, 'Your name is needed.');
+  });
+
+  it('blocks bad email with friendly words', () => {
+    const stubs = widgetStubs();
+    ['contact-fab', 'contact-panel', 'contact-close', 'contact-done-close',
+     'contact-form-view', 'contact-done-view', 'contact-name', 'contact-email',
+     'contact-msg', 'contact-count', 'contact-err', 'contact-send',
+     'contact-form'].forEach((id) => stubs.el(id));
+    stubs.el('contact-name').value = 'Ada';
+    stubs.el('contact-email').value = 'not-an-email';
+    stubs.el('contact-msg').value = 'Hello there, this is long enough.';
+    loadWidget(stubs);
+    stubs.el('contact-form').handlers.submit({ preventDefault() {} });
+    assert.equal(stubs.el('contact-err').textContent, 'Email must look like name@site.');
+  });
+});
