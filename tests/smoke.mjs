@@ -533,7 +533,73 @@ describe('api/admin/delete door', () => {
   });
 });
 
-// ---- 10. chat widget self-build (Phase 4) ----
+// ---- 10. drawer wiring (Phase 4) ----
+describe('MinimsaahLib.wireDrawer', () => {
+  function drawerStubs() {
+    function mk() {
+      return {
+        classes: new Set(['hidden', 'opacity-0']),
+        attrs: {},
+        handlers: {},
+        classList: {
+          add(c) { this._s.add(c); },
+          remove(c) { this._s.delete(c); },
+          contains(c) { return this._s.has(c); },
+          _s: null,
+        },
+        setAttribute(k, v) { this.attrs[k] = v; },
+        addEventListener() {},
+      };
+    }
+    function fin(s) {
+      s.classList._s = s.classes;
+      s.onclick = null;
+      return s;
+    }
+    const t = fin(mk()), d = fin(mk()), c = fin(mk());
+    const body = { style: {} };
+    const doc = {
+      getElementById: (id) => (
+        id === 'menu-toggle-detail' ? t
+        : id === 'mobile-drawer-detail' ? d
+        : id === 'menu-close-detail' ? c : null),
+      body,
+    };
+    return { t, d, c, doc, body };
+  }
+
+  function loadLibWithDoc(doc) {
+    const src = fs.readFileSync(path.join(ROOT, 'assets/js/lib.js'), 'utf8');
+    const raf = (fn) => fn();
+    const fn = new Function('window', 'location', 'document', 'localStorage', 'fetch', 'requestAnimationFrame', src);
+    const win = {};
+    fn(win, { hostname: 't', pathname: '/', search: '' }, doc,
+      { getItem: () => null, setItem() {}, removeItem() {} },
+      () => { throw new Error('network disabled in tests'); }, raf);
+    return win.MinimsaahLib;
+  }
+
+  it('wires toggle open and close with aria updates', () => {
+    const s = drawerStubs();
+    const L = loadLibWithDoc(s.doc);
+    assert.equal(L.wireDrawer(), true);
+    s.t.onclick();
+    assert.ok(!s.d.classes.has('hidden'));
+    assert.equal(s.t.attrs['aria-expanded'], 'true');
+    assert.equal(s.body.style.overflow, 'hidden');
+    s.c.onclick();
+    assert.ok(s.d.classes.has('opacity-0'));
+    assert.equal(s.t.attrs['aria-expanded'], 'false');
+    assert.equal(s.body.style.overflow, '');
+  });
+
+  it('returns false when nodes are missing', () => {
+    const s = drawerStubs();
+    s.doc.getElementById = () => null;
+    assert.equal(loadLibWithDoc(s.doc).wireDrawer(), false);
+  });
+});
+// ---- 11. chat widget self-build (Phase 4) ----
 describe('MinimsaahContact widget', () => {
   function fakeEl(id) {
     return {

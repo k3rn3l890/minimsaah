@@ -155,6 +155,34 @@
     } catch (e) {}
   }
 
+  // Mobile drawer wiring shared by all detail/list pages (toggle, drawer,
+  // close ids default to the detail variant). Uses the full aria-expanded
+  // variant everywhere — three pages missed those updates before.
+  function wireDrawer(toggleId, drawerId, closeId) {
+    try {
+      var t = document.getElementById(toggleId || 'menu-toggle-detail');
+      var d = document.getElementById(drawerId || 'mobile-drawer-detail');
+      var c = document.getElementById(closeId || 'menu-close-detail');
+      if (!t || !d) return false;
+      function open() {
+        d.classList.remove('hidden');
+        requestAnimationFrame(function () { d.classList.remove('opacity-0'); });
+        t.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden';
+      }
+      function close() {
+        d.classList.add('opacity-0');
+        setTimeout(function () { d.classList.add('hidden'); }, 200);
+        t.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+      }
+      t.onclick = open;
+      if (c) c.onclick = close;
+      d.onclick = function (e) { if (e.target === d) close(); };
+      return true;
+    } catch (e) { return false; }
+  }
+
   function apiClient() {
     if (useSupabase()) {
       try {
@@ -209,5 +237,6 @@
     setPageState: setPageState,
     renderTags: renderTags,
     bindShareCopy: bindShareCopy,
+    wireDrawer: wireDrawer,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

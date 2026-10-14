@@ -94,7 +94,7 @@
 <script src="/assets/js/player.js"></script>
 <script>
 // mobile drawer for archive
-(function(){ var t=document.getElementById('menu-toggle-detail'), d=document.getElementById('mobile-drawer-detail'), c=document.getElementById('menu-close-detail'); if(!t||!d) return; function open(){ d.classList.remove('hidden'); requestAnimationFrame(function(){ d.classList.remove('opacity-0'); }); t.setAttribute('aria-expanded','true'); document.body.style.overflow='hidden'; } function close(){ d.classList.add('opacity-0'); setTimeout(function(){ d.classList.add('hidden'); },200); t.setAttribute('aria-expanded','false'); document.body.style.overflow=''; } t.onclick=open; if(c) c.onclick=close; d.onclick=function(e){ if(e.target===d) close(); }; })();
+(function(){ if(window.MinimsaahLib) window.MinimsaahLib.wireDrawer(); })();
 </script>
 <script>
 (function(){
