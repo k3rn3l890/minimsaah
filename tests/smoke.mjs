@@ -263,3 +263,55 @@ describe('api/log-event door', () => {
     }
   });
 });
+
+// ---- 7. admin delete door rejection paths (no network) ----
+describe('api/admin/delete door', () => {
+  let delHandler;
+  before(async () => {
+    ({ default: delHandler } = await import('../api/admin/delete.js'));
+  });
+
+  function mockRes() {
+    const res = { statusCode: 0, body: null, headers: {} };
+    res.status = (c) => { res.statusCode = c; return res; };
+    res.json = (b) => { res.body = b; return res; };
+    res.setHeader = (k, v) => { res.headers[k] = v; };
+    return res;
+  }
+
+  it('rejects non-POST with 405', async () => {
+    const res = mockRes();
+    await delHandler({ method: 'GET', headers: {} }, res);
+    assert.equal(res.statusCode, 405);
+  });
+
+  it('rejects missing token with 401', async () => {
+    const res = mockRes();
+    await delHandler({ method: 'POST', headers: {}, body: {} }, res);
+    assert.equal(res.statusCode, 401);
+    assert.deepEqual(res.body, { error: 'Unauthorized' });
+  });
+
+  it('returns 500 without server env', async () => {
+    const keep = {
+      url: process.env.SUPABASE_URL,
+      anon: process.env.SUPABASE_ANON_KEY,
+      key: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    };
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_ANON_KEY;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    try {
+      const res = mockRes();
+      await delHandler(
+        { method: 'POST', headers: { authorization: 'Bearer x' }, body: {} },
+        res
+      );
+      assert.equal(res.statusCode, 500);
+    } finally {
+      if (keep.url !== undefined) process.env.SUPABASE_URL = keep.url;
+      if (keep.anon !== undefined) process.env.SUPABASE_ANON_KEY = keep.anon;
+      if (keep.key !== undefined) process.env.SUPABASE_SERVICE_ROLE_KEY = keep.key;
+    }
+  });
+});

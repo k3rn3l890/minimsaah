@@ -1,7 +1,6 @@
 /**
  * Vercel serverless route: POST /api/log-event
- * Same logic as functions/api/log-event.js (Cloudflare Pages twin).
- * If you change one, change the other. Vercel serves this file live.
+ * Sole live audit door (host is Vercel; Cloudflare twin retired Phase 3).
  *
  * Stamps the caller address (IP) that browser code can never know.
  * No login needed. Event allow-list, field caps, per-minute global cap
