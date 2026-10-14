@@ -69,11 +69,11 @@
     </div>
     <div id="chips" class="mt-4 flex flex-wrap gap-2"></div>
 
-    <div id="loading" class="py-20 text-center">
+    <div id="loading" class="py-20 text-center" role="status">
       <div class="inline-block w-6 h-6 border-2 border-white/20 border-t-[#E63946] rounded-full animate-spin"></div>
       <p class="text-xs font-mono text-gray-500 mt-3 tracking-widest">LOADING STORIES…</p>
     </div>
-    <div id="grid" class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    <div id="grid" class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" aria-live="polite"></div>
     <div id="empty" class="hidden py-20 text-center">
       <p class="text-gray-400 mb-2">No stories match.</p>
       <button id="reset" class="text-xs font-mono tracking-widest text-[#E63946] hover:underline uppercase">Clear search & filters</button>

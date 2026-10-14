@@ -155,6 +155,26 @@
     } catch (e) {}
   }
 
+  // Play-overlay chunk shared by the video list renders. The in-site
+  // variant is a real <button> with a spoken label (keyboard + readers
+  // reach it); the go-out variant stays a plain marker because the whole
+  // card is already the link. Static markup, zero user data unescaped.
+  function overlayHTML(o) {
+    o = o || {};
+    if (o.goOut) {
+      return '<div class="absolute inset-0 flex items-center justify-center"><div class="rounded-full w-14 h-14 bg-[#E63946]/90 flex items-center justify-center"><svg class="w-6 h-6 text-white ml-1 pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><span class="sr-only">Watch on provider</span></div></div>';
+    }
+    if (!o.videoUrl) return '';
+    return '<div class="absolute inset-0 flex items-center justify-center"><button type="button" aria-label="Play ' + esc(o.title || 'this video') + '" class="rounded-full w-14 h-14 bg-[#E63946]/90 flex items-center justify-center cursor-pointer" data-video-url="' + esc(o.videoUrl) + '"' + (o.embedUrl ? ' data-embed-url="' + esc(o.embedUrl) + '"' : '') + '><svg class="w-6 h-6 text-white ml-1 pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button></div>';
+  }
+
+  // Spoken label for home-page play buttons (their titles arrive later).
+  function labelPlay(el, title) {
+    try {
+      if (el) el.setAttribute('aria-label', 'Play ' + String(title || 'this video').slice(0, 100));
+    } catch (e) {}
+  }
+
   // Mobile drawer wiring shared by all detail/list pages (toggle, drawer,
   // close ids default to the detail variant). Uses the full aria-expanded
   // variant everywhere — three pages missed those updates before.
@@ -237,6 +257,8 @@
     setPageState: setPageState,
     renderTags: renderTags,
     bindShareCopy: bindShareCopy,
+    overlayHTML: overlayHTML,
+    labelPlay: labelPlay,
     wireDrawer: wireDrawer,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

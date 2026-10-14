@@ -66,11 +66,11 @@
       <input id="q" type="search" placeholder="Title or description…" autocomplete="off" class="w-full mt-1 max-w-xl bg-white/5 border border-white/10 rounded-sm px-3 py-2.5 text-sm placeholder:text-gray-600 focus:border-[#E63946]/50 focus:outline-none">
     </div>
 
-    <div id="loading" class="py-20 text-center">
+    <div id="loading" class="py-20 text-center" role="status">
       <div class="inline-block w-6 h-6 border-2 border-white/20 border-t-[#E63946] rounded-full animate-spin"></div>
       <p class="text-xs font-mono text-gray-500 mt-3 tracking-widest">LOADING DOCUMENTARIES…</p>
     </div>
-    <div id="grid" class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    <div id="grid" class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4" aria-live="polite"></div>
     <div id="empty" class="hidden py-20 text-center">
       <p class="text-gray-400 mb-2">No documentaries match.</p>
       <button id="reset" class="text-xs font-mono tracking-widest text-[#E63946] hover:underline uppercase">Clear search</button>
@@ -147,7 +147,7 @@
       if (goOut) { a.href = iout; a.setAttribute('target', '_blank'); a.setAttribute('rel', 'noopener'); }
       else a.href = '/documentary.html?slug=' + slug;
       a.className = 'group relative block overflow-hidden rounded-sm border border-white/5 bg-[#0A0A0A] min-h-[250px]';
-      a.innerHTML = '<div class="absolute inset-0 overflow-hidden">' + (t ? '<img src="'+esc(t)+'" alt="'+esc(it.title)+'" loading="lazy" class="w-full h-full object-cover opacity-60 group-hover:opacity-70 transition-all duration-700">' : '') + '</div><div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/90 via-[#0A0A0A]/40 to-transparent"></div>' + (it.videoUrl && !goOut ? '<div class="absolute inset-0 flex items-center justify-center"><div class="rounded-full w-14 h-14 bg-[#E63946]/90 flex items-center justify-center" data-video-url="'+esc(it.videoUrl)+'"'+(it.embedUrl ? ' data-embed-url="'+esc(it.embedUrl)+'"' : '')+'><svg class="w-6 h-6 text-white ml-1 pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>' : (goOut ? '<div class="absolute inset-0 flex items-center justify-center"><div class="rounded-full w-14 h-14 bg-[#E63946]/90 flex items-center justify-center"><svg class="w-6 h-6 text-white ml-1 pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><span class="sr-only">Watch on provider</span></div></div>' : '')) + '<div class="absolute bottom-0 left-0 right-0 p-5"><span class="text-[10px] font-mono text-[#E63946] tracking-widest uppercase">Documentary'+(durLabel(it.duration) ? ' • '+durLabel(it.duration) : '')+'</span><h3 class="font-[Space_Grotesk,sans-serif] text-lg md:text-xl font-medium mt-1 group-hover:text-[#E63946]">'+esc(it.title)+'</h3>' + (it.description ? '<p class="text-xs text-gray-400 mt-1 line-clamp-2">'+esc(it.description)+'</p>' : '') + '</div>';
+      a.innerHTML = '<div class="absolute inset-0 overflow-hidden">' + (t ? '<img src="'+esc(t)+'" alt="'+esc(it.title)+'" loading="lazy" class="w-full h-full object-cover opacity-60 group-hover:opacity-70 transition-all duration-700">' : '') + '</div><div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/90 via-[#0A0A0A]/40 to-transparent"></div>' + L.overlayHTML({ videoUrl: it.videoUrl, embedUrl: it.embedUrl, title: it.title, goOut: goOut }) + '<div class="absolute bottom-0 left-0 right-0 p-5"><span class="text-[10px] font-mono text-[#E63946] tracking-widest uppercase">Documentary'+(durLabel(it.duration) ? ' • '+durLabel(it.duration) : '')+'</span><h3 class="font-[Space_Grotesk,sans-serif] text-lg md:text-xl font-medium mt-1 group-hover:text-[#E63946]">'+esc(it.title)+'</h3>' + (it.description ? '<p class="text-xs text-gray-400 mt-1 line-clamp-2">'+esc(it.description)+'</p>' : '') + '</div>';
       if (it.videoUrl && !goOut) {
         var play = a.querySelector('[data-video-url]');
         if (play) play.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); if (window.MinimsaahPlayer) window.MinimsaahPlayer.open({ videoUrl: it.videoUrl, embedUrl: it.embedUrl, title: it.title, thumbnail: t }); });

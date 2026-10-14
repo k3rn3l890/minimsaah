@@ -59,7 +59,7 @@
 
   <!-- Article -->
   <article id="detail" class="px-4 sm:px-6 md:px-12 lg:px-20 max-w-[900px] mx-auto pb-12 sm:pb-16">
-    <div id="loading" class="py-20 text-center">
+    <div id="loading" class="py-20 text-center" role="status">
       <div class="inline-block w-6 h-6 border-2 border-white/20 border-t-[#E63946] rounded-full animate-spin"></div>
       <p class="text-xs font-mono text-gray-500 mt-3 tracking-widest">LOADING STORY…</p>
     </div>
@@ -74,7 +74,7 @@
         <span id="author" class="min-w-0"></span><span class="w-1 h-1 rounded-full bg-[#E63946] hidden sm:block"></span><span id="reading"></span><span class="w-1 h-1 rounded-full bg-gray-700 hidden sm:block"></span><span id="views"></span>
         <div class="ml-auto flex gap-2 w-full sm:w-auto justify-end mt-2 sm:mt-0">
           <button id="share-x" class="w-11 h-11 rounded-full border border-white/10 flex items-center justify-center hover:border-[#E63946]/50 text-gray-400 hover:text-white text-xs touch-manipulation active:bg-white/5" title="Share">𝕏</button>
-          <button id="share-copy" class="w-11 h-11 rounded-full border border-white/10 flex items-center justify-center hover:border-[#E63946]/50 text-gray-400 hover:text-white touch-manipulation active:bg-white/5" title="Copy link"><iconify-icon icon="solar:link-linear" width="14"></iconify-icon></button>
+          <button id="share-copy" aria-live="polite" class="w-11 h-11 rounded-full border border-white/10 flex items-center justify-center hover:border-[#E63946]/50 text-gray-400 hover:text-white touch-manipulation active:bg-white/5" title="Copy link" aria-label="Copy link"><iconify-icon icon="solar:link-linear" width="14"></iconify-icon></button>
         </div>
       </div>
       <div id="cover-wrap" class="relative rounded-sm overflow-hidden bg-[#0A0A0A] border border-white/5 mb-8 hidden">

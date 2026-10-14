@@ -47,7 +47,7 @@
   <div class="px-4 sm:px-6 md:px-12 lg:px-20 max-w-[1100px] mx-auto py-4 flex flex-wrap items-center gap-2 text-[11px] font-mono text-gray-500 tracking-widest uppercase">
     <a href="/index.html" class="hover:text-white">Home</a><span class="text-gray-700">/</span><a href="/index.html#videos" class="hover:text-white">Videos</a><span class="text-gray-700">/</span><span id="bc-title" class="text-gray-400 truncate">Video</span>
   </div>
-  <div id="loading" class="py-20 text-center"><div class="inline-block w-6 h-6 border-2 border-white/20 border-t-[#E63946] rounded-full animate-spin"></div><p class="text-xs font-mono text-gray-500 mt-3 tracking-widest">LOADING VIDEO…</p></div>
+  <div id="loading" class="py-20 text-center" role="status"><div class="inline-block w-6 h-6 border-2 border-white/20 border-t-[#E63946] rounded-full animate-spin"></div><p class="text-xs font-mono text-gray-500 mt-3 tracking-widest">LOADING VIDEO…</p></div>
   <div id="content" class="hidden px-4 sm:px-6 md:px-12 lg:px-20 max-w-[1100px] mx-auto pb-12 sm:pb-16">
     <div class="flex flex-wrap items-center gap-2 mb-3">
       <span id="cat" class="text-[10px] font-mono tracking-widest border border-[#E63946]/30 px-2 py-1 bg-[#E63946]/10 text-[#E63946] uppercase"></span>
@@ -71,7 +71,7 @@
     </div>
     <div class="flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-mono text-gray-500 mt-4 border-y border-white/5 py-3">
       <span id="author"></span><span class="w-1 h-1 rounded-full bg-[#E63946] hidden sm:block"></span><span id="date"></span>
-      <button id="share-copy" class="ml-auto w-11 h-11 rounded-full border border-white/10 flex items-center justify-center hover:border-[#E63946]/50 touch-manipulation active:bg-white/5"><iconify-icon icon="solar:link-linear" width="14"></iconify-icon></button>
+      <button id="share-copy" aria-live="polite" aria-label="Copy link" class="ml-auto w-11 h-11 rounded-full border border-white/10 flex items-center justify-center hover:border-[#E63946]/50 touch-manipulation active:bg-white/5"><iconify-icon icon="solar:link-linear" width="14"></iconify-icon></button>
     </div>
     <div id="tags" class="flex flex-wrap gap-2 mt-6"></div>
   </div>

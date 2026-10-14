@@ -337,6 +337,7 @@
         var play = card.querySelector('[data-play]');
         if (play && v.videoUrl) {
           play.setAttribute('data-video-url', v.videoUrl);
+          try { play.setAttribute('aria-label', 'Play ' + String(v.title || 'this video').slice(0, 100)); } catch (e) {}
           if (v.embedUrl) play.setAttribute('data-embed-url', v.embedUrl);
           play.addEventListener('click', function (e) {
             e.preventDefault();
@@ -392,6 +393,7 @@
         var playBtn = card.querySelector('.rounded-full');
         if (playBtn && d.videoUrl) {
           playBtn.setAttribute('data-video-url', d.videoUrl);
+          try { playBtn.setAttribute('aria-label', 'Play ' + String(d.title || 'this documentary').slice(0, 100)); } catch (e) {}
           if (d.embedUrl) playBtn.setAttribute('data-embed-url', d.embedUrl);
           playBtn.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); window.MinimsaahPlayer && window.MinimsaahPlayer.open({ videoUrl: d.videoUrl, embedUrl: d.embedUrl }); });
         }

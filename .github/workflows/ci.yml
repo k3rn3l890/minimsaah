@@ -24,3 +24,8 @@ jobs:
       - run: node --check api/log-event.js
       - run: node --check api/admin/delete.js
       - run: node --check assets/js/lib.js
+      - run: node --check assets/js/player.js
+      - run: node --check assets/js/app.js
+      - run: node --check assets/js/contact.js
+      - run: node --check assets/js/embeds.js
+      - run: node --check admin/js/admin.js

@@ -599,6 +599,128 @@ describe('MinimsaahLib.wireDrawer', () => {
     assert.equal(loadLibWithDoc(s.doc).wireDrawer(), false);
   });
 });
+// ---- 12. accessibility pass (Phase 5) ----
+describe('a11y: overlay buttons, labels, focus', () => {
+  function libWith(stubs) {
+    const src = fs.readFileSync(path.join(ROOT, 'assets/js/lib.js'), 'utf8');
+    const fn = new Function('window', 'location', 'document', 'localStorage', 'fetch', src);
+    fn(stubs.win, stubs.loc, stubs.doc, stubs.ls, () => { throw new Error('no network'); });
+    return stubs.win.MinimsaahLib;
+  }
+  const base = () => ({
+    win: {}, loc: { hostname: 't', pathname: '/', search: '' },
+    doc: { getElementById: () => null },
+    ls: { getItem: () => null, setItem() {}, removeItem() {} },
+  });
+
+  it('overlayHTML in-site variant is a labelled button', () => {
+    const L = libWith(base());
+    const h = L.overlayHTML({ videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', title: 'My <Film>' });
+    assert.ok(h.startsWith('<div class="absolute inset-0'));
+    assert.ok(h.includes('<button type="button"'));
+    assert.ok(h.includes('aria-label="Play My &lt;Film&gt;"'));
+    assert.ok(h.includes('data-video-url="https://www.youtube.com/watch?v=dQw4w9WgXcQ"'));
+    assert.ok(!h.includes('<b>') && !h.includes('<Film>'));
+  });
+
+  it('overlayHTML go-out variant stays a plain marker', () => {
+    const L = libWith(base());
+    const h = L.overlayHTML({ videoUrl: 'https://t.test/v/1', title: 'T', goOut: true });
+    assert.ok(!h.includes('<button'));
+    assert.ok(h.includes('Watch on provider'));
+  });
+
+  it('overlayHTML renders nothing without a video', () => {
+    const L = libWith(base());
+    assert.equal(L.overlayHTML({ title: 'T' }), '');
+  });
+
+  it('labelPlay sets a capped spoken label', () => {
+    const L = libWith(base());
+    let got = '';
+    L.labelPlay({ setAttribute: (k, v) => { got = k + '=' + v; } }, 'A'.repeat(200));
+    assert.ok(got.startsWith('aria-label=Play '));
+    assert.ok(got.length < 130);
+    assert.doesNotThrow(() => L.labelPlay(null, 'x'));
+  });
+
+  it('static pages carry live regions and labelled controls', () => {
+    const need = {
+      'videos.html': ['role="status"', 'aria-live="polite"'],
+      'documentaries.html': ['role="status"', 'aria-live="polite"'],
+      'articles.html': ['role="status"', 'aria-live="polite"'],
+      'article.html': ['role="status"', 'aria-live="polite"', 'aria-label="Copy link"'],
+      'video.html': ['role="status"', 'aria-live="polite"', 'aria-label="Copy link"'],
+      'event.html': ['role="status"'],
+      'documentary.html': ['role="status"'],
+      'index.html': ['aria-label="Play video"', 'aria-label="Play documentary"'],
+    };
+    for (const [f, marks] of Object.entries(need)) {
+      const t = fs.readFileSync(path.join(ROOT, f), 'utf8');
+      for (const m of marks) assert.ok(t.includes(m), `${f} must contain ${m}`);
+    }
+  });
+});
+
+// ---- 13. player focus restore (Phase 5) ----
+describe('MinimsaahPlayer focus', () => {
+  function playerStubs() {
+    function mk() {
+      return {
+        style: {}, innerHTML: '', textContent: '',
+        dataset: {},
+        kids: {},
+        handlers: {},
+        setAttribute() {},
+        addEventListener(ev, fn) { this.handlers[ev] = fn; },
+        appendChild(c) { this.appended = c; },
+        querySelector(sel) { return this.kids[sel] || null; },
+        removeAttribute() {},
+        focus() { this.focused = true; },
+      };
+    }
+    const modal = mk();
+    ['#video-modal-close', '#video-modal-body', '#video-modal-blocked',
+     '#video-modal-poster', '#video-modal-thumb', '#video-modal-retry',
+     '#video-modal-watch'].forEach((s) => { modal.kids[s] = mk(); });
+    modal.firstElementChild = mk();
+    const opener = mk();
+    const doc = {
+      createElement: () => modal,
+      body: { appendChild() {}, style: {} },
+      activeElement: opener,
+      addEventListener() {},
+    };
+    const win = {
+      MinimsaahEmbeds: {
+        thumbnailUrl: () => 'https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg',
+        toEmbedUrl: (v) => v,
+        isAllowedEmbedUrl: () => true,
+        isNativeMedia: () => false,
+        detectProvider: () => 'youtube',
+        createIframe: () => mk(),
+      },
+    };
+    return { modal, opener, doc, win };
+  }
+
+  function loadPlayer(stubs) {
+    const src = fs.readFileSync(path.join(ROOT, 'assets/js/player.js'), 'utf8');
+    const fn = new Function('window', 'document', 'setTimeout', src);
+    fn(stubs.win, stubs.doc, (f) => f());
+    return stubs.win.MinimsaahPlayer;
+  }
+
+  it('close() gives focus back to the opener', () => {
+    const s = playerStubs();
+    // modal starts "created" so open() reuses our fake
+    s.doc.createElement = () => s.modal;
+    const P = loadPlayer(s);
+    P.open({ videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', title: 'T' });
+    P.close();
+    assert.equal(s.opener.focused, true);
+  });
+});
 // ---- 11. chat widget self-build (Phase 4) ----
 describe('MinimsaahContact widget', () => {
   function fakeEl(id) {

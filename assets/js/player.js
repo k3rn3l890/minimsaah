@@ -10,6 +10,7 @@
   var currentIframe = null;
   var loadTimer = null;
   var pendingVideo = null;
+  var opener = null;
 
   function ensureModal() {
     if (modal) return modal;
@@ -142,7 +143,8 @@
     } catch (e) {}
     m.style.display = 'flex';
     document.body.style.overflow = 'hidden';
-    // focus close for a11y
+    // focus close for a11y, remember the opener to give focus back on close
+    try { opener = document.activeElement; } catch (e) { opener = null; }
     setTimeout(function () { m.querySelector('#video-modal-close').focus(); }, 50);
   }
 
@@ -156,6 +158,8 @@
     if (blocked) blocked.style.display = 'none';
     modal.style.display = 'none';
     document.body.style.overflow = '';
+    try { if (opener && opener.focus) opener.focus(); } catch (e) {}
+    opener = null;
   }
 
   // Expose
