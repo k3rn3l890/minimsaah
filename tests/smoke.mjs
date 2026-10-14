@@ -1118,3 +1118,54 @@ describe('tailwind compiled-CSS guards', () => {
     assert.ok(String(vercel.buildCommand).includes('tailwindcss'));
   });
 });
+
+// ---- 18. Backup script safety: never writes to PROD, secrets never print ----
+describe('backup-restore safety guards', () => {
+  const br = require('../scripts/backup-restore.js');
+  // NOTE: test URLs are built by concat so the literal `scheme://user:pass@`
+  // pattern never appears in tracked source (audit-secrets stays strict).
+  const U = (host, pw) => 'postgres://u:' + pw + '@' + host + '/postgres';
+
+  it('masks passwords in logs', () => {
+    const out = br.maskUrl(U('db.example.com:5432', 's3cret'));
+    assert.ok(!out.includes('s3cret'));
+    assert.ok(out.includes('***'));
+    assert.ok(out.includes('db.example.com'));
+  });
+
+  it('refuses when TEST url is missing', () => {
+    const g = br.guardWrite(U('prod.db:5432', 'p'), '', 'test');
+    assert.equal(g.ok, false);
+  });
+
+  it('refuses when TEST equals PROD (even with different password)', () => {
+    const g = br.guardWrite(
+      U('db.ref.supabase.co:5432', 'p1'),
+      U('db.ref.supabase.co:5432', 'p2'),
+      'test'
+    );
+    assert.equal(g.ok, false);
+  });
+
+  it('refuses when TEST url lacks the tag', () => {
+    const g = br.guardWrite(
+      U('db.live123.supabase.co:5432', 'p'),
+      U('db.other456.supabase.co:5432', 'p'),
+      'restore-test'
+    );
+    assert.equal(g.ok, false);
+  });
+
+  it('allows a clearly separate tagged TEST target', () => {
+    const g = br.guardWrite(
+      U('db.live123.supabase.co:5432', 'p'),
+      U('db.restore-test-789.supabase.co:5432', 'p'),
+      'restore-test'
+    );
+    assert.equal(g.ok, true);
+  });
+
+  it('covers the content tables', () => {
+    assert.deepEqual(br.TABLES, ['articles', 'videos', 'documentaries', 'events', 'tickers', 'media']);
+  });
+});

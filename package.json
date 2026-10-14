@@ -8,6 +8,7 @@
     "test": "node --test tests/smoke.mjs",
     "audit": "node scripts/audit-secrets.cjs",
     "verify": "node scripts/inject-env.js --verify",
+    "backup:check": "node scripts/backup-restore.js --check",
     "dev": "npx vercel dev",
     "deploy": "vercel --prod"
   },
