@@ -9,9 +9,11 @@ const path = require('path');
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || '';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('ERROR: SUPABASE_URL and SUPABASE_ANON_KEY environment variables must be set');
-  process.exit(1);
+function needEnv() {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('ERROR: SUPABASE_URL and SUPABASE_ANON_KEY environment variables must be set');
+    process.exit(1);
+  }
 }
 
 const files = [
@@ -83,10 +85,6 @@ function injectIntoFile(relPath) {
   console.log(`Injected Supabase config into ${relPath}`);
 }
 
-files.forEach(injectIntoFile);
-
-console.log('Supabase config injected into all HTML files');
-
 // Asset version stamps: every local script link becomes
 // /assets/js/app.js?v=<save-id> so browsers fetch fresh files after
 // each deploy. The 1-year freeze rule in vercel.json stays correct.
@@ -104,15 +102,19 @@ function buildTag() {
   return Date.now().toString(36);
 }
 
+function stampContent(content, tag) {
+  const re = /(\/(?:assets\/js|admin\/js)\/[A-Za-z0-9-]+\.js)(\?v=[A-Za-z0-9]+)?/g;
+  return content.replace(re, '$1?v=' + tag);
+}
+
 function stampVersions() {
   const tag = buildTag();
-  const re = /(\/(?:assets\/js|admin\/js)\/[A-Za-z0-9-]+\.js)(\?v=[A-Za-z0-9]+)?/g;
   let n = 0;
   files.forEach(function (relPath) {
     const fullPath = path.join(__dirname, '..', relPath);
     if (!fs.existsSync(fullPath)) return;
     const content = fs.readFileSync(fullPath, 'utf8');
-    const updated = content.replace(re, '$1?v=' + tag);
+    const updated = stampContent(content, tag);
     if (updated !== content) {
       fs.writeFileSync(fullPath, updated);
       n++;
@@ -121,4 +123,16 @@ function stampVersions() {
   console.log(`Stamped asset versions (?v=${tag}) in ${n} files`);
 }
 
-stampVersions();
+if (require.main === module) {
+  needEnv();
+  files.forEach(injectIntoFile);
+
+  console.log('Supabase config injected into all HTML files');
+
+  stampVersions();
+}
+
+// Exported for smoke tests (tests/smoke.mjs). Zero runtime effect.
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { buildTag: buildTag, stampContent: stampContent };
+}

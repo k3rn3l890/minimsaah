@@ -4,11 +4,13 @@
   "description": "MINIMSAAH - Sports journalism platform for Ghana",
   "scripts": {
     "build": "node scripts/inject-env.js",
+    "test": "node --test tests/smoke.mjs",
+    "audit": "node scripts/audit-secrets.cjs",
     "dev": "npx vercel dev",
     "deploy": "vercel --prod"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.117.2"
+    "@supabase/supabase-js": "2.117.2"
   },
   "devDependencies": {},
   "engines": {

@@ -108,7 +108,7 @@ function headBlock(kind, conf, row, pageUrl) {
     '<meta name="twitter:title" content="' + esc(title) + '">\n' +
     '<meta name="twitter:description" content="' + esc(desc) + '">\n' +
     '<meta name="twitter:image" content="' + esc(img) + '">\n' +
-    '<script type="application/ld+json">' + JSON.stringify(ld) + '</script>'
+    '<script type="application/ld+json">' + JSON.stringify(ld).replace(/</g, '\\u003c') + '</script>'
   );
 }
 
@@ -208,7 +208,14 @@ async function main() {
   console.log('sitemap: wrote sitemap.xml with ' + urls.length + ' urls, pre-rendered ' + rendered + ' story pages.');
 }
 
-main().catch(function (e) {
-  console.error('sitemap: ' + e.message);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch(function (e) {
+    console.error('sitemap: ' + e.message);
+    process.exit(1);
+  });
+}
+
+// Exported for smoke tests (tests/smoke.mjs). Zero runtime effect.
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { safeSlug: safeSlug, esc: esc, headBlock: headBlock, TYPES: TYPES, SITE: SITE };
+}
