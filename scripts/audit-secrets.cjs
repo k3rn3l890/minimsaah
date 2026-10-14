@@ -13,6 +13,10 @@ const PATTERNS = [
   { name: 'private key block', re: /BEGIN [A-Z ]*PRIVATE KEY/ },
   { name: 'live secret key (sk-live)', re: /sk-live-[A-Za-z0-9_-]{8,}/ },
   { name: 'postgres password URL', re: /postgres:\/\/[^:]+:([^@/\s]{1,64})@/ },
+  // Hardcoded service-role assignment (env NAME alone is fine — a literal
+  // key value assigned in source is never fine).
+  { name: 'hardcoded service-role key', re: /SUPABASE_SERVICE_ROLE_KEY\s*[:=]\s*['"][^'"]{20,}['"]/ },
+  { name: 'supabase publishable/secret literal (sbp_)', re: /sbp_[A-Za-z0-9]{20,}/ },
 ];
 
 function trackedFiles() {

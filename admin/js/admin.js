@@ -3,12 +3,9 @@
  * Vanilla admin helpers: auth, api wrapper, guards, utils
  */
 (function (global) {
-  var API = 'http://localhost:3000/api/v1';
-  if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-    // Render backend is gone (Supabase sole backend) — no dead default.
-    // request() throws an explicit error below when Supabase is not configured.
-    API = (window.__API_BASE__ || '');
-  }
+  // Supabase is the sole backend. No localhost default: '' means
+  // Supabase-direct only — request() throws explicitly when unconfigured.
+  var API = (window.__API_BASE__ || '');
 
   function getToken() { return localStorage.getItem('access_token'); }
   function getRefresh() { return localStorage.getItem('refresh_token'); }

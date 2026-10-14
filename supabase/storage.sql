@@ -17,3 +17,7 @@ using (bucket_id = 'minimsaah-media' and public.is_staff())
 with check (bucket_id = 'minimsaah-media' and public.is_staff());
 
 -- Deletes only via Pages Functions (service_role), no anon delete policy = blocked by default
+-- Upload caps are enforced in admin/js/admin.js (images 8MB + allowlisted
+-- extensions, library video 50MB, SVG/HTML/JS/PHP/exe/sh/bat/ps1 blocked as
+-- stored-XSS) AND must be re-checked wherever a future server upload door
+-- is added — Storage policies alone cannot inspect mime/size reliably.

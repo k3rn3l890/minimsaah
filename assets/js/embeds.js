@@ -177,6 +177,15 @@
     iframe.setAttribute('frameborder', '0');
     iframe.setAttribute('allow', 'autoplay; fullscreen; encrypted-media; picture-in-picture');
     iframe.setAttribute('allowfullscreen', 'true');
+    iframe.setAttribute('loading', 'lazy');
+    iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+    try {
+      var label = provider ? (provider.charAt(0).toUpperCase() + provider.slice(1) + ' video player') : 'Video player';
+      iframe.setAttribute('title', label);
+    } catch (e) { iframe.setAttribute('title', 'Video player'); }
+    // Least privilege: provider embeds need scripts + same-origin for playback,
+    // but never top navigation, popups, or forms.
+    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
     iframe.style.width = '100%';
     iframe.style.height = '100%';
     iframe.style.border = '0';

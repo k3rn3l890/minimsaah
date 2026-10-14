@@ -1,8 +1,9 @@
 /**
  * MINIMSAAH — supabase-client.js
  * Direct Supabase client for Pages + Supabase beta (no middleman server).
- * Uses anon key only. Service_role never exposed — deletes/role changes go via Pages Functions.
- * Falls back to Nest API when SUPABASE_URL not configured (localhost dev).
+ * Uses anon key only. Service_role never exposed — deletes/role changes go via api/* doors.
+ * When SUPABASE_URL is not configured, isEnabled() is false and callers
+ * show their empty state. No legacy REST fallback.
  */
 (function (global) {
   function getConfig() {

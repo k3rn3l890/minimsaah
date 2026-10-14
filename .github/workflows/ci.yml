@@ -16,8 +16,13 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - run: npm run build:css
       - run: npm test
       - run: npm run audit
+      - run: npm run verify
+      - run: node -e "JSON.parse(require('fs').readFileSync('vercel.json','utf8')); console.log('vercel.json OK')"
+      - run: node -e "const {execSync}=require('child_process'); const out=execSync('git grep -l cdn.tailwindcss.com -- *.html admin/*.html || true',{encoding:'utf8'}).trim(); if(out){console.error('CDN still referenced in HTML:\n'+out); process.exit(1)} console.log('tailwind CDN gone from HTML')"
+      - run: node --check tailwind.config.js
       - run: node --check scripts/inject-env.js
       - run: node --check scripts/sitemap.js
       - run: node --check scripts/audit-secrets.cjs

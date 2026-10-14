@@ -4,7 +4,7 @@
  *
  * Stamps the caller address (IP) that browser code can never know.
  * No login needed. Event allow-list, field caps, per-minute global cap
- * + per-address cap. Fixed words only.
+ * + per-address cap (memory fast-path + durable DB check). Fixed words only.
  */
 import { createClient } from '@supabase/supabase-js';
 
@@ -18,6 +18,8 @@ const ALLOWED_EVENTS = [
   'input_blocked',
   'site_error',
 ];
+
+const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,253}\.[^\s@]{2,}$/;
 
 const stampTimes = [];
 const stampTimesByIp = new Map();
@@ -54,6 +56,11 @@ function callerIp(req) {
 }
 
 export default async function handler(req, res) {
+  if (res.setHeader) res.setHeader('Cache-Control', 'no-store');
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
@@ -65,14 +72,20 @@ export default async function handler(req, res) {
   }
   const body = (req.body && typeof req.body === 'object' ? req.body : {}) || {};
   const event = typeof body.event === 'string' ? body.event : '';
-  const email = typeof body.email === 'string' ? body.email : '';
-  const detail = typeof body.detail === 'string' ? body.detail : '';
+  const email = typeof body.email === 'string' ? body.email.trim().slice(0, 320) : '';
+  const detail = typeof body.detail === 'string' ? body.detail.trim().slice(0, 500) : '';
   const success = body.success === true;
   if (!ALLOWED_EVENTS.includes(event)) {
     res.status(400).json({ error: 'Bad request' });
     return;
   }
-  if (email.length > 320 || detail.length > 500) {
+  if (email !== '' && !EMAIL_RE.test(email)) {
+    res.status(400).json({ error: 'Bad request' });
+    return;
+  }
+  // Reject control characters that break dashboard review / log parsing.
+  // eslint-disable-next-line no-control-regex
+  if (/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(email + detail)) {
     res.status(400).json({ error: 'Bad request' });
     return;
   }
@@ -86,6 +99,21 @@ export default async function handler(req, res) {
   const supaAdmin = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false },
   });
+  // Durable cross-instance throttle: memory caps reset on cold start, so
+  // re-check the last minute in the DB before inserting. Fail open on
+  // read errors (availability) — memory cap still slows floods.
+  try {
+    const since = new Date(Date.now() - 60 * 1000).toISOString();
+    const { count } = await supaAdmin
+      .from('admin_audit')
+      .select('id', { count: 'exact', head: true })
+      .gte('created_at', since);
+    if (typeof count === 'number' && count >= 60) {
+      if (res.setHeader) res.setHeader('Retry-After', '60');
+      res.status(429).json({ error: 'Slow down.' });
+      return;
+    }
+  } catch (e) {}
   const { error } = await supaAdmin.from('admin_audit').insert({
     event: event,
     email: email === '' ? null : email,

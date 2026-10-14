@@ -113,8 +113,32 @@ describe('inject-env stamp', () => {
     assert.equal(inj.stampContent('<p>hello</p>', 'z'), '<p>hello</p>');
   });
 
+  it('stampContent stamps compiled CSS links (immutable cache)', () => {
+    assert.equal(
+      inj.stampContent('<link rel="stylesheet" href="/assets/css/tailwind.css">', 'abc123'),
+      '<link rel="stylesheet" href="/assets/css/tailwind.css?v=abc123">'
+    );
+    const once = inj.stampContent('<link rel="stylesheet" href="/assets/css/tailwind.css?v=old1">', 'new9');
+    assert.ok(once.includes('?v=new9'));
+    assert.ok(!once.includes('?v=old1'));
+  });
+
   it('buildTag returns letters and digits only', () => {
     assert.match(inj.buildTag(), /^[A-Za-z0-9]+$/);
+  });
+
+  it('pinned tag tracks package.json version with SRI', () => {
+    const pkg = require('../package.json');
+    const ver = String(pkg.dependencies['@supabase/supabase-js']).replace(/^[\^~>=<\s]+/, '');
+    assert.ok(ver.length > 0);
+    assert.equal(inj.supabaseVersion(), ver);
+    const tag = inj.pinnedSupabaseTag();
+    assert.ok(tag.includes(`@supabase/supabase-js@${ver}`));
+    assert.ok(tag.includes('integrity="sha384-'));
+  });
+
+  it('verifyCommittedPlaceholders passes on clean tree', () => {
+    assert.equal(inj.verifyCommittedPlaceholders(), 0);
   });
 });
 
@@ -195,6 +219,42 @@ describe('MinimsaahEmbeds', () => {
 
   it('thumbnailUrl has no fake default (unknown means empty)', () => {
     assert.equal(Embeds.thumbnailUrl({}), '');
+  });
+
+  it('createIframe is sandboxed with title and lazy load', () => {
+    const els = [];
+    const fakeDoc = {
+      createElement: (tag) => {
+        const el = {
+          tag,
+          attrs: {},
+          style: {},
+          setAttribute(k, v) { this.attrs[k] = v; },
+          addEventListener() {},
+        };
+        els.push(el);
+        return el;
+      },
+    };
+    const src = fs.readFileSync(path.join(ROOT, 'assets/js/embeds.js'), 'utf8');
+    const fn = new Function('window', 'document', 'fetch', src);
+    const win = {};
+    const origDoc = globalThis.document;
+    try {
+      globalThis.document = fakeDoc;
+      fn(win, fakeDoc, () => { throw new Error('no network'); });
+    } finally {
+      if (origDoc === undefined) delete globalThis.document;
+      else globalThis.document = origDoc;
+    }
+    const E = win.MinimsaahEmbeds;
+    const f = E.createIframe('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ', 'youtube');
+    assert.ok(f);
+    assert.ok(String(f.attrs.sandbox).includes('allow-scripts'));
+    assert.ok(!String(f.attrs.sandbox).includes('allow-top-navigation'));
+    assert.ok(f.attrs.title.length > 0);
+    assert.equal(f.attrs.loading, 'lazy');
+    assert.equal(E.createIframe('javascript:alert(1)', 'youtube'), null);
   });
 });
 
@@ -369,15 +429,13 @@ describe('MinimsaahLib detail loader', () => {
     await assert.rejects(loadLib(s2).loadOne({ table: 'events' }), /not found/);
   });
 
-  it('loadOne falls back to fetch and normalizes', async () => {
+  it('loadOne throws without Supabase (no legacy fetch fallback)', async () => {
     const s = stubsWith({ location: { search: '?slug=y' } });
     s.stubWindow.SupabaseDB = { isEnabled: () => false };
-    const L = loadLib(s, async (url) => {
-      assert.ok(url.endsWith('/events/y'));
-      return { ok: true, json: async () => ({ id: '9', slug: 'y', first_name: 'Z' }) };
-    });
-    const row = await L.loadOne({ table: 'events' });
-    assert.equal(row.firstName, 'Z');
+    let fetched = false;
+    const L = loadLib(s, async () => { fetched = true; return { ok: true, json: async () => ({}) }; });
+    await assert.rejects(L.loadOne({ table: 'events' }), /not found/);
+    assert.equal(fetched, false);
   });
 
   it('setPageState toggles the right nodes', () => {
@@ -398,18 +456,38 @@ describe('MinimsaahLib detail loader', () => {
     assert.deepEqual(
       s.calls.filter((c) => c[1] === 'append').map((c) => c[2]),
       ['#a', '#b']);
-    let wired = null;
+    let wiredId = null;
+    let wiredFn = null;
     const doc2 = {
       getElementById: (id) => {
-        wired = id;
-        return { set onclick(fn) { wired = fn; } };
+        wiredId = id;
+        return {
+          innerHTML: '<iconify-icon></iconify-icon>',
+          addEventListener: (ev, fn) => { if (ev === 'click') wiredFn = fn; },
+        };
       },
       createElement: () => ({}),
     };
     const s2 = stubsWith({});
     s2.stubDocument = doc2;
-    loadLib(s2).bindShareCopy();
-    assert.equal(typeof wired, 'function');
+    const ok = loadLib(s2).bindShareCopy();
+    assert.equal(ok, true);
+    assert.equal(wiredId, 'share-copy');
+    assert.equal(typeof wiredFn, 'function');
+  });
+
+  it('bindShareCopy returns false when the button is missing', () => {
+    const s = stubsWith({});
+    s.stubDocument.getElementById = () => null;
+    assert.equal(loadLib(s).bindShareCopy(), false);
+  });
+
+  it('show() ignores missing nodes, fmtDate returns input on bad date', () => {
+    const s = stubsWith({});
+    const L = loadLib(s);
+    assert.doesNotThrow(() => L.show(null, true));
+    assert.doesNotThrow(() => L.show({}, true));
+    assert.equal(L.fmtDate('not-a-date'), 'not-a-date');
   });
 });
 
@@ -421,17 +499,26 @@ describe('api/log-event door', () => {
   });
 
   function mockRes() {
-    const res = { statusCode: 0, body: null, headers: {} };
+    const res = { statusCode: 0, body: null, headers: {}, ended: false };
     res.status = (c) => { res.statusCode = c; return res; };
     res.json = (b) => { res.body = b; return res; };
     res.setHeader = (k, v) => { res.headers[k] = v; };
+    res.end = () => { res.ended = true; return res; };
     return res;
   }
 
-  it('rejects non-POST with 405', async () => {
+  it('answers OPTIONS preflight with 204 + no-store', async () => {
+    const res = mockRes();
+    await handler({ method: 'OPTIONS', headers: {} }, res);
+    assert.equal(res.statusCode, 204);
+    assert.equal(res.ended, true);
+    assert.equal(res.headers['Cache-Control'], 'no-store');
+  });
+
+  it('sets no-store on rejection paths', async () => {
     const res = mockRes();
     await handler({ method: 'GET', headers: {}, socket: {} }, res);
-    assert.equal(res.statusCode, 405);
+    assert.equal(res.headers['Cache-Control'], 'no-store');
   });
 
   it('returns 500 without server env', async () => {
@@ -479,6 +566,40 @@ describe('api/log-event door', () => {
       delete process.env.SUPABASE_SERVICE_ROLE_KEY;
     }
   });
+
+  it('rejects malformed email with fixed words', async () => {
+    process.env.SUPABASE_URL = 'https://dummy.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'dummy-key-for-tests';
+    try {
+      const res = mockRes();
+      await handler(
+        { method: 'POST', headers: {}, body: { event: 'login_failed', email: 'not-an-email' } },
+        res
+      );
+      assert.equal(res.statusCode, 400);
+      assert.deepEqual(res.body, { error: 'Bad request' });
+    } finally {
+      delete process.env.SUPABASE_URL;
+      delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    }
+  });
+
+  it('rejects control characters in detail', async () => {
+    process.env.SUPABASE_URL = 'https://dummy.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'dummy-key-for-tests';
+    try {
+      const res = mockRes();
+      await handler(
+        { method: 'POST', headers: {}, body: { event: 'site_error', detail: 'bad\u0007char' } },
+        res
+      );
+      assert.equal(res.statusCode, 400);
+      assert.deepEqual(res.body, { error: 'Bad request' });
+    } finally {
+      delete process.env.SUPABASE_URL;
+      delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    }
+  });
 });
 
 // ---- 7. admin delete door rejection paths (no network) ----
@@ -489,10 +610,11 @@ describe('api/admin/delete door', () => {
   });
 
   function mockRes() {
-    const res = { statusCode: 0, body: null, headers: {} };
+    const res = { statusCode: 0, body: null, headers: {}, ended: false };
     res.status = (c) => { res.statusCode = c; return res; };
     res.json = (b) => { res.body = b; return res; };
     res.setHeader = (k, v) => { res.headers[k] = v; };
+    res.end = () => { res.ended = true; return res; };
     return res;
   }
 
@@ -500,6 +622,14 @@ describe('api/admin/delete door', () => {
     const res = mockRes();
     await delHandler({ method: 'GET', headers: {} }, res);
     assert.equal(res.statusCode, 405);
+  });
+
+  it('answers OPTIONS preflight with 204 + no-store', async () => {
+    const res = mockRes();
+    await delHandler({ method: 'OPTIONS', headers: {} }, res);
+    assert.equal(res.statusCode, 204);
+    assert.equal(res.ended, true);
+    assert.equal(res.headers['Cache-Control'], 'no-store');
   });
 
   it('rejects missing token with 401', async () => {
@@ -537,7 +667,7 @@ describe('api/admin/delete door', () => {
 describe('MinimsaahLib.wireDrawer', () => {
   function drawerStubs() {
     function mk() {
-      return {
+      const el = {
         classes: new Set(['hidden', 'opacity-0']),
         attrs: {},
         handlers: {},
@@ -548,8 +678,11 @@ describe('MinimsaahLib.wireDrawer', () => {
           _s: null,
         },
         setAttribute(k, v) { this.attrs[k] = v; },
-        addEventListener() {},
+        addEventListener(ev, fn) { this.handlers[ev] = fn; },
+        focus() { this.focused = true; },
+        click() { if (this.handlers.click) this.handlers.click({ target: this }); },
       };
+      return el;
     }
     function fin(s) {
       s.classList._s = s.classes;
@@ -558,12 +691,15 @@ describe('MinimsaahLib.wireDrawer', () => {
     }
     const t = fin(mk()), d = fin(mk()), c = fin(mk());
     const body = { style: {} };
+    const docHandlers = {};
     const doc = {
       getElementById: (id) => (
         id === 'menu-toggle-detail' ? t
         : id === 'mobile-drawer-detail' ? d
         : id === 'menu-close-detail' ? c : null),
       body,
+      addEventListener(ev, fn) { docHandlers[ev] = fn; },
+      _handlers: docHandlers,
     };
     return { t, d, c, doc, body };
   }
@@ -583,14 +719,23 @@ describe('MinimsaahLib.wireDrawer', () => {
     const s = drawerStubs();
     const L = loadLibWithDoc(s.doc);
     assert.equal(L.wireDrawer(), true);
-    s.t.onclick();
+    s.t.click();
     assert.ok(!s.d.classes.has('hidden'));
     assert.equal(s.t.attrs['aria-expanded'], 'true');
     assert.equal(s.body.style.overflow, 'hidden');
-    s.c.onclick();
+    s.c.click();
     assert.ok(s.d.classes.has('opacity-0'));
     assert.equal(s.t.attrs['aria-expanded'], 'false');
     assert.equal(s.body.style.overflow, '');
+  });
+
+  it('closes on Escape', () => {
+    const s = drawerStubs();
+    loadLibWithDoc(s.doc).wireDrawer();
+    s.t.click();
+    assert.equal(s.t.attrs['aria-expanded'], 'true');
+    s.doc._handlers.keydown({ key: 'Escape' });
+    assert.equal(s.t.attrs['aria-expanded'], 'false');
   });
 
   it('returns false when nodes are missing', () => {
@@ -822,5 +967,154 @@ describe('MinimsaahContact widget', () => {
     loadWidget(stubs);
     stubs.el('contact-form').handlers.submit({ preventDefault() {} });
     assert.equal(stubs.el('contact-err').textContent, 'Email must look like name@site.');
+  });
+});
+
+// ---- 14. P0-CSP static guards: headers must cover what the code fetches ----
+describe('headers/CSP static guards', () => {
+  const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
+
+  function cspFor(source) {
+    const b = vercel.headers.find((h) => h.source === source);
+    const h = b.headers.find((x) => x.key === 'Content-Security-Policy');
+    return h.value;
+  }
+
+  it('public connect-src covers Supabase, iconify, and TikTok oEmbed', () => {
+    const csp = cspFor('/(.*)');
+    assert.ok(csp.includes('https://*.supabase.co'), 'supabase wildcard');
+    assert.ok(csp.includes('https://api.iconify.design'), 'iconify runtime');
+    assert.ok(csp.includes('https://www.tiktok.com'), 'tiktok oembed (embeds.js fetch)');
+  });
+
+  it('admin connect-src covers TikTok and iconify', () => {
+    const csp = cspFor('/admin/(.*)');
+    assert.ok(csp.includes('https://www.tiktok.com'));
+    assert.ok(csp.includes('https://api.iconify.design'));
+  });
+
+  it('drops deprecated X-XSS-Protection, keeps COOP + no-frame', () => {
+    const top = vercel.headers.find((h) => h.source === '/(.*)').headers;
+    const keys = top.map((h) => h.key);
+    assert.ok(!keys.includes('X-XSS-Protection'), 'deprecated header removed');
+    assert.ok(keys.includes('Cross-Origin-Opener-Policy'));
+    assert.ok(cspFor('/(.*)').includes("frame-ancestors 'none'"));
+  });
+
+  it('api routes answer preflight via headers config', () => {
+    const api = vercel.headers.find((h) => h.source === '/api/(.*)').headers;
+    const m = Object.fromEntries(api.map((h) => [h.key, h.value]));
+    assert.ok(m['Access-Control-Allow-Methods'].includes('OPTIONS'));
+    assert.ok(m['Access-Control-Allow-Headers'].includes('Authorization'));
+    assert.equal(m.Vary, 'Origin');
+  });
+});
+
+// ---- 15. P1-RLS static guards: policies carry WITH CHECK + triggers + indexes ----
+describe('supabase RLS static guards', () => {
+  const rls = fs.readFileSync(path.join(ROOT, 'supabase/rls.sql'), 'utf8');
+  const hardening = fs.readFileSync(path.join(ROOT, 'supabase/hardening.sql'), 'utf8');
+  const audit = fs.readFileSync(path.join(ROOT, 'supabase/audit.sql'), 'utf8');
+
+  it('staff UPDATE policies carry WITH CHECK', () => {
+    for (const t of ['articles', 'videos', 'documentaries', 'events']) {
+      const re = new RegExp(
+        `create policy "staff_update" on public\\.${t} for update using \\(public\\.is_staff\\(\\)\\) with check \\(public\\.is_staff\\(\\)\\)`
+      );
+      assert.ok(re.test(rls), `${t} staff_update needs WITH CHECK`);
+    }
+  });
+
+  it('updated_at trigger function + per-table triggers exist', () => {
+    assert.ok(rls.includes('create or replace function public.handle_updated_at()'));
+    for (const t of ['articles', 'videos', 'documentaries', 'events', 'tickers', 'sponsors']) {
+      assert.ok(rls.includes(`create trigger set_updated_at before update on public.${t}`), t);
+    }
+  });
+
+  it('audit throttle indexes exist', () => {
+    assert.ok(audit.includes('admin_audit_created_at_idx'));
+    assert.ok(audit.includes('admin_audit_email_created_idx'));
+  });
+
+  it('hardening checks open-write normalization, WITH CHECK, and triggers', () => {
+    assert.ok(hardening.includes('UPDATE-WITHOUT-WITHCHECK'));
+    assert.ok(hardening.includes('lock_user_role'));
+    assert.ok(hardening.includes('set_updated_at'));
+    assert.ok(hardening.includes('regexp_replace'));
+  });
+});
+
+// ---- 16. P5 sitemap hygiene: env SITE + test-fixture exclusion ----
+describe('sitemap build hygiene', () => {
+  it('SITE honors SITE_URL env with production fallback', () => {
+    const src = fs.readFileSync(path.join(ROOT, 'scripts/sitemap.js'), 'utf8');
+    assert.ok(src.includes('process.env.SITE_URL'));
+    assert.ok(src.includes('https://minimsaah.vercel.app'));
+  });
+
+  it('skips test- slugs and reports the skip', () => {
+    const src = fs.readFileSync(path.join(ROOT, 'scripts/sitemap.js'), 'utf8');
+    assert.ok(src.includes('/^test-/i.test(slug)'));
+    assert.ok(src.includes('skippedTest'));
+  });
+
+  it('getJSON has a timeout so builds never hang', () => {
+    const src = fs.readFileSync(path.join(ROOT, 'scripts/sitemap.js'), 'utf8');
+    assert.ok(src.includes('timeout'));
+    assert.ok(src.includes('15000'));
+  });
+});
+
+// ---- 17. Tailwind compiled-CSS guards: no Play CDN, CSS built, CSP clean ----
+describe('tailwind compiled-CSS guards', () => {
+  const htmlFiles = [
+    ...fs.readdirSync(ROOT).filter((f) => f.endsWith('.html')),
+    ...fs.readdirSync(path.join(ROOT, 'admin')).filter((f) => f.endsWith('.html')).map((f) => `admin/${f}`),
+  ];
+
+  it('no tracked HTML references the Play CDN', () => {
+    const hits = htmlFiles.filter((rel) => {
+      try {
+        return fs.readFileSync(path.join(ROOT, rel), 'utf8').includes('cdn.tailwindcss.com');
+      } catch (e) { return false; }
+    });
+    assert.deepEqual(hits, []);
+  });
+
+  it('every tracked HTML links the compiled stylesheet', () => {
+    const missing = htmlFiles.filter((rel) => {
+      try {
+        return !fs.readFileSync(path.join(ROOT, rel), 'utf8').includes('/assets/css/tailwind.css');
+      } catch (e) { return true; }
+    });
+    assert.deepEqual(missing, []);
+  });
+
+  it('compiled CSS exists and carries brand tokens + utilities', () => {
+    const css = fs.readFileSync(path.join(ROOT, 'assets/css/tailwind.css'), 'utf8');
+    assert.ok(css.length > 10000, `tailwind.css suspiciously small (${css.length}b) — rebuild needed`);
+    for (const k of ['050505', 'E63946', 'backdrop-blur', 'inset-0', 'sr-only']) {
+      assert.ok(css.includes(k), `tailwind.css missing ${k}`);
+    }
+  });
+
+  it('CSP no longer lists the Tailwind CDN', () => {
+    const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
+    for (const b of vercel.headers) {
+      for (const h of b.headers || []) {
+        if (h.key === 'Content-Security-Policy') {
+          assert.ok(!h.value.includes('cdn.tailwindcss.com'), `${b.source} CSP still allows Tailwind CDN`);
+        }
+      }
+    }
+  });
+
+  it('build pipeline compiles CSS before inject + sitemap', () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+    const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
+    assert.ok(String(pkg.scripts['build:css']).includes('tailwindcss'));
+    assert.ok(String(pkg.scripts.build).includes('build:css'));
+    assert.ok(String(vercel.buildCommand).includes('tailwindcss'));
   });
 });

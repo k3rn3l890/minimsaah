@@ -22,6 +22,11 @@ alter table public.admin_audit enable row level security;
 drop policy if exists "staff_read_audit" on public.admin_audit;
 create policy "staff_read_audit" on public.admin_audit for select using (public.is_staff());
 
+-- Throttle support: the /api/log-event durable check counts the last minute,
+-- and /api/admin/delete counts the last day per user. Both need indexes.
+create index if not exists admin_audit_created_at_idx on public.admin_audit(created_at desc);
+create index if not exists admin_audit_email_created_idx on public.admin_audit(email, created_at desc);
+
 -- Throttled, allowlisted writer. SECURITY DEFINER so anon callers can log
 -- (e.g. failed logins have no session) without direct table access.
 -- SET search_path pins resolution (same hardening as increment_view).

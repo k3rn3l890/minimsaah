@@ -3,16 +3,20 @@
   "version": "1.0.0",
   "description": "MINIMSAAH - Sports journalism platform for Ghana",
   "scripts": {
-    "build": "node scripts/inject-env.js",
+    "build": "npm run build:css && node scripts/inject-env.js && node scripts/sitemap.js",
+    "build:css": "tailwindcss -i ./assets/css/input.css -o ./assets/css/tailwind.css --minify",
     "test": "node --test tests/smoke.mjs",
     "audit": "node scripts/audit-secrets.cjs",
+    "verify": "node scripts/inject-env.js --verify",
     "dev": "npx vercel dev",
     "deploy": "vercel --prod"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.117.2"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  },
   "engines": {
     "node": ">=18.0.0"
   }

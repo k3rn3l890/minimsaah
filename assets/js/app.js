@@ -1,16 +1,11 @@
 /**
  * MINIMSAAH — app.js
- * Hydrates minimsaah_v1/index.html with live data from backend at http://localhost:3000/api/v1
- * Keeps your design exactly same, only fills titles/images/links.
- * No redirect for videos: uses MinimsaahPlayer modal.
+ * Hydrates minimsaah_v1/index.html with live data from Supabase direct.
+ * Supabase is the sole backend (Render retired). No legacy REST fallback.
+ * When Supabase is not configured, hydrators show their empty state.
  */
 (function () {
-  var API = (function () {
-    // Use backend on 3000; if served from backend itself, use relative
-    var host = location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') return 'http://localhost:3000/api/v1';
-    return (window.__API_BASE__ || '');
-  })();
+  var API = (window.__API_BASE__ || '');
 
   function useSupabase() {
     return window.SupabaseDB && window.SupabaseDB.isEnabled();
@@ -57,6 +52,9 @@
   function qsa(sel, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); }
 
   async function fetchJSON(path) {
+    // Legacy REST door retired: fail closed when no explicit API base is
+    // configured. Never fetch a same-origin guess (would 404 + waste).
+    if (!API) return null;
     try {
       var res = await fetch(API + path, { headers: { 'Content-Type': 'application/json' } });
       if (!res.ok) throw new Error('HTTP ' + res.status);

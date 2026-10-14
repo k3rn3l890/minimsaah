@@ -61,25 +61,25 @@ drop policy if exists "staff_insert" on public.articles;
 create policy "staff_insert" on public.articles for insert with check (public.is_staff());
 
 drop policy if exists "staff_update" on public.articles;
-create policy "staff_update" on public.articles for update using (public.is_staff());
+create policy "staff_update" on public.articles for update using (public.is_staff()) with check (public.is_staff());
 
 drop policy if exists "staff_insert" on public.videos;
 create policy "staff_insert" on public.videos for insert with check (public.is_staff());
 
 drop policy if exists "staff_update" on public.videos;
-create policy "staff_update" on public.videos for update using (public.is_staff());
+create policy "staff_update" on public.videos for update using (public.is_staff()) with check (public.is_staff());
 
 drop policy if exists "staff_insert" on public.documentaries;
 create policy "staff_insert" on public.documentaries for insert with check (public.is_staff());
 
 drop policy if exists "staff_update" on public.documentaries;
-create policy "staff_update" on public.documentaries for update using (public.is_staff());
+create policy "staff_update" on public.documentaries for update using (public.is_staff()) with check (public.is_staff());
 
 drop policy if exists "staff_insert" on public.events;
 create policy "staff_insert" on public.events for insert with check (public.is_staff());
 
 drop policy if exists "staff_update" on public.events;
-create policy "staff_update" on public.events for update using (public.is_staff());
+create policy "staff_update" on public.events for update using (public.is_staff()) with check (public.is_staff());
 
 drop policy if exists "staff_write_tickers" on public.tickers;
 -- Split: INSERT/UPDATE stay staff-wide (ticker add/toggle for all staff roles);
@@ -155,6 +155,39 @@ $$;
 drop trigger if exists lock_user_role on public.users;
 create trigger lock_user_role before update of role, status on public.users
 for each row execute function public.lock_user_role();
+
+-- 6b. updated_at maintenance: staff updates via anon key cannot be trusted
+-- to stamp updated_at, so the DB does it. One function, one trigger per
+-- content table. Idempotent.
+create or replace function public.handle_updated_at()
+returns trigger language plpgsql as $$
+begin
+  NEW.updated_at = now();
+  return NEW;
+end;
+$$;
+
+drop trigger if exists set_updated_at on public.articles;
+create trigger set_updated_at before update on public.articles
+for each row execute function public.handle_updated_at();
+drop trigger if exists set_updated_at on public.videos;
+create trigger set_updated_at before update on public.videos
+for each row execute function public.handle_updated_at();
+drop trigger if exists set_updated_at on public.documentaries;
+create trigger set_updated_at before update on public.documentaries
+for each row execute function public.handle_updated_at();
+drop trigger if exists set_updated_at on public.events;
+create trigger set_updated_at before update on public.events
+for each row execute function public.handle_updated_at();
+drop trigger if exists set_updated_at on public.tickers;
+create trigger set_updated_at before update on public.tickers
+for each row execute function public.handle_updated_at();
+drop trigger if exists set_updated_at on public.sponsors;
+create trigger set_updated_at before update on public.sponsors
+for each row execute function public.handle_updated_at();
+drop trigger if exists set_updated_at on public.site_settings;
+create trigger set_updated_at before update on public.site_settings
+for each row execute function public.handle_updated_at();
 
 -- 7. View count RPC (avoids backend increment logic)
 -- Hardened: explicit table allowlist + row_id shape guard. Anonymous calls stay

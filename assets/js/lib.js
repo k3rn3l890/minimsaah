@@ -30,27 +30,37 @@
 
   function fmtDate(d) {
     try {
-      return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      var dt = new Date(d);
+      if (isNaN(dt.getTime())) return d;
+      return dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     } catch (e) { return d; }
   }
 
-  function show(el, on) { el.classList.toggle('hidden', !on); }
+  function show(el, on) {
+    try {
+      if (!el || !el.classList || typeof el.classList.toggle !== 'function') return;
+      el.classList.toggle('hidden', !on);
+    } catch (e) {}
+  }
 
   function useSupabase() {
     return global.SupabaseDB && global.SupabaseDB.isEnabled();
   }
 
   function apiBase() {
-    try {
-      var host = (global.location && global.location.hostname) || '';
-      if (host === 'localhost' || host === '127.0.0.1') return 'http://localhost:3000/api/v1';
-    } catch (e) {}
+    // Supabase is the sole backend. No localhost/Render fallback:
+    // '' means Supabase-direct only — callers must not fetch a dead API.
     return (global.__API_BASE__ || '');
   }
 
-  // Slug-or-id to URL piece. '' means caller skips the row.
+  // Slug-or-id to URL piece. '' means caller skips the row. Capped at 200
+  // to match the sitemap safeSlug gate.
   function safeSlug(it) {
-    try { return encodeURIComponent(String((it && (it.slug || it.id)) || '')); }
+    try {
+      var s = String((it && (it.slug || it.id)) || '');
+      if (!s || s.length > 200) return '';
+      return encodeURIComponent(s);
+    }
     catch (e) { return ''; }
   }
 
@@ -120,9 +130,9 @@
       }
       return row;
     }
-    var res = await fetch(apiBase() + '/' + opts.table + '/' + encodeURIComponent(slug));
-    if (!res.ok) throw new Error('not found');
-    return normRow(await res.json());
+    // No legacy API fallback: Supabase-direct only. Without a client the
+    // row cannot be resolved — throw so callers show their error state.
+    throw new Error('not found');
   }
 
   // Detail-page states: 'content' reveals, anything else shows the error.
@@ -147,12 +157,31 @@
 
   function bindShareCopy(btnId) {
     try {
-      document.getElementById(btnId || 'share-copy').onclick = function () {
-        navigator.clipboard.writeText(location.href);
-        this.textContent = '✓';
-        setTimeout(() => this.innerHTML = '<iconify-icon icon="solar:link-linear" width="14"></iconify-icon>', 1200);
-      };
-    } catch (e) {}
+      var btn = document.getElementById(btnId || 'share-copy');
+      if (!btn || typeof btn.addEventListener !== 'function') return false;
+      var original = btn.innerHTML;
+      btn.addEventListener('click', function () {
+        function done(ok) {
+          try {
+            if (ok) {
+              btn.textContent = '✓';
+              setTimeout(function () { btn.innerHTML = original; }, 1200);
+            }
+          } catch (e) {}
+        }
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(location.href).then(
+              function () { done(true); },
+              function () { done(false); }
+            );
+          } else {
+            done(false);
+          }
+        } catch (e) { done(false); }
+      });
+      return true;
+    } catch (e) { return false; }
   }
 
   // Play-overlay chunk shared by the video list renders. The in-site
@@ -178,6 +207,7 @@
   // Mobile drawer wiring shared by all detail/list pages (toggle, drawer,
   // close ids default to the detail variant). Uses the full aria-expanded
   // variant everywhere — three pages missed those updates before.
+  // Esc closes, focus returns to the toggle, backdrop click closes.
   function wireDrawer(toggleId, drawerId, closeId) {
     try {
       var t = document.getElementById(toggleId || 'menu-toggle-detail');
@@ -186,19 +216,41 @@
       if (!t || !d) return false;
       function open() {
         d.classList.remove('hidden');
-        requestAnimationFrame(function () { d.classList.remove('opacity-0'); });
+        if (typeof requestAnimationFrame === 'function') {
+          requestAnimationFrame(function () { d.classList.remove('opacity-0'); });
+        } else {
+          d.classList.remove('opacity-0');
+        }
         t.setAttribute('aria-expanded', 'true');
-        document.body.style.overflow = 'hidden';
+        try { document.body.style.overflow = 'hidden'; } catch (e) {}
+        try { if (c && c.focus) c.focus(); } catch (e) {}
       }
-      function close() {
+      function close(restoreFocus) {
         d.classList.add('opacity-0');
         setTimeout(function () { d.classList.add('hidden'); }, 200);
         t.setAttribute('aria-expanded', 'false');
-        document.body.style.overflow = '';
+        try { document.body.style.overflow = ''; } catch (e) {}
+        if (restoreFocus !== false) {
+          try { if (t && t.focus) t.focus(); } catch (e) {}
+        }
       }
-      t.onclick = open;
-      if (c) c.onclick = close;
-      d.onclick = function (e) { if (e.target === d) close(); };
+      function onKey(e) {
+        try {
+          if (e && e.key === 'Escape' && !d.classList.contains('hidden')) close();
+        } catch (err) {}
+      }
+      if (t.addEventListener) t.addEventListener('click', open);
+      else t.onclick = open;
+      if (c) {
+        if (c.addEventListener) c.addEventListener('click', function () { close(); });
+        else c.onclick = close;
+      }
+      if (d.addEventListener) {
+        d.addEventListener('click', function (e) { if (e.target === d) close(false); });
+      } else {
+        d.onclick = function (e) { if (e.target === d) close(false); };
+      }
+      if (document.addEventListener) document.addEventListener('keydown', onKey);
       return true;
     } catch (e) { return false; }
   }
@@ -216,6 +268,7 @@
   // Published rows for a listing page, normalized. [] on any failure —
   // callers show their empty/error state, never throw — unless opts.strict,
   // which throws Error('not found') on failure (empty data still returns []).
+  // Supabase-direct only: no legacy REST fallback (Render retired).
   async function fetchPublished(table, orderField, limit, opts) {
     var strict = !!(opts && opts.strict);
     var fail = function () { if (strict) throw new Error('not found'); return []; };
@@ -228,14 +281,8 @@
         return (r.data || []).map(normRow);
       } catch (e) { return fail(); }
     }
-    try {
-      var base = apiBase();
-      if (!base) return fail();
-      var res = await fetch(base + '/' + table + '?status=PUBLISHED&limit=' + (limit || 100));
-      if (!res.ok) return fail();
-      var data = await res.json();
-      return (data.items || data || []).map(normRow);
-    } catch (e) { return fail(); }
+    // No Supabase client and no legacy API: fail closed, no dead fetch.
+    return fail();
   }
 
   global.MinimsaahLib = {

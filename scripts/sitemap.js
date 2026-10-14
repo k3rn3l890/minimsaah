@@ -14,8 +14,11 @@ const path = require('path');
 const https = require('https');
 
 const ROOT = path.join(__dirname, '..');
-const SITE = 'https://minimsaah.vercel.app';
+// Deploy domain is env-driven (Vercel preview + custom domain safe),
+// falling back to production. Never hardcode per-env hosts elsewhere.
+const SITE = (process.env.SITE_URL || 'https://minimsaah.vercel.app').replace(/\/$/, '');
 const DEFAULT_IMAGE =
+  process.env.DEFAULT_OG_IMAGE ||
   'https://dndiajfohpmnmocmmokt.supabase.co/storage/v1/object/public/minimsaah-media/0be6735e-acf2-4513-aacb-71189871230c.jpg';
 
 const TYPES = {
@@ -25,18 +28,32 @@ const TYPES = {
   event: { table: 'events', file: 'event.html', ogType: 'website', schema: 'Event', dateField: 'date', select: 'slug,date,title,description,cover_image,location,venue' },
 };
 
-function getJSON(url, headers) {
+function getJSON(url, headers, timeoutMs) {
   return new Promise(function (resolve, reject) {
+    var done = false;
+    var timer = setTimeout(function () {
+      if (!done) { done = true; reject(new Error('timeout')); }
+    }, timeoutMs || 15000);
+    // Unref so the build never hangs on a stalled socket.
+    if (timer.unref) timer.unref();
     https
       .get(url, { headers: headers }, function (res) {
         var data = '';
         res.on('data', function (c) { data += c; });
         res.on('end', function () {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
           if (res.statusCode < 200 || res.statusCode >= 300) return reject(new Error('HTTP ' + res.statusCode));
           try { resolve(JSON.parse(data)); } catch (e) { reject(e); }
         });
       })
-      .on('error', reject);
+      .on('error', function (e) {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        reject(e);
+      });
   });
 }
 
@@ -156,9 +173,15 @@ async function main() {
       }
       var dir = path.join(ROOT, kind);
       fs.mkdirSync(dir, { recursive: true });
+      var skippedTest = 0;
       rows.forEach(function (row) {
         var slug = safeSlug(row.slug);
         if (!slug) return;
+        // Pre-launch hygiene: never pre-render or index test/seed rows.
+        // Slugs starting with test- are staff QA fixtures, not public stories.
+        // (Placeholder video IDs with real titles still need manual unpublish
+        // in Supabase before big launch — see CHANGELOG known gaps.)
+        if (/^test-/i.test(slug)) { skippedTest++; return; }
         var pageUrl = SITE + '/' + kind + '/' + encodeURIComponent(slug);
         var block = headBlock(kind, conf, row, pageUrl);
         var out = template.replace(
@@ -186,7 +209,7 @@ async function main() {
           priority: '0.6',
         });
       });
-      console.log('sitemap: ' + rows.length + ' ' + conf.table + ' rows, pages kept in /' + kind + '/');
+      console.log('sitemap: ' + rows.length + ' ' + conf.table + ' rows, pages kept in /' + kind + '/' + (skippedTest ? `, skipped ${skippedTest} test fixture(s)` : ''));
     }
   }
 
