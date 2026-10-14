@@ -1131,9 +1131,9 @@ a:focus-visible {
       });
     });
   </script>
-  <!-- MINIMSAAH Dynamic Layer — Pages + Supabase direct, Nest fallback for localhost -->
-  <!-- Production API base: kept for render-backend return; beta uses Supabase when configured -->
-  <script>window.__API_BASE__ = window.__API_BASE__ || 'https://minimsaah-api.onrender.com/api/v1';</script>
+  <!-- MINIMSAAH Dynamic Layer — Pages + Supabase direct. Nest retired 2026: Supabase is the sole backend. -->
+  <!-- API base empty by design: with Supabase configured every call goes direct; localhost dev uses its own base. -->
+  <script>window.__API_BASE__ = window.__API_BASE__ || '';</script>
   <!-- Supabase: set in Cloudflare Pages Settings -> Environment variables -->
   <script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2" integrity="sha384-WgXwGL6fUsYJWNaKJgVbrJKGRQwc1vieh2oy4kw9nXqpNDz3tdSsqEYUgeHD/NuF" crossorigin="anonymous"></script>
