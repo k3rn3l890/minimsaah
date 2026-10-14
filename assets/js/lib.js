@@ -90,6 +90,71 @@
 
   function readingTimeLabel(n) { return (n || 5) + ' min read'; }
 
+  function getSlug() {
+    try { return new URLSearchParams(global.location.search).get('slug'); }
+    catch (e) { return null; }
+  }
+
+  // One published row by slug, normalized. Throws Error('not found') on
+  // missing slug, query miss, or dead fallback — callers show error UI.
+  // opts: {table, select, withAuthor, view} where view names the
+  // increment_view table (absent when the table has no view counter).
+  async function loadOne(opts) {
+    var slug = getSlug();
+    if (!slug) throw new Error('not found');
+    var sb = apiClient();
+    if (sb) {
+      var r = await sb.from(opts.table).select(opts.select || '*')
+        .eq('slug', slug).eq('status', 'PUBLISHED').single();
+      if (r.error) throw new Error('not found');
+      var row = normRow(r.data);
+      if (opts.withAuthor && row.author) row.author = normRow(row.author);
+      if (opts.view) {
+        try {
+          if (global.SupabaseDB && global.SupabaseDB.throttledRpc) {
+            await global.SupabaseDB.throttledRpc(
+              'increment_view', { table_name: opts.view, row_id: row.id },
+              'view_' + opts.view + '_' + row.id);
+          }
+        } catch (e) {}
+      }
+      return row;
+    }
+    var res = await fetch(apiBase() + '/' + opts.table + '/' + encodeURIComponent(slug));
+    if (!res.ok) throw new Error('not found');
+    return normRow(await res.json());
+  }
+
+  // Detail-page states: 'content' reveals, anything else shows the error.
+  function setPageState(which) {
+    try {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById(which === 'content' ? 'content' : 'error').classList.remove('hidden');
+    } catch (e) {}
+  }
+
+  function renderTags(tags) {
+    try {
+      var tg = document.getElementById('tags');
+      (tags || []).forEach(function (t) {
+        var s = document.createElement('span');
+        s.className = 'text-[10px] font-mono tracking-widest border border-white/10 px-2 py-1 text-gray-500 uppercase';
+        s.textContent = '#' + t;
+        tg.appendChild(s);
+      });
+    } catch (e) {}
+  }
+
+  function bindShareCopy(btnId) {
+    try {
+      document.getElementById(btnId || 'share-copy').onclick = function () {
+        navigator.clipboard.writeText(location.href);
+        this.textContent = '✓';
+        setTimeout(() => this.innerHTML = '<iconify-icon icon="solar:link-linear" width="14"></iconify-icon>', 1200);
+      };
+    } catch (e) {}
+  }
+
   function apiClient() {
     if (useSupabase()) {
       try {
@@ -139,5 +204,10 @@
     thumbFor: thumbFor,
     readingTimeLabel: readingTimeLabel,
     fetchPublished: fetchPublished,
+    getSlug: getSlug,
+    loadOne: loadOne,
+    setPageState: setPageState,
+    renderTags: renderTags,
+    bindShareCopy: bindShareCopy,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

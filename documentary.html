@@ -113,34 +113,30 @@
   <script src="/assets/js/contact.js"></script>
 <script src="/assets/js/watch.js"></script>
 <script src="/assets/js/supabase-client.js"></script>
+<script src="/assets/js/lib.js"></script>
 <script>
 // drawer
 (function(){ var t=document.getElementById('menu-toggle-detail'), d=document.getElementById('mobile-drawer-detail'), c=document.getElementById('menu-close-detail'); if(!t||!d) return; function open(){ d.classList.remove('hidden'); requestAnimationFrame(function(){ d.classList.remove('opacity-0'); }); document.body.style.overflow='hidden'; } function close(){ d.classList.add('opacity-0'); setTimeout(function(){ d.classList.add('hidden'); document.body.style.overflow='';},200);} t.onclick=open; if(c) c.onclick=close; d.onclick=function(e){ if(e.target===d) close(); };})();
 </script>
 <script>
 (function(){
-  var API=location.hostname==='localhost'||location.hostname==='127.0.0.1'?'http://localhost:3000/api/v1':(window.__API_BASE__||'');
-  function getSlug(){return new URLSearchParams(location.search).get('slug');}
-  function esc(s){if(s===null||s===undefined)return '';return String(s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);});}
-  function useSupabase(){ return window.SupabaseDB && window.SupabaseDB.isEnabled(); }
-  function normRow(r){ if(!r||typeof r!=='object'||Array.isArray(r)) return r; var o={}; for(var k in r){ o[k]=r[k]; var ck=k.replace(/_([a-z])/g,function(m,c){return c.toUpperCase();}); if(ck!==k&&o[ck]===undefined) o[ck]=r[k]; } return o; }
+  var L = window.MinimsaahLib;
+  if (!L) {
+    try {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('error').classList.remove('hidden');
+    } catch (e) {}
+    return;
+  }
+  var getSlug = L.getSlug, esc = L.esc, useSupabase = L.useSupabase, normRow = L.normRow;
   async function loadSupabase(slug){
-    var sb = window.SupabaseDB.client();
-    var res = await sb.from('documentaries').select('*').eq('slug', slug).eq('status','PUBLISHED').single();
-    if (res.error) throw new Error('not found');
-    var d = normRow(res.data);
-    try { await window.SupabaseDB.throttledRpc('increment_view', { table_name: 'documentaries', row_id: d.id }, 'view_documentaries_' + d.id); } catch {}
-    return d;
+    return L.loadOne({ table: 'documentaries', view: 'documentaries' });
   }
   async function load(){
     var slug=getSlug();
     if(!slug){document.getElementById('loading').classList.add('hidden');document.getElementById('error').classList.remove('hidden');return;}
     try{
-      var d = useSupabase() ? await loadSupabase(slug) : await (async function(){
-        var res=await fetch(API+'/documentaries/'+encodeURIComponent(slug));
-        if(!res.ok) throw new Error();
-        return await res.json();
-      })();
+      var d = await loadSupabase(slug);
       document.title=d.title+' | MINIMSAAH';
       document.getElementById('bc-title').textContent=d.title;
       document.getElementById('title').textContent=d.title;
@@ -150,8 +146,7 @@
       if(!d.coverImage && !d.thumbnail && d.videoUrl && window.MinimsaahEmbeds){
         var t=window.MinimsaahEmbeds.thumbnailUrl(d); if(t){ document.getElementById('thumb').src=t; document.getElementById('thumb').alt=d.title||'Documentary'; }
       }
-      document.getElementById('loading').classList.add('hidden');
-      document.getElementById('content').classList.remove('hidden');
+      L.setPageState('content');
       // chapters
       if(d.chapters && Array.isArray(d.chapters) && d.chapters.length){
         document.getElementById('chapters').classList.remove('hidden');
@@ -164,7 +159,7 @@
           list.appendChild(row);
         });
       }
-      var tg=document.getElementById('tags'); (d.tags||[]).forEach(function(t){var s=document.createElement('span');s.className='text-[10px] font-mono tracking-widest border border-white/10 px-2 py-1 text-gray-500 uppercase';s.textContent='#'+t;tg.appendChild(s);});
+      L.renderTags(d.tags);
       // player
       var wrap=document.getElementById('player'); var overlay=document.getElementById('thumb-overlay');
       function providerName(p){
@@ -209,7 +204,7 @@
         wrap.innerHTML=''; wrap.appendChild(iframe); overlay.style.display='none';
       }
       overlay.onclick=play;
-    }catch(e){document.getElementById('loading').classList.add('hidden');document.getElementById('error').classList.remove('hidden');}
+    }catch(e){L.setPageState('error');}
   }
   load();
 })();

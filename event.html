@@ -114,28 +114,27 @@
   </div>
   <script src="/assets/js/contact.js"></script>
 <script src="/assets/js/watch.js"></script>
-<script src="/assets/js/supabase-client.js"></script><script>
+<script src="/assets/js/supabase-client.js"></script>
+<script src="/assets/js/lib.js"></script><script>
 (function(){
-  var API=location.hostname==='localhost'||location.hostname==='127.0.0.1'?'http://localhost:3000/api/v1':(window.__API_BASE__||'');
-  function getSlug(){return new URLSearchParams(location.search).get('slug');}
-  function useSupabase(){ return window.SupabaseDB && window.SupabaseDB.isEnabled(); }
-  function normRow(r){ if(!r||typeof r!=='object'||Array.isArray(r)) return r; var o={}; for(var k in r){ o[k]=r[k]; var ck=k.replace(/_([a-z])/g,function(m,c){return c.toUpperCase();}); if(ck!==k&&o[ck]===undefined) o[ck]=r[k]; } return o; }
+  var L = window.MinimsaahLib;
+  if (!L) {
+    try {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('error').classList.remove('hidden');
+    } catch (e) {}
+    return;
+  }
+  var getSlug = L.getSlug, normRow = L.normRow, useSupabase = L.useSupabase;
   async function loadSupabase(slug){
-    // Note: events table has no view_count column, so no increment_view RPC here.
-    var sb = window.SupabaseDB.client();
-    var res = await sb.from('events').select('*').eq('slug', slug).eq('status','PUBLISHED').single();
-    if (res.error) throw new Error('not found');
-    return normRow(res.data);
+    // Note: events table has no view_count column, so no view counter here.
+    return L.loadOne({ table: 'events' });
   }
   async function load(){
     var slug=getSlug();
     if(!slug){document.getElementById('loading').classList.add('hidden');document.getElementById('error').classList.remove('hidden');return;}
     try{
-      var e = useSupabase() ? await loadSupabase(slug) : await (async function(){
-        var res=await fetch(API+'/events/'+encodeURIComponent(slug));
-        if(!res.ok) throw new Error();
-        return await res.json();
-      })();
+      var e = await loadSupabase(slug);
       document.title=e.title+' | MINIMSAAH';
       document.getElementById('bc-title').textContent=e.title;
       document.getElementById('title').textContent=e.title;
@@ -146,10 +145,9 @@
       if(e.coverImage){document.getElementById('cover-wrap').classList.remove('hidden');document.getElementById('cover').src=e.coverImage;}
       document.getElementById('desc').textContent=e.description||'';
       if(e.ticketUrl && /^https:\/\//i.test(e.ticketUrl)){var t=document.getElementById('ticket');t.classList.remove('hidden');t.href=e.ticketUrl;}
-      var tg=document.getElementById('tags');(e.tags||[]).forEach(function(x){var s=document.createElement('span');s.className='text-[10px] font-mono tracking-widest border border-white/10 px-2 py-1 text-gray-500 uppercase';s.textContent='#'+x;tg.appendChild(s);});
-      document.getElementById('loading').classList.add('hidden');
-      document.getElementById('content').classList.remove('hidden');
-    }catch(err){document.getElementById('loading').classList.add('hidden');document.getElementById('error').classList.remove('hidden');}
+      L.renderTags(e.tags);
+      L.setPageState('content');
+    }catch(err){L.setPageState('error');}
   }
   load();
 })();

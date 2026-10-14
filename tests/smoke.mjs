@@ -265,6 +265,154 @@ describe('MinimsaahLib', () => {
   });
 });
 
+// ---- 9. shared detail loader (Phase 4) ----
+describe('MinimsaahLib detail loader', () => {
+  function stubsWith(over) {
+    const store = {};
+    const stubWindow = Object.assign({ __API_BASE__: '' }, over && over.window);
+    const stubLocation = Object.assign(
+      { hostname: 'test', pathname: '/', search: '' }, over && over.location);
+    const calls = [];
+    const els = {};
+    function el(id) {
+      if (!els[id]) {
+        els[id] = {
+          id,
+          classList: {
+            add: (c) => calls.push([id, 'add', c]),
+            remove: (c) => calls.push([id, 'remove', c]),
+            toggle: () => {},
+          },
+          appendChild: (c) => calls.push([id, 'append', c && c.textContent]),
+          textContent: '',
+        };
+      }
+      return els[id];
+    }
+    const stubDocument = {
+      getElementById: (id) => el(id),
+      createElement: () => ({ style: {}, setAttribute() {}, className: '', textContent: '' }),
+    };
+    return {
+      stubWindow, stubLocation, stubDocument, calls,
+      stubLocalStorage: {
+        getItem: (k) => (k in store ? store[k] : null),
+        setItem: (k, v) => { store[k] = String(v); },
+        removeItem: (k) => { delete store[k]; },
+      },
+    };
+  }
+
+  function loadLib(stubs, fetchImpl) {
+    const src = fs.readFileSync(path.join(ROOT, 'assets/js/lib.js'), 'utf8');
+    stubs.stubWindow.location = stubs.stubLocation;
+    const fn = new Function('window', 'location', 'document', 'localStorage', 'fetch', 'navigator', src);
+    fn(stubs.stubWindow, stubs.stubLocation, stubs.stubDocument, stubs.stubLocalStorage,
+      fetchImpl || (() => { throw new Error('network disabled in tests'); }));
+    return stubs.stubWindow.MinimsaahLib;
+  }
+
+  function supaStub(rows, rpcLog) {
+    return {
+      isEnabled: () => true,
+      client: () => ({
+        from: () => ({
+          select: () => ({
+            eq: () => ({
+              eq: () => ({
+                single: async () => rows instanceof Error
+                  ? { error: rows, data: null }
+                  : { error: null, data: rows },
+              }),
+            }),
+          }),
+        }),
+      }),
+      throttledRpc: async (...a) => { if (rpcLog) rpcLog.push(a); return null; },
+    };
+  }
+
+  it('getSlug reads ?slug=', () => {
+    const s = stubsWith({ location: { search: '?slug=abc-1' } });
+    assert.equal(loadLib(s).getSlug(), 'abc-1');
+    const s2 = stubsWith({});
+    assert.equal(loadLib(s2).getSlug(), null);
+  });
+
+  it('loadOne normalizes author and fires the view counter', async () => {
+    const rpcLog = [];
+    const s = stubsWith({
+      location: { search: '?slug=x' },
+      window: {
+        SupabaseDB: supaStub(
+          { id: '1', slug: 'x', first_name: 'A', author: { first_name: 'B', last_name: 'C' } },
+          rpcLog),
+      },
+    });
+    const row = await loadLib(s).loadOne({
+      table: 'articles', select: '*,author:users(first_name,last_name)',
+      withAuthor: true, view: 'articles',
+    });
+    assert.equal(row.firstName, 'A');
+    assert.equal(row.author.lastName, 'C');
+    assert.equal(rpcLog.length, 1);
+    assert.deepEqual(rpcLog[0][1], { table_name: 'articles', row_id: '1' });
+  });
+
+  it('loadOne throws not found on miss and on missing slug', async () => {
+    const s = stubsWith({
+      location: { search: '?slug=gone' },
+      window: { SupabaseDB: supaStub(new Error('no row')) },
+    });
+    await assert.rejects(loadLib(s).loadOne({ table: 'events' }), /not found/);
+    const s2 = stubsWith({ window: { SupabaseDB: supaStub({}) } });
+    await assert.rejects(loadLib(s2).loadOne({ table: 'events' }), /not found/);
+  });
+
+  it('loadOne falls back to fetch and normalizes', async () => {
+    const s = stubsWith({ location: { search: '?slug=y' } });
+    s.stubWindow.SupabaseDB = { isEnabled: () => false };
+    const L = loadLib(s, async (url) => {
+      assert.ok(url.endsWith('/events/y'));
+      return { ok: true, json: async () => ({ id: '9', slug: 'y', first_name: 'Z' }) };
+    });
+    const row = await L.loadOne({ table: 'events' });
+    assert.equal(row.firstName, 'Z');
+  });
+
+  it('setPageState toggles the right nodes', () => {
+    const s = stubsWith({});
+    const L = loadLib(s);
+    L.setPageState('content');
+    assert.ok(s.calls.some((c) => c[0] === 'loading' && c[1] === 'add' && c[2] === 'hidden'));
+    assert.ok(s.calls.some((c) => c[0] === 'content' && c[1] === 'remove'));
+    s.calls.length = 0;
+    L.setPageState('error');
+    assert.ok(s.calls.some((c) => c[0] === 'error' && c[1] === 'remove'));
+  });
+
+  it('renderTags writes #-spans, bindShareCopy wires the button', () => {
+    const s = stubsWith({});
+    const L = loadLib(s);
+    L.renderTags(['a', 'b']);
+    assert.deepEqual(
+      s.calls.filter((c) => c[1] === 'append').map((c) => c[2]),
+      ['#a', '#b']);
+    let wired = null;
+    const doc2 = {
+      getElementById: (id) => {
+        wired = id;
+        return { set onclick(fn) { wired = fn; } };
+      },
+      createElement: () => ({}),
+    };
+    const s2 = stubsWith({});
+    s2.stubDocument = doc2;
+    loadLib(s2).bindShareCopy();
+    assert.equal(typeof wired, 'function');
+  });
+});
+
 // ---- 6. log-event door rejection paths (no network) ----
 describe('api/log-event door', () => {
   let handler;
