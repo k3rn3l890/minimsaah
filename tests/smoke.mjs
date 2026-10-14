@@ -323,6 +323,84 @@ describe('MinimsaahLib', () => {
     const calm = await L2.fetchPublished('articles', 'published_at', 100);
     assert.deepEqual(calm, []);
   });
+
+  it('fetchPublished pages with offset via range (stable server order)', async () => {
+    const seen = [];
+    const rows = Array.from({ length: 250 }, (_, i) => ({ id: String(i), slug: `s-${i}` }));
+    const stubs = browserStubs();
+    stubs.stubWindow.SupabaseDB = {
+      isEnabled: () => true,
+      client: () => ({
+        from: (table) => ({
+          select: () => ({
+            eq: () => ({
+              order: (field, opts) => {
+                seen.push({ table, field, asc: opts.ascending });
+                return {
+                  limit: async (n) => ({ error: null, data: rows.slice(0, n) }),
+                  range: async (a, b) => ({ error: null, data: rows.slice(a, b + 1) }),
+                };
+              },
+            }),
+          }),
+        }),
+      }),
+    };
+    const L2 = loadBrowserScript('assets/js/lib.js', stubs).MinimsaahLib;
+    const p1 = await L2.fetchPublished('articles', 'published_at', 100);
+    const p2 = await L2.fetchPublished('articles', 'published_at', 100, { offset: 100 });
+    const p3 = await L2.fetchPublished('articles', 'published_at', 100, { offset: 200 });
+    assert.equal(p1.length, 100);
+    assert.equal(p1[0].id, '0');
+    assert.equal(p2[0].id, '100');
+    assert.equal(p3.length, 50);
+    assert.ok(seen.every((s) => s.field === 'published_at' && s.asc === false));
+  });
+
+  it('makePager appends pages in order and ends on a short page', async () => {
+    const rows = Array.from({ length: 250 }, (_, i) => ({ id: String(i), slug: `s-${i}` }));
+    const stubs = browserStubs();
+    stubs.stubWindow.SupabaseDB = {
+      isEnabled: () => true,
+      client: () => ({
+        from: () => ({
+          select: () => ({
+            eq: () => ({
+              order: () => ({
+                limit: async (n) => ({ error: null, data: rows.slice(0, n) }),
+                range: async (a, b) => ({ error: null, data: rows.slice(a, b + 1) }),
+              }),
+            }),
+          }),
+        }),
+      }),
+    };
+    const L2 = loadBrowserScript('assets/js/lib.js', stubs).MinimsaahLib;
+    const pager = L2.makePager('videos', 'published_at', 100, 0);
+    assert.equal(pager.done(), false);
+    const a = await pager.next();
+    const b = await pager.next();
+    assert.equal(a.length + b.length, 200);
+    assert.equal(a[0].id, '0');
+    assert.equal(b[0].id, '100');
+    assert.equal(pager.done(), false);
+    const c = await pager.next();
+    assert.equal(c.length, 50);
+    assert.equal(pager.done(), true);
+    assert.deepEqual(await pager.next(), []);
+  });
+
+  it('makePager fails closed (errors end paging, rows stay)', async () => {
+    const stubs = browserStubs();
+    stubs.stubWindow.SupabaseDB = {
+      isEnabled: () => true,
+      client: () => ({ from: () => { throw new Error('down'); } }),
+    };
+    const L2 = loadBrowserScript('assets/js/lib.js', stubs).MinimsaahLib;
+    const pager = L2.makePager('articles', 'published_at', 100, 100);
+    assert.deepEqual(await pager.next(), []);
+    assert.equal(pager.done(), true);
+  });
 });
 
 // ---- 9. shared detail loader (Phase 4) ----
@@ -372,7 +450,7 @@ describe('MinimsaahLib detail loader', () => {
     return stubs.stubWindow.MinimsaahLib;
   }
 
-  function supaStub(rows, rpcLog) {
+  function supaStub(rows) {
     return {
       isEnabled: () => true,
       client: () => ({
@@ -388,7 +466,6 @@ describe('MinimsaahLib detail loader', () => {
           }),
         }),
       }),
-      throttledRpc: async (...a) => { if (rpcLog) rpcLog.push(a); return null; },
     };
   }
 
@@ -399,24 +476,49 @@ describe('MinimsaahLib detail loader', () => {
     assert.equal(loadLib(s2).getSlug(), null);
   });
 
-  it('loadOne normalizes author and fires the view counter', async () => {
-    const rpcLog = [];
+  it('loadOne normalizes author and counts via POST /api/view', async () => {
+    const posts = [];
     const s = stubsWith({
       location: { search: '?slug=x' },
       window: {
         SupabaseDB: supaStub(
-          { id: '1', slug: 'x', first_name: 'A', author: { first_name: 'B', last_name: 'C' } },
-          rpcLog),
+          { id: '1', slug: 'x', first_name: 'A', author: { first_name: 'B', last_name: 'C' } }),
       },
     });
-    const row = await loadLib(s).loadOne({
+    const L = loadLib(s, async (url, opts) => {
+      posts.push([url, opts]);
+      return { ok: true, json: async () => ({ ok: true }) };
+    });
+    const row = await L.loadOne({
       table: 'articles', select: '*,author:users(first_name,last_name)',
       withAuthor: true, view: 'articles',
     });
     assert.equal(row.firstName, 'A');
     assert.equal(row.author.lastName, 'C');
-    assert.equal(rpcLog.length, 1);
-    assert.deepEqual(rpcLog[0][1], { table_name: 'articles', row_id: '1' });
+    assert.equal(posts.length, 1);
+    assert.equal(posts[0][0], '/api/view');
+    assert.equal(posts[0][1].method, 'POST');
+    assert.deepEqual(JSON.parse(posts[0][1].body), { table: 'articles', id: '1' });
+  });
+
+  it('countView throttles to one count per row per 5 minutes', async () => {
+    const posts = [];
+    const s = stubsWith({});
+    const L = loadLib(s, async (url) => { posts.push(url); return { ok: true }; });
+    await L.countView('videos', 'abc');
+    await L.countView('videos', 'abc');
+    assert.equal(posts.length, 1);
+    assert.equal(posts[0], '/api/view');
+    await L.countView('videos', 'other');
+    assert.equal(posts.length, 2);
+  });
+
+  it('countView never throws and ignores bad input', async () => {
+    const s = stubsWith({});
+    const L = loadLib(s, async () => { throw new Error('down'); });
+    await L.countView('articles', 'x');
+    await L.countView('', '');
+    await L.countView(null, null);
   });
 
   it('loadOne throws not found on miss and on missing slug', async () => {
@@ -602,6 +704,80 @@ describe('api/log-event door', () => {
   });
 });
 
+// ---- 6b. view-count door (no network; validation paths only) ----
+describe('api/view door', () => {
+  let viewHandler;
+  before(async () => {
+    ({ default: viewHandler } = await import('../api/view.js'));
+  });
+
+  function mockRes() {
+    const res = { statusCode: 0, body: null, headers: {}, ended: false };
+    res.status = (c) => { res.statusCode = c; return res; };
+    res.json = (b) => { res.body = b; return res; };
+    res.setHeader = (k, v) => { res.headers[k] = v; };
+    res.end = () => { res.ended = true; return res; };
+    return res;
+  }
+
+  function withEnv(fn) {
+    process.env.SUPABASE_URL = 'https://dummy.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'dummy-key-for-tests';
+    return fn().finally(() => {
+      delete process.env.SUPABASE_URL;
+      delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    });
+  }
+
+  it('answers OPTIONS preflight with 204 + no-store', async () => {
+    const res = mockRes();
+    await viewHandler({ method: 'OPTIONS', headers: {} }, res);
+    assert.equal(res.statusCode, 204);
+    assert.equal(res.ended, true);
+    assert.equal(res.headers['Cache-Control'], 'no-store');
+  });
+
+  it('rejects non-POST with 405', async () => {
+    const res = mockRes();
+    await viewHandler({ method: 'GET', headers: {} }, res);
+    assert.equal(res.statusCode, 405);
+  });
+
+  it('returns 500 without server env', async () => {
+    const keepUrl = process.env.SUPABASE_URL;
+    const keepKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    try {
+      const res = mockRes();
+      await viewHandler({ method: 'POST', headers: {}, body: { table: 'articles', id: 'x' } }, res);
+      assert.equal(res.statusCode, 500);
+    } finally {
+      if (keepUrl !== undefined) process.env.SUPABASE_URL = keepUrl;
+      if (keepKey !== undefined) process.env.SUPABASE_SERVICE_ROLE_KEY = keepKey;
+    }
+  });
+
+  it('rejects tables outside the allow-list', async () => {
+    await withEnv(async () => {
+      const res = mockRes();
+      await viewHandler({ method: 'POST', headers: {}, body: { table: 'users', id: 'abc' } }, res);
+      assert.equal(res.statusCode, 400);
+      assert.deepEqual(res.body, { error: 'Bad request' });
+    });
+  });
+
+  it('rejects malformed ids', async () => {
+    await withEnv(async () => {
+      for (const id of ['', 'a'.repeat(65), '../../etc', 'a;b', null]) {
+        const res = mockRes();
+        await viewHandler({ method: 'POST', headers: {}, body: { table: 'videos', id } }, res);
+        assert.equal(res.statusCode, 400);
+      }
+    });
+  });
+});
+
 // ---- 7. admin delete door rejection paths (no network) ----
 describe('api/admin/delete door', () => {
   let delHandler;
@@ -660,6 +836,130 @@ describe('api/admin/delete door', () => {
       if (keep.anon !== undefined) process.env.SUPABASE_ANON_KEY = keep.anon;
       if (keep.key !== undefined) process.env.SUPABASE_SERVICE_ROLE_KEY = keep.key;
     }
+  });
+});
+
+// ---- 7b. upload-approve door (no network; validation paths only) ----
+describe('api/upload-approve door', () => {
+  let upHandler;
+  before(async () => {
+    ({ default: upHandler } = await import('../api/upload-approve.js'));
+  });
+
+  function mockRes() {
+    const res = { statusCode: 0, body: null, headers: {}, ended: false };
+    res.status = (c) => { res.statusCode = c; return res; };
+    res.json = (b) => { res.body = b; return res; };
+    res.setHeader = (k, v) => { res.headers[k] = v; };
+    res.end = () => { res.ended = true; return res; };
+    return res;
+  }
+
+  function withEnv(fn) {
+    process.env.SUPABASE_URL = 'https://dummy.supabase.co';
+    process.env.SUPABASE_ANON_KEY = 'dummy-anon-for-tests';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'dummy-key-for-tests';
+    return fn().finally(() => {
+      delete process.env.SUPABASE_URL;
+      delete process.env.SUPABASE_ANON_KEY;
+      delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    });
+  }
+
+  it('answers OPTIONS preflight with 204 + no-store', async () => {
+    const res = mockRes();
+    await upHandler({ method: 'OPTIONS', headers: {} }, res);
+    assert.equal(res.statusCode, 204);
+    assert.equal(res.ended, true);
+    assert.equal(res.headers['Cache-Control'], 'no-store');
+  });
+
+  it('rejects non-POST with 405', async () => {
+    const res = mockRes();
+    await upHandler({ method: 'GET', headers: {} }, res);
+    assert.equal(res.statusCode, 405);
+  });
+
+  it('rejects missing token with 401', async () => {
+    const res = mockRes();
+    await upHandler({ method: 'POST', headers: {}, body: {} }, res);
+    assert.equal(res.statusCode, 401);
+    assert.deepEqual(res.body, { error: 'Unauthorized' });
+  });
+
+  it('returns 500 without server env', async () => {
+    const keep = {
+      url: process.env.SUPABASE_URL,
+      anon: process.env.SUPABASE_ANON_KEY,
+      key: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    };
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_ANON_KEY;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    try {
+      const res = mockRes();
+      await upHandler(
+        { method: 'POST', headers: { authorization: 'Bearer x' }, body: {} },
+        res
+      );
+      assert.equal(res.statusCode, 500);
+    } finally {
+      if (keep.url !== undefined) process.env.SUPABASE_URL = keep.url;
+      if (keep.anon !== undefined) process.env.SUPABASE_ANON_KEY = keep.anon;
+      if (keep.key !== undefined) process.env.SUPABASE_SERVICE_ROLE_KEY = keep.key;
+    }
+  });
+
+  it('upload validation: images', async () => {
+    const { checkFile } = await import('../api/upload-approve.js');
+    assert.equal(checkFile('image', 'photo.jpg', 'image/jpeg', 1000), '');
+    assert.equal(checkFile('image', 'photo.JPG', 'image/jpeg', 8 * 1024 * 1024), '');
+    assert.ok(checkFile('image', 'photo.jpg', 'image/jpeg', 8 * 1024 * 1024 + 1).includes('8 MB'));
+    assert.ok(checkFile('image', 'photo.png', 'application/octet-stream', 100).includes('Only image'));
+    assert.ok(checkFile('image', 'evil.svg', 'image/svg+xml', 100).includes('not allowed'));
+  });
+
+  it('upload validation: library (video 50 MB, docs, active content denied)', async () => {
+    const { checkFile } = await import('../api/upload-approve.js');
+    assert.equal(checkFile('library', 'clip.mp4', 'video/mp4', 50 * 1024 * 1024), '');
+    assert.ok(checkFile('library', 'clip.mp4', 'video/mp4', 50 * 1024 * 1024 + 1).includes('50 MB'));
+    assert.equal(checkFile('library', 'doc.pdf', 'application/pdf', 1000), '');
+    assert.equal(checkFile('library', 'doc.docx', '', 1000), '');
+    assert.ok(checkFile('library', 'run.sh', 'text/x-sh', 10).includes('not allowed'));
+    assert.ok(checkFile('library', 'app.js', 'application/javascript', 10).includes('not allowed'));
+    assert.ok(checkFile('library', 'x.mp4', 'video/mp4', 0).includes('Bad request'));
+    assert.ok(checkFile('weird', 'x.jpg', 'image/jpeg', 10).includes('Bad request'));
+  });
+
+  it('upload caps parity: door mirrors admin/js/admin.js exactly', () => {
+    const door = fs.readFileSync(path.join(ROOT, 'api/upload-approve.js'), 'utf8');
+    const admin = fs.readFileSync(path.join(ROOT, 'admin/js/admin.js'), 'utf8');
+    for (const lit of [
+      "'.jpg'", "'.jpeg'", "'.png'", "'.gif'", "'.webp'", "'.avif'",
+      "'.mp4'", "'.webm'", "'.mov'", "'.m4v'", "'.ogg'",
+      "'.pdf'", "'.doc'", "'.docx'",
+      "'.svg'", "'.html'", "'.php'", "'.exe'", "'.sh'", "'.ps1'",
+      '8 * 1024 * 1024', '50 * 1024 * 1024',
+    ]) {
+      assert.ok(door.includes(lit), `door must contain ${lit}`);
+      assert.ok(admin.includes(lit), `admin.js must contain ${lit}`);
+    }
+  });
+
+  it('session-only identity: no localStorage fallback in privileged paths', () => {
+    const admin = fs.readFileSync(path.join(ROOT, 'admin/js/admin.js'), 'utf8');
+    assert.ok(!admin.includes('|| me.id'), 'author/uploader must come from the live session only');
+    assert.ok(admin.includes('/api/upload-approve'), 'uploads must pass the approval door');
+    assert.ok(admin.includes("addEventListener('storage'"), 'cross-tab logout sync must exist');
+  });
+
+  it('media rows bind uploader_id to the caller at the database', () => {
+    const rls = fs.readFileSync(path.join(ROOT, 'supabase/rls.sql'), 'utf8');
+    assert.ok(rls.includes('uploader_id = (auth.uid())::text'), 'staff_insert_media must bind uploader_id');
+    const hardening = fs.readFileSync(path.join(ROOT, 'supabase/hardening.sql'), 'utf8');
+    assert.ok(hardening.includes('MEDIA-INSERT-UNBOUND'), 'hardening must detect an unbound media insert');
+    const audit = fs.readFileSync(path.join(ROOT, 'supabase/audit.sql'), 'utf8');
+    assert.ok(audit.includes("'upload_approved'"), 'audit allow-list must admit approval rows');
   });
 });
 
@@ -1008,6 +1308,20 @@ describe('headers/CSP static guards', () => {
     assert.ok(m['Access-Control-Allow-Headers'].includes('Authorization'));
     assert.equal(m.Vary, 'Origin');
   });
+
+  it('pre-rendered story dirs carry edge cache (browser always fresh)', () => {
+    // max-age=0: readers revalidate (fresh). s-maxage=60: edge absorbs
+    // traffic spikes. stale-while-revalidate: no request ever waits.
+    // New publishes land within ~60s; deploys regenerate the files anyway.
+    for (const src of ['/article/(.*)', '/video/(.*)', '/documentary/(.*)', '/event/(.*)']) {
+      const b = vercel.headers.find((h) => h.source === src);
+      assert.ok(b, `missing headers block for ${src}`);
+      const cc = b.headers.find((h) => h.key === 'Cache-Control').value;
+      assert.ok(cc.includes('max-age=0'), `${src} must not let browsers cache`);
+      assert.ok(cc.includes('s-maxage=60'), `${src} must cache at the edge`);
+      assert.ok(cc.includes('stale-while-revalidate'), `${src} must never make readers wait`);
+    }
+  });
 });
 
 // ---- 15. P1-RLS static guards: policies carry WITH CHECK + triggers + indexes ----
@@ -1043,6 +1357,24 @@ describe('supabase RLS static guards', () => {
     assert.ok(hardening.includes('set_updated_at'));
     assert.ok(hardening.includes('regexp_replace'));
   });
+
+  it('increment_view is revoked from anon/authenticated (door-only counts)', () => {
+    assert.ok(
+      rls.includes('revoke execute on function public.increment_view(text, text) from anon, authenticated;'),
+      'rls.sql must revoke direct RPC access'
+    );
+    assert.ok(
+      audit.includes('revoke execute on function public.increment_view(text, text) from anon, authenticated;'),
+      'audit.sql re-asserts the revoke after its redefine'
+    );
+    assert.ok(hardening.includes('RPC-OPEN:increment_view'), 'hardening must detect an open RPC');
+  });
+
+  it('browser counts through POST /api/view, never the RPC', () => {
+    const lib = fs.readFileSync(path.join(ROOT, 'assets/js/lib.js'), 'utf8');
+    assert.ok(lib.includes("fetch('/api/view'"), 'loadOne must count via the door');
+    assert.ok(!lib.includes('increment_view'), 'no direct RPC reference may remain in lib.js');
+  });
 });
 
 // ---- 16. P5 sitemap hygiene: env SITE + test-fixture exclusion ----
@@ -1063,6 +1395,22 @@ describe('sitemap build hygiene', () => {
     const src = fs.readFileSync(path.join(ROOT, 'scripts/sitemap.js'), 'utf8');
     assert.ok(src.includes('timeout'));
     assert.ok(src.includes('15000'));
+  });
+
+  it('pages past 1000 with a stable order and a runaway cap', () => {
+    const src = fs.readFileSync(path.join(ROOT, 'scripts/sitemap.js'), 'utf8');
+    assert.ok(src.includes('&offset='));
+    assert.ok(src.includes('page.length < 1000'));
+    assert.ok(src.includes('offset >= 9000'));
+  });
+
+  it('list pages page through makePager behind a Load-more button', () => {
+    for (const f of ['articles.html', 'videos.html', 'documentaries.html']) {
+      const t = fs.readFileSync(path.join(ROOT, f), 'utf8');
+      assert.ok(t.includes('makePager('), `${f} must page via MinimsaahLib.makePager`);
+      assert.ok(t.includes('id="more"'), `${f} must carry the Load-more button`);
+      assert.ok(t.includes('loadMore'), `${f} must wire the button`);
+    }
   });
 });
 
@@ -1167,5 +1515,82 @@ describe('backup-restore safety guards', () => {
 
   it('covers the content tables', () => {
     assert.deepEqual(br.TABLES, ['articles', 'videos', 'documentaries', 'events', 'tickers', 'media']);
+  });
+});
+
+// ---- 19. CLS hygiene: every lazy image carries width + height ----
+describe('lazy-image dimensions', () => {
+  function trackedFiles(ext, dir) {
+    const out = [];
+    const root = dir || ROOT;
+    for (const f of fs.readdirSync(root)) {
+      if (f === 'node_modules' || f === '.git') continue;
+      const p = path.join(root, f);
+      const st = fs.statSync(p);
+      if (st.isDirectory()) out.push(...trackedFiles(ext, p));
+      else if (f.endsWith(ext)) out.push(p);
+    }
+    return out;
+  }
+
+  it('no lazy image lacks width/height (static HTML + injected markup)', () => {
+    const files = [
+      ...trackedFiles('.html'),
+      ...trackedFiles('.js', path.join(ROOT, 'assets', 'js')),
+      ...trackedFiles('.js', path.join(ROOT, 'admin', 'js')),
+    ];
+    const bad = [];
+    for (const p of files) {
+      const t = fs.readFileSync(p, 'utf8');
+      const re = /<img\b[^>]*loading="lazy"[^>]*>/g;
+      let m;
+      while ((m = re.exec(t))) {
+        if (!/\bwidth="/.test(m[0]) || !/\bheight="/.test(m[0])) {
+          bad.push(`${path.relative(ROOT, p)}: ${m[0].slice(0, 100)}`);
+        }
+      }
+    }
+    assert.deepEqual(bad, []);
+  });
+});
+
+// ---- 20. Head partial: one source of truth, no pasted copies ----
+describe('head-core partial', () => {
+  const bh = require('../scripts/build-head.js');
+
+  it('partial exists and holds the tailwind link', () => {
+    const p = fs.readFileSync(path.join(ROOT, 'partials/head-core.html'), 'utf8');
+    assert.ok(p.includes('/assets/css/tailwind.css'));
+    assert.ok(p.includes('fonts.googleapis.com'));
+  });
+
+  it('every tracked HTML carries the exact partial block', () => {
+    const bad = [];
+    for (const rel of bh.htmlFiles()) {
+      const t = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+      const nl = t.includes('\r\n') ? '\r\n' : '\n';
+      if (!t.includes(bh.renderPartial(nl))) bad.push(rel);
+    }
+    assert.deepEqual(bad, []);
+  });
+
+  it('no stale admin-only font URL survives anywhere', () => {
+    const stale = 'family=Inter:wght@400;500&family=Space';
+    const hits = [];
+    for (const rel of bh.htmlFiles()) {
+      const t = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+      if (t.includes(stale)) hits.push(rel);
+    }
+    assert.deepEqual(hits, []);
+  });
+
+  it('build pipeline stamps the partial before env injection', () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+    const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
+    for (const cmd of [String(pkg.scripts.build), String(vercel.buildCommand)]) {
+      const hi = cmd.indexOf('build-head');
+      const ii = cmd.indexOf('inject-env');
+      assert.ok(hi !== -1 && ii !== -1 && hi < ii, `head partial must run before inject-env: ${cmd}`);
+    }
   });
 });

@@ -33,7 +33,7 @@ create index if not exists admin_audit_email_created_idx on public.admin_audit(e
 create or replace function public.log_admin_event(p_event text, p_email text default null, p_success boolean default false, p_detail text default null)
 returns void language plpgsql security definer set search_path = public as $$
 begin
-  if p_event not in ('login_failed', 'login_denied', 'guard_denied', 'upload_rejected', 'delete_blocked', 'limit_hit', 'input_blocked', 'site_error') then
+  if p_event not in ('login_failed', 'login_denied', 'guard_denied', 'upload_rejected', 'upload_approved', 'delete_blocked', 'limit_hit', 'input_blocked', 'site_error') then
     raise exception 'invalid event';
   end if;
   if length(coalesce(p_email, '')) > 320 then
@@ -66,6 +66,9 @@ begin
   end if;
 end;
 $$;
+
+-- Re-assert after the redefine: counts flow only through POST /api/view.
+revoke execute on function public.increment_view(text, text) from anon, authenticated;
 
 -- Retention (requires pg_cron; leave commented if unavailable):
 -- select cron.schedule('audit-retention', '0 3 * * *',

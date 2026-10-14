@@ -74,6 +74,9 @@
       <p class="text-xs font-mono text-gray-500 mt-3 tracking-widest">LOADING STORIES…</p>
     </div>
     <div id="grid" class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" aria-live="polite"></div>
+    <div class="mt-8 text-center">
+      <button id="more" class="hidden text-xs font-mono tracking-widest uppercase border border-white/10 px-6 py-3 hover:border-[#E63946]/50 hover:text-[#E63946] touch-manipulation">Load more</button>
+    </div>
     <div id="empty" class="hidden py-20 text-center">
       <p class="text-gray-400 mb-2">No stories match.</p>
       <button id="reset" class="text-xs font-mono tracking-widest text-[#E63946] hover:underline uppercase">Clear search & filters</button>
@@ -110,9 +113,31 @@
   }
   var useSupabase = L.useSupabase, esc = L.esc, normRow = L.normRow, fmt = L.fmtDate, show = L.show;
   var CATS = ['FEATURE','MATCH_REPORT','ANALYSIS','INTERVIEW','OPINION','BREAKING'];
-  var all = [], q = '', cat = '';
+  var all = [], q = '', cat = '', pager = null;
   async function fetchAll(){
-    return L.fetchPublished('articles', 'published_at', 100, { strict: true });
+    var first = await L.fetchPublished('articles', 'published_at', 100, { strict: true });
+    pager = L.makePager('articles', 'published_at', 100, first.length);
+    return first;
+  }
+  // Pager state for the Load-more button: visible only while a next page
+  // may exist. Idempotent — safe to call from render on every keystroke.
+  function syncMore(){
+    try {
+      var btn = document.getElementById('more');
+      if (!btn) return;
+      btn.classList.toggle('hidden', !(pager && !pager.done() && all.length > 0));
+      btn.disabled = false;
+      btn.textContent = 'Load more';
+    } catch (e) {}
+  }
+  async function loadMore(){
+    try {
+      var btn = document.getElementById('more');
+      if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
+      var rows = pager ? await pager.next() : [];
+      if (rows.length) { all = all.concat(rows); render(); return; }
+    } catch (e) {}
+    syncMore();
   }
   function filtered(){
     var needle = L.cleanQuery(q);
@@ -132,10 +157,11 @@
       var a = document.createElement('a');
       a.href = '/article.html?slug=' + encodeURIComponent(it.slug);
       a.className = 'group block rounded-sm overflow-hidden border border-white/5 bg-[#0A0A0A]';
-      a.innerHTML = '<div class="aspect-[16/9] overflow-hidden bg-[#111]">' + (it.coverImage ? '<img src="'+esc(it.coverImage)+'" alt="'+esc(it.title)+'" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">' : '') + '</div><div class="p-4"><span class="text-[10px] font-mono tracking-widest text-[#E63946] uppercase">'+esc((it.category||'').replace(/_/g,' '))+'</span><h3 class="font-[Space_Grotesk,sans-serif] text-sm font-medium mt-1 group-hover:text-[#E63946] line-clamp-2">'+esc(it.title)+'</h3><span class="text-[11px] font-mono text-gray-600 mt-1 block">'+esc(String(it.readingTime||5))+' min read • '+fmt(it.publishedAt||it.createdAt)+'</span></div>';
+      a.innerHTML = '<div class="aspect-[16/9] overflow-hidden bg-[#111]">' + (it.coverImage ? '<img src="'+esc(it.coverImage)+'" alt="'+esc(it.title)+'" loading="lazy" width="800" height="450" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">' : '') + '</div><div class="p-4"><span class="text-[10px] font-mono tracking-widest text-[#E63946] uppercase">'+esc((it.category||'').replace(/_/g,' '))+'</span><h3 class="font-[Space_Grotesk,sans-serif] text-sm font-medium mt-1 group-hover:text-[#E63946] line-clamp-2">'+esc(it.title)+'</h3><span class="text-[11px] font-mono text-gray-600 mt-1 block">'+esc(String(it.readingTime||5))+' min read • '+fmt(it.publishedAt||it.createdAt)+'</span></div>';
       grid.appendChild(a);
     });
     renderChips();
+    syncMore();
   }
   function renderChips(){
     var box = document.getElementById('chips');
@@ -174,6 +200,7 @@
     document.getElementById('q').value = '';
     render();
   };
+  document.getElementById('more').onclick = loadMore;
   load();
 })();
 </script>

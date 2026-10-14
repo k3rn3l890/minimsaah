@@ -100,7 +100,11 @@ drop policy if exists "staff_read_media" on public.media;
 create policy "staff_read_media" on public.media for select using (public.is_staff());
 
 drop policy if exists "staff_insert_media" on public.media;
-create policy "staff_insert_media" on public.media for insert with check (public.is_staff());
+-- Uploader is bound to the caller: auth.uid() is the verified session id,
+-- so a staff key cannot attribute rows to another user. service_role
+-- (server doors, auth-migrate) bypasses RLS, unaffected.
+create policy "staff_insert_media" on public.media for insert
+with check (public.is_staff() and uploader_id = (auth.uid())::text);
 
 drop policy if exists "staff_update_media" on public.media;
 create policy "staff_update_media" on public.media for update using (public.is_staff()) with check (public.is_staff());
@@ -189,9 +193,11 @@ drop trigger if exists set_updated_at on public.site_settings;
 create trigger set_updated_at before update on public.site_settings
 for each row execute function public.handle_updated_at();
 
--- 7. View count RPC (avoids backend increment logic)
--- Hardened: explicit table allowlist + row_id shape guard. Anonymous calls stay
--- allowed (public pages increment views) but arbitrary tables/ids are rejected.
+-- 7. View count RPC (called ONLY by the /api/view server door via
+-- service_role, which stamps per-IP caps browsers cannot forge).
+-- Anonymous direct execution is revoked: browsers must go through the door.
+-- Apply order: run this file, then confirm HARDENING OK. If this revoke is
+-- applied before /api/view deploys, counts pause (content never breaks).
 create or replace function public.increment_view(table_name text, row_id text)
 returns void language plpgsql security definer set search_path = public as $$
 begin
@@ -207,3 +213,8 @@ begin
   end if;
 end;
 $$;
+
+-- Browsers count via POST /api/view only. Direct anon/authenticated
+-- execution is revoked so the RPC cannot be replayed outside the door's
+-- per-IP caps. service_role (the door) bypasses grants, unaffected.
+revoke execute on function public.increment_view(text, text) from anon, authenticated;

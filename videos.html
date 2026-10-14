@@ -71,6 +71,9 @@
       <p class="text-xs font-mono text-gray-500 mt-3 tracking-widest">LOADING VIDEOS…</p>
     </div>
     <div id="grid" class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4" aria-live="polite"></div>
+    <div class="mt-8 text-center">
+      <button id="more" class="hidden text-xs font-mono tracking-widest uppercase border border-white/10 px-6 py-3 hover:border-[#E63946]/50 hover:text-[#E63946] touch-manipulation">Load more</button>
+    </div>
     <div id="empty" class="hidden py-20 text-center">
       <p class="text-gray-400 mb-2">No videos match.</p>
       <button id="reset" class="text-xs font-mono tracking-widest text-[#E63946] hover:underline uppercase">Clear search</button>
@@ -109,9 +112,31 @@
   var useSupabase = L.useSupabase, esc = L.esc, normRow = L.normRow, show = L.show;
   var thumbFor = L.thumbFor, durLabel = L.durLabel, safeSlug = L.safeSlug;
   var sortNewestFirst = L.sortFeaturedFirst;
-  var all = [], q = '';
+  var all = [], q = '', pager = null;
   async function fetchAll(){
-    return L.fetchPublished('videos', 'published_at', 100, { strict: true });
+    var first = await L.fetchPublished('videos', 'published_at', 100, { strict: true });
+    pager = L.makePager('videos', 'published_at', 100, first.length);
+    return first;
+  }
+  // Pager state for the Load-more button: visible only while a next page
+  // may exist. Idempotent — safe to call from render on every keystroke.
+  function syncMore(){
+    try {
+      var btn = document.getElementById('more');
+      if (!btn) return;
+      btn.classList.toggle('hidden', !(pager && !pager.done() && all.length > 0));
+      btn.disabled = false;
+      btn.textContent = 'Load more';
+    } catch (e) {}
+  }
+  async function loadMore(){
+    try {
+      var btn = document.getElementById('more');
+      if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
+      var rows = pager ? await pager.next() : [];
+      if (rows.length) { all = sortNewestFirst(all.concat(rows)); render(); return; }
+    } catch (e) {}
+    syncMore();
   }
   function filtered(){
     var needle = L.cleanQuery(q);
@@ -141,7 +166,7 @@
         if (goOut) { a.href = iout; a.setAttribute('target', '_blank'); a.setAttribute('rel', 'noopener'); }
         else a.href = '/video.html?slug=' + slug;
       a.className = 'group relative block overflow-hidden rounded-sm border border-white/5 bg-[#0A0A0A] min-h-[250px]';
-      a.innerHTML = '<div class="absolute inset-0 overflow-hidden">' + (t ? '<img src="'+esc(t)+'" alt="'+esc(it.title)+'" loading="lazy" class="w-full h-full object-cover opacity-60 group-hover:opacity-70 transition-all duration-700">' : '') + '</div><div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/90 via-[#0A0A0A]/40 to-transparent"></div>' + L.overlayHTML({ videoUrl: it.videoUrl, embedUrl: it.embedUrl, title: it.title, goOut: goOut }) + '<div class="absolute bottom-0 left-0 right-0 p-5"><span class="text-[10px] font-mono text-[#E63946] tracking-widest uppercase">'+esc((it.category||'Feature').replace(/_/g,' '))+(durLabel(it.duration) ? ' • '+durLabel(it.duration) : '')+'</span><h3 class="font-[Space_Grotesk,sans-serif] text-lg md:text-xl font-medium mt-1 group-hover:text-[#E63946]">'+esc(it.title)+'</h3>' + (it.description ? '<p class="text-xs text-gray-400 mt-1 line-clamp-2">'+esc(it.description)+'</p>' : '') + '</div>';
+      a.innerHTML = '<div class="absolute inset-0 overflow-hidden">' + (t ? '<img src="'+esc(t)+'" alt="'+esc(it.title)+'" loading="lazy" width="800" height="450" class="w-full h-full object-cover opacity-60 group-hover:opacity-70 transition-all duration-700">' : '') + '</div><div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/90 via-[#0A0A0A]/40 to-transparent"></div>' + L.overlayHTML({ videoUrl: it.videoUrl, embedUrl: it.embedUrl, title: it.title, goOut: goOut }) + '<div class="absolute bottom-0 left-0 right-0 p-5"><span class="text-[10px] font-mono text-[#E63946] tracking-widest uppercase">'+esc((it.category||'Feature').replace(/_/g,' '))+(durLabel(it.duration) ? ' • '+durLabel(it.duration) : '')+'</span><h3 class="font-[Space_Grotesk,sans-serif] text-lg md:text-xl font-medium mt-1 group-hover:text-[#E63946]">'+esc(it.title)+'</h3>' + (it.description ? '<p class="text-xs text-gray-400 mt-1 line-clamp-2">'+esc(it.description)+'</p>' : '') + '</div>';
       if (it.videoUrl && !goOut) {
         var play = a.querySelector('[data-video-url]');
         if (play) play.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); if (window.MinimsaahPlayer) window.MinimsaahPlayer.open({ videoUrl: it.videoUrl, embedUrl: it.embedUrl, title: it.title, thumbnail: t }); });
@@ -155,6 +180,7 @@
     if (shown === 0 && items.length > 0) {
       try { console.error('[videos] all rows skipped, first row keys:', items[0] ? Object.keys(items[0]).join(',') : 'none'); } catch (_) {}
     }
+    syncMore();
   }
     async function load(){
     try{
@@ -173,6 +199,7 @@
     document.getElementById('q').value = '';
     render();
   };
+  document.getElementById('more').onclick = loadMore;
   load();
 })();
 </script>

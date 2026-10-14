@@ -52,6 +52,19 @@ begin
     missing := missing || ' UPDATE-WITHOUT-WITHCHECK';
   end if;
 
+  -- 2c. Media INSERT must bind uploader_id to the caller (no attribution
+  -- forgery with a staff key).
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename = 'media'
+      and policyname = 'staff_insert_media'
+      and cmd = 'INSERT'
+      and with_check like '%uploader_id%'
+  ) then
+    missing := missing || ' MEDIA-INSERT-UNBOUND';
+  end if;
+
   -- 2c. Role-escalation trigger must exist on users.
   if not exists (
     select 1 from pg_trigger where tgname = 'lock_user_role'
@@ -82,6 +95,17 @@ begin
       missing := missing || ' RPC-UNPINNED:' || t;
     end if;
   end loop;
+
+  -- 3b. increment_view must NOT be directly executable by anon/authenticated:
+  -- counts flow only through POST /api/view (service_role bypasses grants).
+  if exists (
+    select 1 from information_schema.role_routine_grants
+    where specific_schema = 'public'
+      and routine_name = 'increment_view'
+      and grantee in ('anon', 'authenticated', 'PUBLIC')
+  ) then
+    missing := missing || ' RPC-OPEN:increment_view';
+  end if;
 
   if missing <> '' then
     raise exception 'HARDENING GAPS:%', missing;

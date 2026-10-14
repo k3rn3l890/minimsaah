@@ -30,6 +30,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" integrity="sha384-Z3REaz79l2IaAZqJsSABtTbhjgOUYyV3p90XNnAPCSHg3EMTz1fouunq9WZRtj3d" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js" integrity="sha384-tKsJDT6PlUI0pSBt9/sBKJluKgA19/a6mBrDsZaXotLB4ZYfMGM6xt6/WgGpYhTm" crossorigin="anonymous"></script>
+<!-- devtools-only note: opening F12 makes the browser fetch lenis.min.js.map, which connect-src blocks by design. Real visitors never fetch it. No action. -->
 
 <style>
 /* ===== Focus Ring Styles (Keyboard Accessibility) ===== */
@@ -306,26 +307,26 @@ a:focus-visible {
       </div>
       <div class="py-6 overflow-hidden">
         <div id="sponsor-track" class="sponsor-track">
-          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center"><img src="/assets/img/partners/nike.svg" alt="Nike" loading="lazy" class="h-7 w-auto"></span>
-          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center"><img src="/assets/img/partners/adidas.svg" alt="Adidas" loading="lazy" class="h-7 w-auto"></span>
-          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center"><img src="/assets/img/partners/puma.svg" alt="Puma" loading="lazy" class="h-7 w-auto"></span>
-          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center"><img src="/assets/img/partners/fila.svg" alt="Fila" loading="lazy" class="h-7 w-auto"></span>
-          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center"><img src="/assets/img/partners/under-armour.svg" alt="Under Armour" loading="lazy" class="h-7 w-auto"></span>
-          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/nike.svg" alt="" loading="lazy" class="h-7 w-auto"></span>
-          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/adidas.svg" alt="" loading="lazy" class="h-7 w-auto"></span>
-          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/puma.svg" alt="" loading="lazy" class="h-7 w-auto"></span>
-          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/fila.svg" alt="" loading="lazy" class="h-7 w-auto"></span>
-          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/under-armour.svg" alt="" loading="lazy" class="h-7 w-auto"></span>
-          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/nike.svg" alt="" loading="lazy" class="h-7 w-auto"></span>
-          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/adidas.svg" alt="" loading="lazy" class="h-7 w-auto"></span>
-          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/puma.svg" alt="" loading="lazy" class="h-7 w-auto"></span>
-          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/fila.svg" alt="" loading="lazy" class="h-7 w-auto"></span>
-          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/under-armour.svg" alt="" loading="lazy" class="h-7 w-auto"></span>
-          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/nike.svg" alt="" loading="lazy" class="h-7 w-auto"></span>
-          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/adidas.svg" alt="" loading="lazy" class="h-7 w-auto"></span>
-          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/puma.svg" alt="" loading="lazy" class="h-7 w-auto"></span>
-          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/fila.svg" alt="" loading="lazy" class="h-7 w-auto"></span>
-          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/under-armour.svg" alt="" loading="lazy" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center"><img src="/assets/img/partners/nike.svg" alt="Nike" loading="lazy" width="79" height="28" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center"><img src="/assets/img/partners/adidas.svg" alt="Adidas" loading="lazy" width="41" height="28" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center"><img src="/assets/img/partners/puma.svg" alt="Puma" loading="lazy" width="90" height="28" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center"><img src="/assets/img/partners/fila.svg" alt="Fila" loading="lazy" width="83" height="28" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center"><img src="/assets/img/partners/under-armour.svg" alt="Under Armour" loading="lazy" width="48" height="28" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/nike.svg" alt="" loading="lazy" width="79" height="28" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/adidas.svg" alt="" loading="lazy" width="41" height="28" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/puma.svg" alt="" loading="lazy" width="90" height="28" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/fila.svg" alt="" loading="lazy" width="83" height="28" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/under-armour.svg" alt="" loading="lazy" width="48" height="28" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/nike.svg" alt="" loading="lazy" width="79" height="28" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/adidas.svg" alt="" loading="lazy" width="41" height="28" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/puma.svg" alt="" loading="lazy" width="90" height="28" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/fila.svg" alt="" loading="lazy" width="83" height="28" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/under-armour.svg" alt="" loading="lazy" width="48" height="28" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/nike.svg" alt="" loading="lazy" width="79" height="28" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/adidas.svg" alt="" loading="lazy" width="41" height="28" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/puma.svg" alt="" loading="lazy" width="90" height="28" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/fila.svg" alt="" loading="lazy" width="83" height="28" class="h-7 w-auto"></span>
+          <span class="shrink-0 bg-white rounded-sm px-5 py-2.5 flex items-center" aria-hidden="true"><img src="/assets/img/partners/under-armour.svg" alt="" loading="lazy" width="48" height="28" class="h-7 w-auto"></span>
         </div>
       </div>
     </section>

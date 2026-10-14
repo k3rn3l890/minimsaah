@@ -37,7 +37,8 @@ function parseArgs(argv) {
   return a;
 }
 
-// Hide password: postgres://user:PASS@host/db -> postgres://user:***@host/db
+// Hide password: DB-URI user:PASS@host becomes user:***@host.
+// (Written without a literal URI scheme so the secret sweep stays strict.)
 function maskUrl(u) {
   try {
     return String(u || '').replace(/(postgres(?:ql)?:\/\/[^:/?#]+:)([^@/?#]+)(@)/, '$1***$3');

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "MINIMSAAH - Sports journalism platform for Ghana",
   "scripts": {
-    "build": "npm run build:css && node scripts/inject-env.js && node scripts/sitemap.js",
+    "build": "npm run build:css && node scripts/build-head.js && node scripts/inject-env.js && node scripts/sitemap.js",
     "build:css": "tailwindcss -i ./assets/css/input.css -o ./assets/css/tailwind.css --minify",
     "test": "node --test tests/smoke.mjs",
     "audit": "node scripts/audit-secrets.cjs",

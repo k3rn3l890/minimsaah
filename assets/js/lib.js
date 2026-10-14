@@ -6,6 +6,12 @@
  * Pure functions only — zero DOM access at load, safe on every page.
  * Pages call window.MinimsaahLib.* instead of redefining their own copies.
  * Behaviour matches the originals exactly (verified by tests/smoke.mjs).
+ *
+ * Delivery design (deliberate, not missing): per-page vanilla scripts with
+ * immutable caching (?v= stamps) and no bundler. Eight small modules, each
+ * page loads only what it needs, HTTP/2 multiplexes the rest. A concat
+ * step would grow every page's bytes and break per-file caching for no
+ * measured gain — revisit only with bundle numbers proving otherwise.
  */
 (function (global) {
   function esc(s) {
@@ -105,10 +111,30 @@
     catch (e) { return null; }
   }
 
+  // View counts go through POST /api/view (per-IP caps live server-side,
+  // where browsers cannot forge them). Local 5-minute throttle per row so
+  // one reader counts once per visit. Fire-and-forget: counting never
+  // breaks content and never throws.
+  async function countView(table, rowId) {
+    try {
+      if (!table || !rowId) return;
+      var k = 'ms_view_' + table + '_' + rowId;
+      var last = 0;
+      try { last = parseInt(localStorage.getItem(k) || '0', 10) || 0; } catch (e) { last = 0; }
+      if (Date.now() - last < 5 * 60 * 1000) return;
+      try { localStorage.setItem(k, String(Date.now())); } catch (e) {}
+      await fetch('/api/view', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table: table, id: rowId }),
+      });
+    } catch (e) {}
+  }
+
   // One published row by slug, normalized. Throws Error('not found') on
   // missing slug, query miss, or dead fallback — callers show error UI.
   // opts: {table, select, withAuthor, view} where view names the
-  // increment_view table (absent when the table has no view counter).
+  // /api/view table (absent when the table has no view counter).
   async function loadOne(opts) {
     var slug = getSlug();
     if (!slug) throw new Error('not found');
@@ -119,15 +145,7 @@
       if (r.error) throw new Error('not found');
       var row = normRow(r.data);
       if (opts.withAuthor && row.author) row.author = normRow(row.author);
-      if (opts.view) {
-        try {
-          if (global.SupabaseDB && global.SupabaseDB.throttledRpc) {
-            await global.SupabaseDB.throttledRpc(
-              'increment_view', { table_name: opts.view, row_id: row.id },
-              'view_' + opts.view + '_' + row.id);
-          }
-        } catch (e) {}
-      }
+      if (opts.view) await countView(opts.view, row.id);
       return row;
     }
     // No legacy API fallback: Supabase-direct only. Without a client the
@@ -269,20 +287,50 @@
   // callers show their empty/error state, never throw — unless opts.strict,
   // which throws Error('not found') on failure (empty data still returns []).
   // Supabase-direct only: no legacy REST fallback (Render retired).
+  // opts.offset pages with the same ORDER BY (see makePager): server order
+  // stays stable across pages, so appended rows keep global order.
   async function fetchPublished(table, orderField, limit, opts) {
     var strict = !!(opts && opts.strict);
+    var offset = (opts && opts.offset) || 0;
+    var size = limit || 100;
     var fail = function () { if (strict) throw new Error('not found'); return []; };
     var sb = apiClient();
     if (sb) {
       try {
-        var r = await sb.from(table).select('*').eq('status', 'PUBLISHED')
-          .order(orderField || 'published_at', { ascending: false }).limit(limit || 100);
+        var q = sb.from(table).select('*').eq('status', 'PUBLISHED')
+          .order(orderField || 'published_at', { ascending: false });
+        q = offset > 0 ? q.range(offset, offset + size - 1) : q.limit(size);
+        var r = await q;
         if (r.error) throw new Error(r.error.message);
         return (r.data || []).map(normRow);
       } catch (e) { return fail(); }
     }
     // No Supabase client and no legacy API: fail closed, no dead fetch.
     return fail();
+  }
+
+  // Cumulative pager for list pages ("Load more"): same ORDER BY every
+  // page, so appended rows keep global server order. A short page — or any
+  // failure — ends paging. Fail-closed: errors hide the button, rows
+  // already shown stay. First page stays strict in the page (error UI on
+  // failure); the pager itself never throws.
+  function makePager(table, orderField, pageSize, startOffset) {
+    var size = pageSize || 100;
+    var offset = startOffset || 0;
+    var finished = false;
+    return {
+      done: function () { return finished; },
+      next: async function () {
+        if (finished) return [];
+        var rows = [];
+        try {
+          rows = await fetchPublished(table, orderField, size, { offset: offset });
+        } catch (e) { rows = []; }
+        if (!rows || rows.length < size) finished = true;
+        else offset += rows.length;
+        return rows || [];
+      },
+    };
   }
 
   global.MinimsaahLib = {
@@ -299,6 +347,8 @@
     thumbFor: thumbFor,
     readingTimeLabel: readingTimeLabel,
     fetchPublished: fetchPublished,
+    makePager: makePager,
+    countView: countView,
     getSlug: getSlug,
     loadOne: loadOne,
     setPageState: setPageState,

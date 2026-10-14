@@ -139,6 +139,20 @@
     location.href = '/admin/login.html';
   }
 
+  // Cross-tab logout: clearing tokens in one tab signs out the others.
+  // Login page excluded (it writes fresh tokens; redirecting there loops).
+  try {
+    window.addEventListener('storage', function (e) {
+      if (!e) return;
+      if (e.key !== 'access_token' && e.key !== 'user') return;
+      if (e.newValue) return;
+      try {
+        if (String(location.pathname || '').indexOf('/admin/login') !== -1) return;
+        location.href = '/admin/login.html';
+      } catch (err) {}
+    });
+  } catch (e) {}
+
   // Idle auto-logout: warn at 10 min idle, log out at 15 min idle.
   // Starts only after a staff login passes requireAuth (never on login page).
   // Any mouse, key, touch or scroll resets the clock. Stay extends it.
@@ -237,12 +251,15 @@
       toast('Disabled in beta');
       throw new Error('Disabled in beta');
     }
-    // Post-beta path via Pages Functions proxy hiding service_role (kept for return)
+    // Post-beta path via Pages Functions proxy hiding service_role (kept for return).
+    // Token comes from the live session only: the localStorage fallback is
+    // gone (a stolen-or-stale local token must never authorize a delete).
     var sb = supa();
     var session = sb ? (await sb.auth.getSession()).data.session : null;
+    if (!session || !session.access_token) throw new Error('Not authenticated — sign in again');
     var res = await fetch('/api/admin/delete', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (session ? session.access_token : getToken()) },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
       body: JSON.stringify({ table: table, id: id }),
     });
     if (!res.ok) {
@@ -305,9 +322,13 @@
       return up.data;
     }
     if (table === 'articles' || table === 'videos' || table === 'documentaries' || table === 'events') {
-      var me = getUser() || {};
+      // Authorship comes from the live session only. The localStorage 'user'
+      // object is display data — JS-readable and forgeable — so it must
+      // never decide author_id, and neither may a caller payload.
       var sess = (await sb.auth.getSession()).data.session;
-      body.author_id = (sess && sess.user && sess.user.id) || me.id || body.author_id;
+      var sid = sess && sess.user && sess.user.id;
+      if (!sid) throw new Error('Not authenticated — sign in again');
+      body.author_id = sid;
     }
     body.id = cuid();
     if (table === 'articles' && body.body && !body.reading_time) {
@@ -356,18 +377,45 @@
       if (file.size > IMAGE_MAX_BYTES) throw new Error('Image too large (max 8 MB)');
     }
     if (opts && opts.library) checkLibraryFile(file);
+    // Identity from the live session only (never the localStorage fallback).
+    // The media-row RLS binds uploader_id to auth.uid(), so a forged id
+    // fails at the database even if this code is bypassed.
+    var sess = (await sb.auth.getSession()).data.session;
+    var uid = sess && sess.user && sess.user.id;
+    if (!uid) throw new Error('Not authenticated — sign in again');
+    // Server approval first (fail closed): the door re-checks type/size
+    // against the same caps and audit-logs the attempt with staff identity.
+    // Localhost dev skips it (no API base there); every hosted host enforces.
+    if (!isLocalhost()) await approveUpload(sess, file, opts);
     var ext = (file.name.match(/\.[a-z0-9]+$/i) || [''])[0];
     var filename = cuid() + ext;
     var up = await sb.storage.from('minimsaah-media').upload(filename, file, { contentType: file.type, upsert: false });
     if (up.error) throw new Error(up.error.message);
     var url = sb.storage.from('minimsaah-media').getPublicUrl(filename).data.publicUrl;
     var type = file.type.indexOf('image/') === 0 ? 'IMAGE' : (file.type.indexOf('video/') === 0 ? 'VIDEO' : 'DOCUMENT');
-    var me = getUser() || {};
-    var sess = (await sb.auth.getSession()).data.session;
-    var uid = (sess && sess.user && sess.user.id) || me.id || null;
     var ins = await sb.from('media').insert({ id: cuid(), filename: filename, original_name: file.name, mime_type: (file.type || 'application/octet-stream'), size: file.size, url: url, alt: (meta && meta.alt) || null, caption: (meta && meta.caption) || null, type: type, uploader_id: uid });
     if (ins.error) throw new Error(ins.error.message);
     return { url: url, filename: filename };
+  }
+
+  // Upload gate call: POST /api/upload-approve before any Storage write.
+  // Throws on denial or on door failure (fail closed). Localhost never
+  // reaches here (see supaUpload) — this is the hosted enforcement path.
+  async function approveUpload(sess, file, opts) {
+    var res = await fetch('/api/upload-approve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (sess && sess.access_token) },
+      body: JSON.stringify({
+        filename: file.name || '',
+        mime: file.type || '',
+        size: file.size || 0,
+        kind: (opts && opts.library) ? 'library' : 'image',
+      }),
+    });
+    if (!res.ok) {
+      var j = await res.json().catch(function () { return null; });
+      throw new Error((j && j.error) || 'Upload not approved');
+    }
   }
 
   // Map Supabase snake_case rows to the camelCase fields templates use.

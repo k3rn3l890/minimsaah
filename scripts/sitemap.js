@@ -148,17 +148,33 @@ async function main() {
   } else {
     for (var kind of Object.keys(TYPES)) {
       var conf = TYPES[kind];
+      // Page past 1000 (PostgREST caps a single answer): same ORDER BY every
+      // page so rows never repeat or skip. Capped at 10 pages — past 10k rows
+      // the sitemap splits by design, and the cap stops a runaway build.
       var rows = [];
-      try {
-        var q =
-          supabaseUrl.replace(/\/$/, '') + '/rest/v1/' + conf.table +
-          '?select=' + encodeURIComponent(conf.select) +
-          '&status=eq.PUBLISHED&limit=1000';
-        rows = await getJSON(q, { apikey: supabaseAnonKey, Authorization: 'Bearer ' + supabaseAnonKey });
-        if (!Array.isArray(rows)) rows = [];
-      } catch (e) {
-        console.warn('sitemap: fetch failed for ' + conf.table + ' — ' + e.message);
-        rows = [];
+      var offset = 0;
+      for (;;) {
+        var page = [];
+        try {
+          var q =
+            supabaseUrl.replace(/\/$/, '') + '/rest/v1/' + conf.table +
+            '?select=' + encodeURIComponent(conf.select) +
+            '&status=eq.PUBLISHED&order=' + encodeURIComponent(conf.dateField + '.desc') +
+            '&limit=1000&offset=' + offset;
+          page = await getJSON(q, { apikey: supabaseAnonKey, Authorization: 'Bearer ' + supabaseAnonKey });
+          if (!Array.isArray(page)) page = [];
+        } catch (e) {
+          console.warn('sitemap: fetch failed for ' + conf.table + ' offset ' + offset + ' — ' + e.message);
+          page = [];
+          break;
+        }
+        rows = rows.concat(page);
+        if (page.length < 1000) break;
+        offset += 1000;
+        if (offset >= 9000) {
+          console.warn('sitemap: capped at 10000 rows for ' + conf.table);
+          break;
+        }
       }
       var template = '';
       try {
