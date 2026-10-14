@@ -58,6 +58,10 @@ _imp_info/
 # Local helper - keep hidden from git
 start.bat
 
+# Markdown docs stay local only (public repo - no project info leaks).
+# Note: supabase/README.md was tracked before this rule and stays tracked.
+*.md
+
 # Pages-only main: Nest backend lives in branch render-backend, not deployed to Pages
 # Kept locally for dev + Render return, untracked on main
 backend/
