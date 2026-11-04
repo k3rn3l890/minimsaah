@@ -49,7 +49,7 @@
     </div>
     <h1 class="font-['Space_Grotesk',sans-serif] text-xl md:text-2xl font-medium tracking-tight mb-2">Section Titles</h1>
     <p class="text-xs font-mono text-gray-500 mb-4">Big names on the home page. Bosses only. Max 40 letters each.</p>
-    <div id="locked" class="hidden bg-[#E63946]/10 border border-[#E63946]/20 rounded-sm px-4 py-3 text-xs font-mono text-[#E63946] mb-4">Bosses only — OWNER or EDITOR role needed to change titles.</div>
+    <div id="locked" class="hidden bg-[#E63946]/10 border border-[#E63946]/20 rounded-sm px-4 py-3 text-xs font-mono text-[#E63946] mb-4">Bosses only — OWNER or EDITOR role needed to change titles or the About Me section.</div>
     <form id="form" class="bg-[#0A0A0A] border border-white/5 rounded-sm p-4 flex flex-col gap-4 mb-6">
       <div>
         <label for="in-featured" class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Featured story</label>
@@ -78,13 +78,77 @@
       <button type="submit" id="btn" class="bg-[#E63946] hover:bg-[#c53030] text-white text-xs font-mono tracking-widest uppercase px-4 py-3 min-h-[44px] rounded-sm touch-manipulation">Save Titles</button>
       <p id="ferr" class="hidden text-xs text-[#E63946] bg-[#E63946]/10 border border-[#E63946]/20 rounded-sm px-3 py-2"></p>
     </form>
+
+    <h2 class="font-['Space_Grotesk',sans-serif] text-xl md:text-2xl font-medium tracking-tight mb-2">About Me</h2>
+    <p class="text-xs font-mono text-gray-500 mb-4">Home page About section — portrait, heading, bio, stats, tags. Bosses only. Clear a box to restore the original copy.</p>
+    <form id="about-form" class="bg-[#0A0A0A] border border-white/5 rounded-sm p-4 flex flex-col gap-4">
+      <div>
+        <label for="in-about-img" class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Portrait image</label>
+        <div class="flex gap-2 mt-1">
+          <input id="in-about-img" data-key="about_image_url" data-max="1000" placeholder="https://… or leave empty for the built-in portrait" autocomplete="off" class="flex-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm touch-manipulation">
+          <label class="bg-white/5 border border-white/10 px-4 min-h-[44px] inline-flex items-center text-xs font-mono tracking-widest uppercase cursor-pointer hover:bg-white/10 touch-manipulation">Upload<input id="about-file" type="file" accept="image/*" class="hidden"></label>
+        </div>
+        <p class="text-[11px] font-mono text-gray-500 mt-1">Upload drops the image into Media (max 8MB) — press Save About Me after.</p>
+        <div id="about-img-preview" class="hidden mt-2"><img id="about-img-preview-src" src="" alt="Portrait preview" class="w-full max-h-52 object-cover rounded-sm border border-white/10"></div>
+      </div>
+      <div>
+        <label for="in-about-heading" class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Heading</label>
+        <input id="in-about-heading" data-key="about_heading" data-max="60" maxlength="60" placeholder="MINIMSAAH" autocomplete="off" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm touch-manipulation">
+      </div>
+      <div>
+        <label for="in-about-para1" class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">First paragraph</label>
+        <textarea id="in-about-para1" data-key="about_para1" data-max="600" rows="3" placeholder="Sports journalist and documentary filmmaker based in Accra, Ghana…" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 text-sm touch-manipulation"></textarea>
+      </div>
+      <div>
+        <label for="in-about-para2" class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Second paragraph</label>
+        <textarea id="in-about-para2" data-key="about_para2" data-max="600" rows="4" placeholder="With over a decade of experience reporting from local pitches…" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 text-sm touch-manipulation"></textarea>
+      </div>
+      <div>
+        <p class="text-[11px] font-mono tracking-widest text-gray-400 uppercase mb-2">Stats <span class="text-gray-500 normal-case tracking-normal">(4 rows — big number + small name)</span></p>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div class="flex gap-2">
+            <input id="in-about-st1" data-key="about_stat_1_value" data-max="12" maxlength="12" placeholder="10+" aria-label="Stat 1 number" autocomplete="off" class="w-20 shrink-0 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm touch-manipulation">
+            <input id="in-about-st1l" data-key="about_stat_1_label" data-max="30" maxlength="30" placeholder="Years Reporting" aria-label="Stat 1 name" autocomplete="off" class="flex-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm touch-manipulation">
+          </div>
+          <div class="flex gap-2">
+            <input id="in-about-st2" data-key="about_stat_2_value" data-max="12" maxlength="12" placeholder="50+" aria-label="Stat 2 number" autocomplete="off" class="w-20 shrink-0 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm touch-manipulation">
+            <input id="in-about-st2l" data-key="about_stat_2_label" data-max="30" maxlength="30" placeholder="Documentaries" aria-label="Stat 2 name" autocomplete="off" class="flex-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm touch-manipulation">
+          </div>
+          <div class="flex gap-2">
+            <input id="in-about-st3" data-key="about_stat_3_value" data-max="12" maxlength="12" placeholder="12" aria-label="Stat 3 number" autocomplete="off" class="w-20 shrink-0 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm touch-manipulation">
+            <input id="in-about-st3l" data-key="about_stat_3_label" data-max="30" maxlength="30" placeholder="Countries Covered" aria-label="Stat 3 name" autocomplete="off" class="flex-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm touch-manipulation">
+          </div>
+          <div class="flex gap-2">
+            <input id="in-about-st4" data-key="about_stat_4_value" data-max="12" maxlength="12" placeholder="3" aria-label="Stat 4 number" autocomplete="off" class="w-20 shrink-0 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm touch-manipulation">
+            <input id="in-about-st4l" data-key="about_stat_4_label" data-max="30" maxlength="30" placeholder="Awards Won" aria-label="Stat 4 name" autocomplete="off" class="flex-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm touch-manipulation">
+          </div>
+        </div>
+      </div>
+      <div>
+        <label for="in-about-tags" class="text-[11px] font-mono tracking-widest text-gray-400 uppercase">Tags (comma separated)</label>
+        <input id="in-about-tags" data-key="about_tags" data-max="260" maxlength="260" placeholder="Grassroots Football, Player Profiles, Match Analysis, Documentary Film" autocomplete="off" class="w-full mt-1 bg-white/5 border border-white/10 rounded-sm px-3 py-3 min-h-[44px] text-sm touch-manipulation">
+        <p class="text-[11px] font-mono text-gray-500 mt-1">Max 10 tags, 40 letters each.</p>
+      </div>
+      <button type="submit" id="about-btn" class="bg-[#E63946] hover:bg-[#c53030] text-white text-xs font-mono tracking-widest uppercase px-4 py-3 min-h-[44px] rounded-sm touch-manipulation self-start">Save About Me</button>
+      <p id="aerr" class="hidden text-xs text-[#E63946] bg-[#E63946]/10 border border-[#E63946]/20 rounded-sm px-3 py-2" role="alert"></p>
+    </form>
   </main>
 </div>
 <script>window.__API_BASE__ = window.__API_BASE__ || '';</script><script>window.__SUPABASE_URL = window.__SUPABASE_URL || ''; window.__SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY || '';</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2" integrity="sha384-WgXwGL6fUsYJWNaKJgVbrJKGRQwc1vieh2oy4kw9nXqpNDz3tdSsqEYUgeHD/NuF" crossorigin="anonymous"></script><script src="/assets/js/supabase-client.js"></script><script src="/admin/js/admin.js"></script>
 <script>
 (function(){if(typeof window.Admin==='undefined'||!Admin.requireAuth){location.href='/admin/login.html';}else{Admin.requireAuth().then(function(){document.documentElement.classList.remove('mm-guard');init();}).catch(function(){});}
   var BOSS_ROLES = ['OWNER', 'EDITOR'];
-  var DEFAULTS = { section_featured: 'FEATURED STORY', section_videos: 'VIDEO STORIES', section_docs: 'DOCUMENTARIES', section_news: 'NEWS & ARTICLES', section_events: 'EVENTS & PROMOS', section_partners: 'PARTNERS' };
+  var DEFAULTS = {
+    section_featured: 'FEATURED STORY', section_videos: 'VIDEO STORIES', section_docs: 'DOCUMENTARIES', section_news: 'NEWS & ARTICLES', section_events: 'EVENTS & PROMOS', section_partners: 'PARTNERS',
+    about_heading: 'MINIMSAAH',
+    about_para1: 'Sports journalist and documentary filmmaker based in Accra, Ghana. I cover grassroots football across West Africa — the stories, the players, the communities that make the beautiful game beautiful.',
+    about_para2: 'With over a decade of experience reporting from local pitches to international tournaments, my work has been featured in leading sports publications and broadcast networks. I believe every player has a story worth telling — and every story deserves to be told with integrity.',
+    about_stat_1_value: '10+', about_stat_1_label: 'Years Reporting',
+    about_stat_2_value: '50+', about_stat_2_label: 'Documentaries',
+    about_stat_3_value: '12', about_stat_3_label: 'Countries Covered',
+    about_stat_4_value: '3', about_stat_4_label: 'Awards Won',
+    about_tags: 'Grassroots Football, Player Profiles, Match Analysis, Documentary Film',
+  };
   function ferr(m){ var el=document.getElementById('ferr'); el.textContent=m||''; el.classList.toggle('hidden', !m); }
   function clean(v){
     v = String(v == null ? '' : v).replace(/[<>"']/g, '').trim().replace(/\s+/g, ' ');
@@ -104,13 +168,16 @@
       document.getElementById('locked').classList.remove('hidden');
       document.getElementById('btn').disabled = true;
       document.getElementById('btn').classList.add('opacity-40');
+      var ab = document.getElementById('about-btn');
+      if (ab) { ab.disabled = true; ab.classList.add('opacity-40'); }
     }
     try {
       if (Admin.useSupabase()) {
         var res = await Admin.supaList('site_settings', { limit: 50, noPager: true, orderBy: 'key', asc: true });
         (res.items || []).forEach(function (it) {
           var key = it.key || it.id;
-          var box = document.querySelector('input[data-key="' + key + '"]');
+          if (typeof key !== 'string' || !/^[a-z0-9_]+$/i.test(key)) return;
+          var box = document.querySelector('input[data-key="' + key + '"], textarea[data-key="' + key + '"]');
           if (box && it.value) box.value = it.value;
         });
       }
@@ -143,6 +210,73 @@
       Admin.toast('Saved');
     } catch (ex) { ferr(ex.message || 'Could not save. Bosses only.'); }
     btn.disabled = false; btn.textContent = 'Save Titles';
+  });
+
+  // ─── About Me card ───────────────────────────────────────────
+  var aboutBtn = document.getElementById('about-btn');
+  function aerr(m) { var el = document.getElementById('aerr'); el.textContent = m || ''; el.classList.toggle('hidden', !m); }
+  function aboutLocked() { return aboutBtn && aboutBtn.disabled; }
+  function cleanLong(v, max) {
+    v = String(v == null ? '' : v).replace(/[<>"']/g, '').trim().replace(/\s+/g, ' ');
+    return v.slice(0, max || 40);
+  }
+  var imgInput = document.getElementById('in-about-img');
+  function showAboutPreview() {
+    var v = (imgInput.value || '').trim();
+    var pv = document.getElementById('about-img-preview');
+    if (/^(https:\/\/|\/)/i.test(v)) {
+      document.getElementById('about-img-preview-src').src = v;
+      pv.classList.remove('hidden');
+    } else pv.classList.add('hidden');
+  }
+  imgInput.addEventListener('input', showAboutPreview);
+
+  // Portrait upload — same media door as article covers (8MB cap, images
+  // only, approve gate on the hosted path). Fill the URL box with the
+  // result; the boss still presses Save About Me to publish it.
+  document.getElementById('about-file').addEventListener('change', async function (e) {
+    var f = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (aboutLocked() || !f) return;
+    aerr('');
+    if (!Admin.useSupabase()) { aerr('Supabase not configured.'); return; }
+    try {
+      var data = await Admin.supaUpload(f, null, { imagesOnly: true });
+      imgInput.value = data.url;
+      showAboutPreview();
+      Admin.toast('Image uploaded — press Save About Me');
+    } catch (ex) { aerr(ex.message || 'Upload failed.'); }
+  });
+
+  document.getElementById('about-form').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    if (aboutLocked()) return;
+    aerr('');
+    if (!Admin.useSupabase()) { aerr('Supabase not configured.'); return; }
+    if (!Admin.budget('about_write', 20, 60 * 60 * 1000)) { aerr('Slow down. Too many saves this hour.'); return; }
+    var rows = [];
+    document.querySelectorAll('#about-form [data-key]').forEach(function (el) {
+      var key = el.getAttribute('data-key');
+      var max = parseInt(el.getAttribute('data-max') || '40', 10);
+      var v = cleanLong(el.value, max);
+      if (key === 'about_image_url') {
+        if (v && !/^(https:\/\/|\/)/i.test(v)) v = ''; // bad link → keep built-in portrait
+        rows.push({ key: key, value: v });
+      } else {
+        rows.push({ key: key, value: v || DEFAULTS[key] || '' });
+      }
+    });
+    aboutBtn.disabled = true; aboutBtn.textContent = 'Saving…';
+    try {
+      var sb = Admin.supa();
+      var stamp = new Date().toISOString();
+      for (var j = 0; j < rows.length; j++) {
+        var up = await sb.from('site_settings').upsert({ key: rows[j].key, value: rows[j].value, updated_at: stamp });
+        if (up.error) throw new Error(up.error.message);
+      }
+      Admin.toast('Saved');
+    } catch (ex) { aerr(ex.message || 'Could not save. Bosses only.'); }
+    aboutBtn.disabled = false; aboutBtn.textContent = 'Save About Me';
   });
 })();
 </script>

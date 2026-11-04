@@ -531,7 +531,7 @@
     try {
       var sb = window.SupabaseDB.client();
       if (!sb) return;
-      var r = await sb.from('site_settings').select('key,value').limit(20);
+      var r = await sb.from('site_settings').select('key,value').in('key', Object.keys(TITLE_IDS));
       if (r.error || !r.data) return;
       r.data.forEach(function (row) {
         try {
@@ -546,6 +546,76 @@
       });
     } catch (e) {
       console.warn('[MINIMSAAH] titles using fixed words');
+    }
+  }
+
+  // ─── Hydrate About Me section (boss-editable) ──────────────────
+  // Same site_settings store. Missing/empty values keep the static copy,
+  // so the section can never render blank.
+  var ABOUT_IDS = {
+    about_heading: { id: 'about-heading', max: 60 },
+    about_para1: { id: 'about-para-1', max: 600 },
+    about_para2: { id: 'about-para-2', max: 600 },
+    about_stat_1_value: { id: 'about-stat-1-value', max: 12 },
+    about_stat_1_label: { id: 'about-stat-1-label', max: 30 },
+    about_stat_2_value: { id: 'about-stat-2-value', max: 12 },
+    about_stat_2_label: { id: 'about-stat-2-label', max: 30 },
+    about_stat_3_value: { id: 'about-stat-3-value', max: 12 },
+    about_stat_3_label: { id: 'about-stat-3-label', max: 30 },
+    about_stat_4_value: { id: 'about-stat-4-value', max: 12 },
+    about_stat_4_label: { id: 'about-stat-4-label', max: 30 },
+  };
+
+  function aboutClean(v, max) {
+    v = String(v == null ? '' : v).replace(/[<>"']/g, '').trim().replace(/\s+/g, ' ');
+    return v.slice(0, max);
+  }
+
+  async function hydrateAbout() {
+    if (!useSupabase()) return;
+    try {
+      var sb = window.SupabaseDB.client();
+      if (!sb) return;
+      var keys = Object.keys(ABOUT_IDS).concat(['about_tags', 'about_image_url']);
+      var r = await sb.from('site_settings').select('key,value').in('key', keys);
+      if (r.error || !r.data || !r.data.length) return;
+      var vals = {};
+      r.data.forEach(function (row) {
+        if (row && typeof row.key === 'string' && typeof row.value === 'string') vals[row.key] = row.value;
+      });
+      // Text (texts set one by one; empty/missing keys keep the static copy).
+      Object.keys(ABOUT_IDS).forEach(function (key) {
+        var v = aboutClean(vals[key], ABOUT_IDS[key].max);
+        if (!v) return;
+        var el = document.getElementById(ABOUT_IDS[key].id);
+        if (el) el.textContent = v;
+      });
+      // Tags: comma list → spans. Rebuild only when at least one valid tag.
+      var wrap = document.getElementById('about-tags');
+      var tagStr = aboutClean(vals.about_tags, 260);
+      if (wrap && tagStr) {
+        var parts = tagStr.split(',');
+        var tags = [];
+        for (var i = 0; i < parts.length && tags.length < 10; i++) {
+          var t = aboutClean(parts[i], 40);
+          if (t) tags.push(t);
+        }
+        if (tags.length) {
+          wrap.textContent = '';
+          tags.forEach(function (t) {
+            var s = document.createElement('span');
+            s.className = 'text-[10px] font-mono text-gray-500 border border-white/10 px-3 py-1.5 tracking-wider uppercase';
+            s.textContent = t;
+            wrap.appendChild(s);
+          });
+        }
+      }
+      // Portrait: only https:// or same-site /… links — never javascript:.
+      var img = document.getElementById('about-img');
+      var url = aboutClean(vals.about_image_url, 1000);
+      if (img && url && /^(https:\/\/|\/)/i.test(url)) img.src = url;
+    } catch (e) {
+      console.warn('[MINIMSAAH] about using fixed words');
     }
   }
 
@@ -571,6 +641,7 @@
     fixNav();
     // Titles settle first so section reveals never swap headings visibly.
     try { titlesReady = hydrateTitles(); } catch (e) { titlesReady = null; }
+    try { hydrateAbout(); } catch (e) {}
     hydrateHero();
     hydrateFeatured();
     hydrateVideos();
@@ -582,6 +653,7 @@
     // Expose for manual refresh
     window.MinimsaahHydrate = {
       titles: hydrateTitles,
+      about: hydrateAbout,
       hero: hydrateHero,
       featured: hydrateFeatured,
       videos: hydrateVideos,
