@@ -113,6 +113,25 @@
       setTimeout(function () { rej(new Error('zone timeout')); }, ms || ZONE_TIMEOUT);
     })]);
   }
+  // ─── Cache-first paints (no stale flash) ───────────────────────
+  // Last-known-good data for every section lives in localStorage. On
+  // load the cache paints at once, then the network check runs: same
+  // data → skip (no image reloads, no player rewires), changed →
+  // repaint and refresh the cache. If the network is down, cached
+  // visitors keep real content instead of stale defaults or errors.
+  var CACHE_PREFIX = 'mscache:';
+  function loadCache(key) {
+    try {
+      var raw = localStorage.getItem(CACHE_PREFIX + key);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+  function saveCache(key, data) {
+    try { localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(data)); } catch (e) {}
+  }
+  function sameData(a, b) {
+    try { return JSON.stringify(a) === JSON.stringify(b); } catch (e) { return false; }
+  }
   function armZone(id, retryFn) {
     var sec = document.getElementById(id);
     if (!sec) return null;
@@ -179,14 +198,8 @@
   }
 
   // ─── Hydrate Hero (featured article) ─────────────────────────────
-  async function hydrateHero() {
-    if (!armZone('hero', hydrateHero)) return;
-    try {
-      var data = await withTimeout(useSupabase()
-        ? fetchSupabase('articles', { status: 'PUBLISHED', limit: 2, orderBy: 'published_at' })
-        : fetchJSON('/articles?status=PUBLISHED&limit=2'));
-      if (!data || !data.items || !data.items.length) throw new Error('empty');
-      var a = data.items[0];
+  function applyHero(data) {
+    var a = data.items[0];
     var heroTitle = qs('#hero-title');
     var heroDeck = qs('#hero-deck');
     var heroBadge = qs('#hero-badge');
@@ -197,7 +210,13 @@
     if (heroTitle) {
       heroTitle.textContent = a.title;
       heroTitle.style.cursor = 'pointer';
-      heroTitle.addEventListener('click', function () { location.href = '/article.html?slug=' + encodeURIComponent(a.slug); });
+      // Wire once, read the target on click. Later paints only refresh
+      // the attribute — never a stack of listeners.
+      if (heroTitle.getAttribute('data-hero-wired') !== '1') {
+        heroTitle.setAttribute('data-hero-wired', '1');
+        heroTitle.addEventListener('click', function () { location.href = heroTitle.getAttribute('data-hero-url'); });
+      }
+      heroTitle.setAttribute('data-hero-url', '/article.html?slug=' + encodeURIComponent(a.slug));
     }
     if (heroDeck && a.excerpt) heroDeck.textContent = a.excerpt;
     if (heroBadge) {
@@ -236,234 +255,330 @@
     titlesThenReady('hero');
     // refresh ScrollTrigger if present
     if (window.ScrollTrigger) setTimeout(function () { window.ScrollTrigger.refresh(); }, 80);
-    } catch (e) { zoneFail('hero'); }
+  }
+
+  async function hydrateHero() {
+    var cached = loadCache('hero');
+    if (cached && cached.items && cached.items.length) {
+      try { applyHero(cached); } catch (e) {}
+    } else if (!armZone('hero', hydrateHero)) return;
+    try {
+      var data = await withTimeout(useSupabase()
+        ? fetchSupabase('articles', { status: 'PUBLISHED', limit: 2, orderBy: 'published_at' })
+        : fetchJSON('/articles?status=PUBLISHED&limit=2'));
+      if (!data || !data.items || !data.items.length) throw new Error('empty');
+      if (!sameData(data, cached)) {
+        try { applyHero(data); } catch (e) {}
+        saveCache('hero', data);
+      }
+    } catch (e) { if (!cached) zoneFail('hero'); }
   }
 
   // ─── Hydrate Featured Section ────────────────────────────────────
-  async function hydrateFeatured() {
-    if (!armZone('featured', hydrateFeatured)) return;
+  function applyFeatured(data) {
     try {
-    var section = qs('#featured');
-    if (!section) throw new Error('missing');
-    var data = await withTimeout(useSupabase()
-      ? fetchSupabase('articles', { status: 'PUBLISHED', limit: 4, orderBy: 'published_at' })
-      : fetchJSON('/articles?status=PUBLISHED&limit=4'));
-    if (!data || !data.items || data.items.length < 2) throw new Error('empty');
-    var featured = data.items[0];
-    var sides = data.items.slice(1, 4);
+      var section = qs('#featured');
+      if (!section) throw new Error('missing');
+      var featured = data.items[0];
+      var sides = data.items.slice(1, 4);
 
-    var grid = section.querySelector('.grid');
-    if (!grid) throw new Error('missing');
+      var grid = section.querySelector('.grid');
+      if (!grid) throw new Error('missing');
 
-    // Large card (first col)
-    var large = grid.children[0];
-    if (large && featured) {
-      var img = large.querySelector('img');
-      if (img && featured.coverImage) setLiveImg(img, featured.coverImage, featured.title);
-      var h3 = large.querySelector('h3');
-      if (h3) { h3.textContent = featured.title; large.style.cursor = 'pointer'; }
-      var p = large.querySelector('p.text-gray-400');
-      if (p && featured.excerpt) p.textContent = featured.excerpt;
-      large.onclick = function () { location.href = '/article.html?slug=' + encodeURIComponent(featured.slug); };
-    }
+      // Large card (first col)
+      var large = grid.children[0];
+      if (large && featured) {
+        var img = large.querySelector('img');
+        if (img && featured.coverImage) setLiveImg(img, featured.coverImage, featured.title);
+        var h3 = large.querySelector('h3');
+        if (h3) { h3.textContent = featured.title; large.style.cursor = 'pointer'; }
+        var p = large.querySelector('p.text-gray-400');
+        if (p && featured.excerpt) p.textContent = featured.excerpt;
+        large.onclick = function () { location.href = '/article.html?slug=' + encodeURIComponent(featured.slug); };
+      }
 
-    // Side cards
-    var sideContainer = grid.children[1];
-    if (sideContainer && sides.length) {
-      var cards = qsa('a.group\\/card', sideContainer);
-      sides.forEach(function (art, i) {
+      // Side cards
+      var sideContainer = grid.children[1];
+      if (sideContainer && sides.length) {
+        var cards = qsa('a.group\\/card', sideContainer);
+        sides.forEach(function (art, i) {
+          var card = cards[i];
+          if (!card) return;
+          var img = card.querySelector('img');
+          if (img && art.coverImage) setLiveImg(img, art.coverImage, art.title);
+          var h4 = card.querySelector('h4');
+          if (h4) h4.textContent = art.title;
+          var cat = card.querySelector('span.text-\\[10px\\]');
+          if (cat) cat.textContent = (art.category || '').replace(/_/g, ' ');
+          var meta = card.querySelector('p.text-xs');
+          if (meta) meta.textContent = readingTimeLabel(art.readingTime) + ' • ' + fmtDate(art.publishedAt);
+          card.href = '/article.html?slug=' + encodeURIComponent(art.slug);
+        });
+      }
+      titlesThenReady('featured');
+    } catch (e) { zoneFail('featured'); }
+  }
+
+  async function hydrateFeatured() {
+    var cached = loadCache('featured');
+    if (cached && cached.items && cached.items.length >= 2) {
+      try { applyFeatured(cached); } catch (e) {}
+    } else if (!armZone('featured', hydrateFeatured)) return;
+    try {
+      var data = await withTimeout(useSupabase()
+        ? fetchSupabase('articles', { status: 'PUBLISHED', limit: 4, orderBy: 'published_at' })
+        : fetchJSON('/articles?status=PUBLISHED&limit=4'));
+      if (!data || !data.items || data.items.length < 2) throw new Error('empty');
+      if (!sameData(data, cached)) {
+        try { applyFeatured(data); } catch (e) {}
+        saveCache('featured', data);
+      }
+    } catch (e) { if (!cached) zoneFail('featured'); }
+  }
+
+  // ─── Hydrate Video Stories (Docs-style grid) ────────────────────
+  function applyVideos(data) {
+    try {
+      var section = qs('#videos');
+      if (!section) throw new Error('missing');
+      var videos = sortFeaturedFirst(data.items);
+      var cards = qsa('#videos .grid > a', document);
+      videos.slice(0, cards.length).forEach(function (v, idx) {
+        try {
+          var card = cards[idx];
+          if (!card) return;
+          var slug = null;
+          try { slug = encodeURIComponent(String(v.slug || v.id || '')); } catch (e) { slug = ''; }
+          if (!slug) return;
+          var img = card.querySelector('img');
+          if (img) {
+            var t = thumbForVideo(v);
+            if (t) setLiveImg(img, t, v.title);
+          }
+          var label = card.querySelector('span.text-\\[10px\\]');
+          if (label) {
+            var durTxt = '';
+            if (v.duration) durTxt = ' • ' + Math.floor(v.duration / 60) + ':' + String(v.duration % 60).padStart(2, '0');
+            label.textContent = ((v.category || 'Feature').replace(/_/g, ' ')) + durTxt;
+          }
+          var h3 = card.querySelector('h3');
+          if (h3) h3.textContent = v.title;
+          var p = card.querySelector('p');
+          if (p && v.description) p.textContent = v.description;
+          // Non-YouTube goes straight to the social video (new tab). YouTube stays in-site.
+          var vprov = (window.MinimsaahEmbeds && window.MinimsaahEmbeds.detectProvider(v.videoUrl)) || 'unknown';
+          var vout = (window.MinimsaahEmbeds && window.MinimsaahEmbeds.cleanVideoUrl(v.videoUrl)) || v.videoUrl || '';
+          if (vprov !== 'youtube' && vprov !== 'unknown' && vout) {
+            card.href = vout;
+            card.setAttribute('target', '_blank');
+            card.setAttribute('rel', 'noopener');
+          } else {
+            card.href = '/video.html?slug=' + slug;
+            var play = card.querySelector('[data-play]');
+            if (play && v.videoUrl) {
+              play.setAttribute('data-video-url', v.videoUrl);
+              play.setAttribute('data-title', v.title || '');
+              play.setAttribute('data-thumb', thumbForVideo(v) || '');
+              try { play.setAttribute('aria-label', 'Play ' + String(v.title || 'this video').slice(0, 100)); } catch (e) {}
+              if (v.embedUrl) play.setAttribute('data-embed-url', v.embedUrl);
+              // Wire once. Later paints only refresh the attributes above,
+              // so the player always opens the newest link and repaints
+              // never stack click handlers.
+              if (play.getAttribute('data-play-wired') !== '1') {
+                play.setAttribute('data-play-wired', '1');
+                play.addEventListener('click', function (e) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  window.MinimsaahPlayer && window.MinimsaahPlayer.open({
+                    videoUrl: play.getAttribute('data-video-url'),
+                    embedUrl: play.getAttribute('data-embed-url'),
+                    title: play.getAttribute('data-title'),
+                    thumbnail: play.getAttribute('data-thumb')
+                  });
+                });
+              }
+            }
+          }
+        } catch (cardErr) {
+          try { console.warn('[home videos] skip bad row', v && (v.id || v.slug)); } catch (_) {}
+        }
+      });
+      titlesThenReady('videos');
+    } catch (e) { zoneFail('videos'); }
+  }
+
+  async function hydrateVideos() {
+    var cached = loadCache('videos');
+    if (cached && cached.items && cached.items.length) {
+      try { applyVideos(cached); } catch (e) {}
+    } else if (!armZone('videos', hydrateVideos)) return;
+    try {
+      var data = await withTimeout(useSupabase()
+        ? fetchSupabase('videos', { status: 'PUBLISHED', limit: 20, orderBy: 'published_at' })
+        : fetchJSON('/videos?status=PUBLISHED&limit=20'));
+      if (!data || !data.items || !data.items.length) throw new Error('empty');
+      if (!sameData(data, cached)) {
+        try { applyVideos(data); } catch (e) {}
+        saveCache('videos', data);
+      }
+    } catch (e) { if (!cached) zoneFail('videos'); }
+  }
+
+  // ─── Hydrate Documentaries ──────────────────────────────────────
+  function applyDocs(data) {
+    try {
+      var section = qs('#docs');
+      if (!section) throw new Error('missing');
+      var docs = sortFeaturedFirst(data.items);
+      var cards = qsa('#docs .grid > a', document);
+      docs.forEach(function (d, i) {
+        var card = cards[i];
+        if (!card) return;
+        var img = card.querySelector('img');
+        if (img) {
+          var src = d.coverImage || d.thumbnail || thumbForVideo(d);
+          if (src) setLiveImg(img, src, d.title);
+        }
+        var h3 = card.querySelector('h3');
+        if (h3) h3.textContent = d.title;
+        var meta = card.querySelector('span.text-\\[10px\\]');
+        if (meta) meta.textContent = 'Documentary • ' + (d.duration ? Math.floor(d.duration/60) + ' min' : '');
+        var p = card.querySelector('p');
+        if (p && d.description) p.textContent = d.description;
+        // Non-YouTube goes straight to the social video (new tab). YouTube stays in-site.
+        var dprov = (window.MinimsaahEmbeds && window.MinimsaahEmbeds.detectProvider(d.videoUrl)) || 'unknown';
+        var dout = (window.MinimsaahEmbeds && window.MinimsaahEmbeds.cleanVideoUrl(d.videoUrl)) || d.videoUrl || '';
+        if (dprov !== 'youtube' && dprov !== 'unknown' && dout) {
+          card.href = dout;
+          card.setAttribute('target', '_blank');
+          card.setAttribute('rel', 'noopener');
+        } else {
+          card.href = '/documentary.html?slug=' + encodeURIComponent(d.slug);
+          // play overlay should open player modal, not navigate
+          var playBtn = card.querySelector('.rounded-full');
+          if (playBtn && d.videoUrl) {
+            playBtn.setAttribute('data-video-url', d.videoUrl);
+            try { playBtn.setAttribute('aria-label', 'Play ' + String(d.title || 'this documentary').slice(0, 100)); } catch (e) {}
+            if (d.embedUrl) playBtn.setAttribute('data-embed-url', d.embedUrl);
+            // Wire once. Later paints only refresh the attributes above.
+            if (playBtn.getAttribute('data-play-wired') !== '1') {
+              playBtn.setAttribute('data-play-wired', '1');
+              playBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                window.MinimsaahPlayer && window.MinimsaahPlayer.open({ videoUrl: playBtn.getAttribute('data-video-url'), embedUrl: playBtn.getAttribute('data-embed-url') });
+              });
+            }
+          }
+        }
+      });
+      titlesThenReady('docs');
+    } catch (e) { zoneFail('docs'); }
+  }
+
+  async function hydrateDocs() {
+    var cached = loadCache('docs');
+    if (cached && cached.items && cached.items.length) {
+      try { applyDocs(cached); } catch (e) {}
+    } else if (!armZone('docs', hydrateDocs)) return;
+    try {
+      var data = await withTimeout(useSupabase()
+        ? fetchSupabase('documentaries', { status: 'PUBLISHED', limit: 20, orderBy: 'published_at' })
+        : fetchJSON('/documentaries?status=PUBLISHED&limit=20'));
+      if (!data || !data.items || !data.items.length) throw new Error('empty');
+      if (!sameData(data, cached)) {
+        try { applyDocs(data); } catch (e) {}
+        saveCache('docs', data);
+      }
+    } catch (e) { if (!cached) zoneFail('docs'); }
+  }
+
+  // ─── Hydrate News ───────────────────────────────────────────────
+  function applyNews(data) {
+    try {
+      var section = qs('#news');
+      if (!section) throw new Error('missing');
+      var items = data.items;
+      var cards = qsa('#news .grid > a', document);
+      // first card spans 2 cols, rest singles
+      items.slice(0, cards.length).forEach(function (art, i) {
         var card = cards[i];
         if (!card) return;
         var img = card.querySelector('img');
         if (img && art.coverImage) setLiveImg(img, art.coverImage, art.title);
-        var h4 = card.querySelector('h4');
-        if (h4) h4.textContent = art.title;
+        var h3 = card.querySelector('h3');
+        if (h3) h3.textContent = art.title;
         var cat = card.querySelector('span.text-\\[10px\\]');
-        if (cat) cat.textContent = (art.category || '').replace(/_/g, ' ');
-        var meta = card.querySelector('p.text-xs');
-        if (meta) meta.textContent = readingTimeLabel(art.readingTime) + ' • ' + fmtDate(art.publishedAt);
+        if (cat) cat.textContent = (art.category || 'Feature').replace(/_/g, ' ');
+        // find meta span with "min read"
+        var metas = card.querySelectorAll('span');
+        metas.forEach(function (sp) {
+          if (sp.textContent.indexOf('min read') !== -1) sp.textContent = readingTimeLabel(art.readingTime) + ' • ' + fmtDate(art.publishedAt);
+        });
         card.href = '/article.html?slug=' + encodeURIComponent(art.slug);
       });
-    }
-    titlesThenReady('featured');
-    } catch (e) { zoneFail('featured'); }
-  }
-
-  // ─── Hydrate Video Stories (Docs-style grid) ────────────────────
-  async function hydrateVideos() {
-    if (!armZone('videos', hydrateVideos)) return;
-    try {
-    var section = qs('#videos');
-    if (!section) throw new Error('missing');
-    var data = await withTimeout(useSupabase()
-      ? fetchSupabase('videos', { status: 'PUBLISHED', limit: 20, orderBy: 'published_at' })
-      : fetchJSON('/videos?status=PUBLISHED&limit=20'));
-    if (!data || !data.items || !data.items.length) throw new Error('empty');
-    var videos = sortFeaturedFirst(data.items);
-    var cards = qsa('#videos .grid > a', document);
-    videos.slice(0, cards.length).forEach(function (v, idx) {
-      try {
-        var card = cards[idx];
-        if (!card) return;
-        var slug = null;
-        try { slug = encodeURIComponent(String(v.slug || v.id || '')); } catch (e) { slug = ''; }
-        if (!slug) return;
-      var img = card.querySelector('img');
-      if (img) {
-        var t = thumbForVideo(v);
-        if (t) setLiveImg(img, t, v.title);
-      }
-      var label = card.querySelector('span.text-\\[10px\\]');
-      if (label) {
-        var durTxt = '';
-        if (v.duration) durTxt = ' • ' + Math.floor(v.duration / 60) + ':' + String(v.duration % 60).padStart(2, '0');
-        label.textContent = ((v.category || 'Feature').replace(/_/g, ' ')) + durTxt;
-      }
-      var h3 = card.querySelector('h3');
-      if (h3) h3.textContent = v.title;
-      var p = card.querySelector('p');
-      if (p && v.description) p.textContent = v.description;
-      // Non-YouTube goes straight to the social video (new tab). YouTube stays in-site.
-      var vprov = (window.MinimsaahEmbeds && window.MinimsaahEmbeds.detectProvider(v.videoUrl)) || 'unknown';
-      var vout = (window.MinimsaahEmbeds && window.MinimsaahEmbeds.cleanVideoUrl(v.videoUrl)) || v.videoUrl || '';
-      if (vprov !== 'youtube' && vprov !== 'unknown' && vout) {
-        card.href = vout;
-        card.setAttribute('target', '_blank');
-        card.setAttribute('rel', 'noopener');
-      } else {
-        card.href = '/video.html?slug=' + slug;
-        var play = card.querySelector('[data-play]');
-        if (play && v.videoUrl) {
-          play.setAttribute('data-video-url', v.videoUrl);
-          try { play.setAttribute('aria-label', 'Play ' + String(v.title || 'this video').slice(0, 100)); } catch (e) {}
-          if (v.embedUrl) play.setAttribute('data-embed-url', v.embedUrl);
-          play.addEventListener('click', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (window.MinimsaahPlayer) window.MinimsaahPlayer.open({ videoUrl: v.videoUrl, embedUrl: v.embedUrl, title: v.title, thumbnail: thumbForVideo(v) });
-          });
-        }
-      }
-      } catch (cardErr) {
-        try { console.warn('[home videos] skip bad row', v && (v.id || v.slug)); } catch (_) {}
-      }
-    });
-    titlesThenReady('videos');
-    } catch (e) { zoneFail('videos'); }
-  }
-
-  // ─── Hydrate Documentaries ──────────────────────────────────────
-  async function hydrateDocs() {
-    if (!armZone('docs', hydrateDocs)) return;
-    try {
-    var section = qs('#docs');
-    if (!section) throw new Error('missing');
-    var data = await withTimeout(useSupabase()
-      ? fetchSupabase('documentaries', { status: 'PUBLISHED', limit: 20, orderBy: 'published_at' })
-      : fetchJSON('/documentaries?status=PUBLISHED&limit=20'));
-    if (!data || !data.items || !data.items.length) throw new Error('empty');
-    var docs = sortFeaturedFirst(data.items);
-    var cards = qsa('#docs .grid > a', document);
-    docs.forEach(function (d, i) {
-      var card = cards[i];
-      if (!card) return;
-      var img = card.querySelector('img');
-      if (img) {
-        var src = d.coverImage || d.thumbnail || thumbForVideo(d);
-        if (src) setLiveImg(img, src, d.title);
-      }
-      var h3 = card.querySelector('h3');
-      if (h3) h3.textContent = d.title;
-      var meta = card.querySelector('span.text-\\[10px\\]');
-      if (meta) meta.textContent = 'Documentary • ' + (d.duration ? Math.floor(d.duration/60) + ' min' : '');
-      var p = card.querySelector('p');
-      if (p && d.description) p.textContent = d.description;
-      // Non-YouTube goes straight to the social video (new tab). YouTube stays in-site.
-      var dprov = (window.MinimsaahEmbeds && window.MinimsaahEmbeds.detectProvider(d.videoUrl)) || 'unknown';
-      var dout = (window.MinimsaahEmbeds && window.MinimsaahEmbeds.cleanVideoUrl(d.videoUrl)) || d.videoUrl || '';
-      if (dprov !== 'youtube' && dprov !== 'unknown' && dout) {
-        card.href = dout;
-        card.setAttribute('target', '_blank');
-        card.setAttribute('rel', 'noopener');
-      } else {
-        card.href = '/documentary.html?slug=' + encodeURIComponent(d.slug);
-        // play overlay should open player modal, not navigate
-        var playBtn = card.querySelector('.rounded-full');
-        if (playBtn && d.videoUrl) {
-          playBtn.setAttribute('data-video-url', d.videoUrl);
-          try { playBtn.setAttribute('aria-label', 'Play ' + String(d.title || 'this documentary').slice(0, 100)); } catch (e) {}
-          if (d.embedUrl) playBtn.setAttribute('data-embed-url', d.embedUrl);
-          playBtn.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); window.MinimsaahPlayer && window.MinimsaahPlayer.open({ videoUrl: d.videoUrl, embedUrl: d.embedUrl }); });
-        }
-      }
-    });
-    titlesThenReady('docs');
-    } catch (e) { zoneFail('docs'); }
-  }
-
-  // ─── Hydrate News ───────────────────────────────────────────────
-  async function hydrateNews() {
-    if (!armZone('news', hydrateNews)) return;
-    try {
-    var section = qs('#news');
-    if (!section) throw new Error('missing');
-    var data = await withTimeout(useSupabase()
-      ? fetchSupabase('articles', { status: 'PUBLISHED', limit: 6, orderBy: 'published_at' })
-      : fetchJSON('/articles?status=PUBLISHED&limit=6'));
-    if (!data || !data.items || !data.items.length) throw new Error('empty');
-    var items = data.items;
-    var cards = qsa('#news .grid > a', document);
-    // first card spans 2 cols, rest singles
-    items.slice(0, cards.length).forEach(function (art, i) {
-      var card = cards[i];
-      if (!card) return;
-      var img = card.querySelector('img');
-      if (img && art.coverImage) setLiveImg(img, art.coverImage, art.title);
-      var h3 = card.querySelector('h3');
-      if (h3) h3.textContent = art.title;
-      var cat = card.querySelector('span.text-\\[10px\\]');
-      if (cat) cat.textContent = (art.category || 'Feature').replace(/_/g, ' ');
-      var meta = card.querySelector('span.text-xs, span.text-\\[10px\\].text-gray-500');
-      // find meta span with "min read"
-      var metas = card.querySelectorAll('span');
-      metas.forEach(function (sp) {
-        if (sp.textContent.indexOf('min read') !== -1) sp.textContent = readingTimeLabel(art.readingTime) + ' • ' + fmtDate(art.publishedAt);
-      });
-      card.href = '/article.html?slug=' + encodeURIComponent(art.slug);
-    });
-    titlesThenReady('news');
+      titlesThenReady('news');
     } catch (e) { zoneFail('news'); }
   }
 
-  // ─── Hydrate Events ─────────────────────────────────────────────
-  async function hydrateEvents() {
-    if (!armZone('events', hydrateEvents)) return;
+  async function hydrateNews() {
+    var cached = loadCache('news');
+    if (cached && cached.items && cached.items.length) {
+      try { applyNews(cached); } catch (e) {}
+    } else if (!armZone('news', hydrateNews)) return;
     try {
-    var section = qs('#events');
-    if (!section) throw new Error('missing');
-    var data = await withTimeout(useSupabase()
-      ? fetchSupabase('events', { status: 'PUBLISHED', limit: 3, orderBy: 'date' })
-      : fetchJSON('/events?status=PUBLISHED&limit=3'));
-    if (!data || !data.items || !data.items.length) throw new Error('empty');
-    var evs = data.items;
-    var rows = qsa('#events .flex.flex-col > a', document);
-    evs.forEach(function (ev, i) {
-      var row = rows[i];
-      if (!row) return;
-      var day = row.querySelector('div.shrink-0 span');
-      var mon = row.querySelector('span.text-\\[10px\\]');
-      if (day) day.textContent = new Date(ev.date).getDate();
-      if (mon) mon.textContent = new Date(ev.date).toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
-      var h3 = row.querySelector('h3');
-      if (h3) h3.textContent = ev.title;
-      var p = row.querySelector('p.text-gray-500');
-      if (p && ev.description) p.textContent = ev.description;
-      var loc = row.querySelector('p.text-\\[10px\\].text-gray-600');
-      if (loc) loc.textContent = (ev.location || ev.venue || '') + ' • ' + fmtDate(ev.date);
-      row.href = '/event.html?slug=' + encodeURIComponent(ev.slug);
-    });
-    titlesThenReady('events');
+      var data = await withTimeout(useSupabase()
+        ? fetchSupabase('articles', { status: 'PUBLISHED', limit: 6, orderBy: 'published_at' })
+        : fetchJSON('/articles?status=PUBLISHED&limit=6'));
+      if (!data || !data.items || !data.items.length) throw new Error('empty');
+      if (!sameData(data, cached)) {
+        try { applyNews(data); } catch (e) {}
+        saveCache('news', data);
+      }
+    } catch (e) { if (!cached) zoneFail('news'); }
+  }
+
+  // ─── Hydrate Events ─────────────────────────────────────────────
+  function applyEvents(data) {
+    try {
+      var section = qs('#events');
+      if (!section) throw new Error('missing');
+      var evs = data.items;
+      var rows = qsa('#events .flex.flex-col > a', document);
+      evs.forEach(function (ev, i) {
+        var row = rows[i];
+        if (!row) return;
+        var day = row.querySelector('div.shrink-0 span');
+        var mon = row.querySelector('span.text-\\[10px\\]');
+        if (day) day.textContent = new Date(ev.date).getDate();
+        if (mon) mon.textContent = new Date(ev.date).toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+        var h3 = row.querySelector('h3');
+        if (h3) h3.textContent = ev.title;
+        var p = row.querySelector('p.text-gray-500');
+        if (p && ev.description) p.textContent = ev.description;
+        var loc = row.querySelector('p.text-\\[10px\\].text-gray-600');
+        if (loc) loc.textContent = (ev.location || ev.venue || '') + ' • ' + fmtDate(ev.date);
+        row.href = '/event.html?slug=' + encodeURIComponent(ev.slug);
+      });
+      titlesThenReady('events');
     } catch (e) { zoneFail('events'); }
+  }
+
+  async function hydrateEvents() {
+    var cached = loadCache('events');
+    if (cached && cached.items && cached.items.length) {
+      try { applyEvents(cached); } catch (e) {}
+    } else if (!armZone('events', hydrateEvents)) return;
+    try {
+      var data = await withTimeout(useSupabase()
+        ? fetchSupabase('events', { status: 'PUBLISHED', limit: 3, orderBy: 'date' })
+        : fetchJSON('/events?status=PUBLISHED&limit=3'));
+      if (!data || !data.items || !data.items.length) throw new Error('empty');
+      if (!sameData(data, cached)) {
+        try { applyEvents(data); } catch (e) {}
+        saveCache('events', data);
+      }
+    } catch (e) { if (!cached) zoneFail('events'); }
   }
 
   // ─── Hydrate Partners strip ───────────────────────────────────
@@ -493,23 +608,35 @@
     return span;
   }
 
+  function applySponsors(items) {
+    var track = qs('#sponsor-track');
+    if (!track) return;
+    track.innerHTML = '';
+    // 4 identical copies (2 twin halves) so the strip stays wider
+    // than big screens — no black tail, endless loop, no jump.
+    for (var copy = 0; copy < 4; copy++) {
+      items.forEach(function (v) {
+        try { track.appendChild(sponsorChip(v, copy > 0)); } catch (e) {}
+      });
+    }
+  }
+
   async function hydrateSponsors() {
     var track = qs('#sponsor-track');
     if (!track || !useSupabase()) return;
+    var cached = loadCache('sponsors');
+    if (cached && cached.length) {
+      try { applySponsors(cached); } catch (e) {}
+    }
     try {
       var sb = window.SupabaseDB.client();
       if (!sb) return;
       var r = await sb.from('sponsors').select('*').eq('active', true).order('priority', { ascending: false }).limit(12);
       if (r.error || !r.data || !r.data.length) return;
       var items = r.data.map(normRow).slice(0, 12);
-      track.innerHTML = '';
-      // 4 identical copies (2 twin halves) so the strip stays wider
-      // than big screens — no black tail, endless loop, no jump.
-      for (var copy = 0; copy < 4; copy++) {
-        items.forEach(function (v) {
-          try { track.appendChild(sponsorChip(v, copy > 0)); } catch (e) {}
-        });
-      }
+      if (sameData(items, cached)) return;
+      try { applySponsors(items); } catch (e) {}
+      saveCache('sponsors', items);
     } catch (e) {
       console.warn('[MINIMSAAH] sponsors using static fallback');
     }
@@ -526,24 +653,35 @@
     section_partners: 'title-partners',
   };
 
+  function applyTitles(map) {
+    Object.keys(TITLE_IDS).forEach(function (key) {
+      try {
+        if (!map || typeof map[key] !== 'string') return;
+        var v = map[key].replace(/[<>"']/g, '').trim().replace(/\s+/g, ' ').slice(0, 40);
+        if (!v) return;
+        var el = document.getElementById(TITLE_IDS[key]);
+        if (el) el.textContent = v;
+      } catch (e) {}
+    });
+  }
+
   async function hydrateTitles() {
     if (!useSupabase()) return;
+    var cached = loadCache('titles');
+    if (cached) { try { applyTitles(cached); } catch (e) {} }
     try {
       var sb = window.SupabaseDB.client();
       if (!sb) return;
       var r = await sb.from('site_settings').select('key,value').in('key', Object.keys(TITLE_IDS));
       if (r.error || !r.data) return;
+      var map = {};
       r.data.forEach(function (row) {
-        try {
-          if (!row || typeof row.key !== 'string' || typeof row.value !== 'string') return;
-          var id = TITLE_IDS[row.key];
-          if (!id) return;
-          var v = row.value.replace(/[<>"']/g, '').trim().replace(/\s+/g, ' ').slice(0, 40);
-          if (!v) return;
-          var el = document.getElementById(id);
-          if (el) el.textContent = v;
-        } catch (e) {}
+        if (!row || typeof row.key !== 'string' || typeof row.value !== 'string') return;
+        map[row.key] = row.value;
       });
+      if (sameData(map, cached)) return;
+      try { applyTitles(map); } catch (e) {}
+      saveCache('titles', map);
     } catch (e) {
       console.warn('[MINIMSAAH] titles using fixed words');
     }
@@ -571,18 +709,8 @@
     return v.slice(0, max);
   }
 
-  async function hydrateAbout() {
-    if (!useSupabase()) return;
+  function applyAbout(vals) {
     try {
-      var sb = window.SupabaseDB.client();
-      if (!sb) return;
-      var keys = Object.keys(ABOUT_IDS).concat(['about_tags', 'about_image_url']);
-      var r = await sb.from('site_settings').select('key,value').in('key', keys);
-      if (r.error || !r.data || !r.data.length) return;
-      var vals = {};
-      r.data.forEach(function (row) {
-        if (row && typeof row.key === 'string' && typeof row.value === 'string') vals[row.key] = row.value;
-      });
       // Text (texts set one by one; empty/missing keys keep the static copy).
       Object.keys(ABOUT_IDS).forEach(function (key) {
         var v = aboutClean(vals[key], ABOUT_IDS[key].max);
@@ -611,9 +739,33 @@
         }
       }
       // Portrait: only https:// or same-site /… links — never javascript:.
+      // setLiveImg fades the new photo in only once it is fully loaded,
+      // so painted content never shows a half-swapped picture.
       var img = document.getElementById('about-img');
       var url = aboutClean(vals.about_image_url, 1000);
-      if (img && url && /^(https:\/\/|\/)/i.test(url)) img.src = url;
+      if (img && url && /^(https:\/\/|\/)/i.test(url)) setLiveImg(img, url);
+    } catch (e) {
+      console.warn('[MINIMSAAH] about using fixed words');
+    }
+  }
+
+  async function hydrateAbout() {
+    if (!useSupabase()) return;
+    var cached = loadCache('about');
+    if (cached) { try { applyAbout(cached); } catch (e) {} }
+    try {
+      var sb = window.SupabaseDB.client();
+      if (!sb) return;
+      var keys = Object.keys(ABOUT_IDS).concat(['about_tags', 'about_image_url']);
+      var r = await sb.from('site_settings').select('key,value').in('key', keys);
+      if (r.error || !r.data || !r.data.length) return;
+      var vals = {};
+      r.data.forEach(function (row) {
+        if (row && typeof row.key === 'string' && typeof row.value === 'string') vals[row.key] = row.value;
+      });
+      if (sameData(vals, cached)) return;
+      try { applyAbout(vals); } catch (e) {}
+      saveCache('about', vals);
     } catch (e) {
       console.warn('[MINIMSAAH] about using fixed words');
     }
