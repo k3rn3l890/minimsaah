@@ -1597,3 +1597,48 @@ describe('head-core partial', () => {
     }
   });
 });
+
+// ---- reduced-motion CSS placement: carousel kill-rules stay scoped ----
+describe('reduced-motion CSS placement guard', () => {
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+
+  function reducedBlockEnd(text) {
+    const start = text.indexOf('@media (prefers-reduced-motion: reduce) {');
+    if (start === -1) return -1;
+    let depth = 0;
+    for (let i = start; i < text.length; i++) {
+      if (text[i] === '{') depth++;
+      else if (text[i] === '}') {
+        depth--;
+        if (depth === 0) return i;
+      }
+    }
+    return -1;
+  }
+
+  it('.sponsor-track animation kill-rule sits inside the reduced-motion block', () => {
+    const end = reducedBlockEnd(html);
+    assert.ok(end !== -1, 'reduced-motion block exists and closes');
+    const block = html.slice(html.indexOf('@media (prefers-reduced-motion: reduce) {'), end + 1);
+    assert.ok(
+      /\.sponsor-track\s*\{[^}]*animation:\s*none/.test(block),
+      'kill-rule must be scoped to reduced-motion users only'
+    );
+  });
+
+  it('no unconditional .sponsor-track animation:none outside the block', () => {
+    const end = reducedBlockEnd(html);
+    const after = end === -1 ? html : html.slice(end + 1);
+    const stray = /\.sponsor-track\s*\{[^}]*animation:\s*none/.exec(after);
+    assert.ok(!stray, `top-level kill-rule found outside reduced-motion: ${stray && stray[0]}`);
+  });
+
+  it('partners strip keeps its scroll animation for normal visitors', () => {
+    const strip = html.slice(html.indexOf('/* ===== Partners strip ===== */'));
+    assert.ok(
+      /\.sponsor-track\s*\{[\s\S]*?animation:\s*sponsor-scroll/.test(strip),
+      'scroll animation must stay active'
+    );
+    assert.ok(strip.includes('@keyframes sponsor-scroll'), 'keyframes defined');
+  });
+});
