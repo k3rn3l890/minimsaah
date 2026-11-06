@@ -95,7 +95,7 @@
         var del=document.createElement('button');
         del.className='text-xs font-mono border border-[#E63946]/30 text-[#E63946] px-3 py-3 min-h-[44px] inline-flex items-center touch-manipulation hover:bg-[#E63946] hover:text-white';
         del.textContent='Delete';
-        del.onclick=async function(ev){ ev.stopPropagation(); if(!confirm('Delete this message?'))return; try{ var d=await sb.from('contact_messages').delete().eq('id',it.id); if(d.error) throw new Error(d.error.message); load(); }catch(e){ Admin.toast(e.message,'error'); } };
+        del.onclick=async function(ev){ ev.stopPropagation(); if(!confirm('Delete this message?'))return; try{ await Admin.supaDelete('contact_messages', it.id); load(); }catch(e){ Admin.toast(e.message,'error'); } };
         btns.appendChild(del);
         body.appendChild(btns);
         head.onclick=function(){ var open=body.classList.toggle('hidden'); head.setAttribute('aria-expanded', open?'false':'true'); };

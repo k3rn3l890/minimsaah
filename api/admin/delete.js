@@ -139,7 +139,20 @@ export default async function handler(req, res) {
     }
   } catch (e) {}
   if (table === 'media') {
-    const { error: sErr } = await supaAdmin.storage.from('minimsaah-media').remove([id]);
+    // Row id ≠ storage filename: uploads store `cuid() + ext` as the
+    // filename while the row id is a plain cuid. Look up the real path
+    // from the row first. Legacy rows that used the id itself as the
+    // storage path fall back to [id].
+    let paths = [id];
+    try {
+      const { data: mRows } = await supaAdmin
+        .from('media')
+        .select('filename')
+        .eq('id', id)
+        .limit(1);
+      if (mRows && mRows.length && mRows[0].filename) paths = [mRows[0].filename];
+    } catch (e) {}
+    const { error: sErr } = await supaAdmin.storage.from('minimsaah-media').remove(paths);
     // Fixed words only — raw database words never leave the server.
     if (sErr) {
       await audit('failed', 'delete:' + table);

@@ -241,17 +241,14 @@
   }
 
   function deletesDisabled() {
-    // Beta lock: service_role out entirely, deletes disabled with exact message
-    return useSupabase();
+    // Beta unlock (go-live): deletes flow through the audited
+    // POST /api/admin/delete door — OWNER/EDITOR only, capped
+    // (10/hour, 50/day per admin) and audit-logged server-side.
+    return false;
   }
 
   async function supaDelete(table, id) {
-    // Beta: deletes disabled — buttons stay visible per plan, show exact message
-    if (deletesDisabled()) {
-      toast('Disabled in beta');
-      throw new Error('Disabled in beta');
-    }
-    // Post-beta path via Pages Functions proxy hiding service_role (kept for return).
+    // Deletes go through the audited door (was: disabled in beta).
     // Token comes from the live session only: the localStorage fallback is
     // gone (a stolen-or-stale local token must never authorize a delete).
     var sb = supa();
