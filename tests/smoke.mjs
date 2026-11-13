@@ -1820,4 +1820,10 @@ describe('phase 1 doors and SQL guards', () => {
     assert.ok(P1.includes("select using (public.is_owner_editor())"), 'boss-only audit read in the delta');
     assert.ok(P1.includes("u.role::text = 'OWNER' and u.status::text = 'ACTIVE'"), 'DB-row OWNER check in the delta');
   });
+
+  it('phase1_hardening.sql: reads the real auth metadata column', () => {
+    assert.ok(P1.includes("a.raw_user_meta_data ->> 'role'"), 'pre-flight must use the real auth.users column');
+    assert.ok(P1.includes("a.raw_user_meta_data ->> 'firstName'"), 'backfill must use the real auth.users column');
+    assert.ok(!P1.includes('a.user_metadata'), 'a.user_metadata does not exist on the auth.users table');
+  });
 });

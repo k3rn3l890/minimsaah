@@ -16,9 +16,11 @@
 
 -- ─── 0. Pre-flight: staff auth accounts missing a public.users row ───
 -- (Commented: run this SELECT alone first. Expect zero rows.)
+-- NOTE: inside the auth.users TABLE the metadata column is named
+-- raw_user_meta_data. ("user_metadata" is its name in the JWT only.)
 -- select a.email, a.id
 -- from auth.users a
--- where (a.user_metadata ->> 'role') in ('OWNER','EDITOR','JOURNALIST','VIDEOGRAPHER')
+-- where (a.raw_user_meta_data ->> 'role') in ('OWNER','EDITOR','JOURNALIST','VIDEOGRAPHER')
 --   and not exists (select 1 from public.users u where u.id = a.id::text);
 
 -- ─── 1. Backfill missing profile rows ───
@@ -31,8 +33,8 @@ insert into public.users (id, email, first_name, last_name, role, status)
 select
   a.id::text,
   a.email,
-  coalesce(nullif(a.user_metadata ->> 'firstName', ''), 'Staff'),
-  coalesce(nullif(a.user_metadata ->> 'lastName', ''), 'Member'),
+  coalesce(nullif(a.raw_user_meta_data ->> 'firstName', ''), 'Staff'),
+  coalesce(nullif(a.raw_user_meta_data ->> 'lastName', ''), 'Member'),
   'SUBSCRIBER'::"Role",
   'ACTIVE'::"UserStatus"
 from auth.users a
