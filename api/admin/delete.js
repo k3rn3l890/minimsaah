@@ -9,6 +9,7 @@
  * Every outcome is audit-logged (durable, cross-instance).
  */
 import { createClient } from '@supabase/supabase-js';
+import { staffDecision } from '../lib/staffAccess.js';
 
 // Delete caps (memory fast-path + durable DB audit check): max 10 per hour
 // AND max 50 per day per user. Memory resets when server sleeps; the DB
@@ -85,26 +86,23 @@ export default async function handler(req, res) {
       });
     } catch (e) {}
   }
-  // JWT metadata is the fast path; the DB profile is truth (catches stale
-  // tokens after a role change / suspend). Both must agree on OWNER/EDITOR.
-  let role = user.user_metadata && user.user_metadata.role;
+  // The DB profile is the ONLY truth (catches stale tokens after a role
+  // change / suspend, and a self-edited metadata claim never counts:
+  // Supabase lets any account write its own user_metadata). Fail closed:
+  // profile read error, missing row, blank role, or any non-ACTIVE
+  // status all refuse the delete.
+  let decision = { allowed: false, role: '', reason: 'error' };
   try {
-    const { data: profile } = await supaAdmin
+    const { data: profile, error: pErr } = await supaAdmin
       .from('users')
       .select('role,status')
       .eq('id', user.id)
-      .single();
-    if (profile) {
-      if (profile.status && profile.status !== 'ACTIVE') {
-        await audit('suspended', 'delete:' + String((readBody(req) || {}).table || 'unknown'));
-        res.status(403).json({ error: 'Forbidden' });
-        return;
-      }
-      if (profile.role) role = profile.role;
-    }
+      .maybeSingle();
+    decision = staffDecision(pErr ? null : profile, ['OWNER', 'EDITOR']);
   } catch (e) {}
-  if (!['OWNER', 'EDITOR'].includes(role)) {
-    await audit('forbidden', 'delete:' + String((readBody(req) || {}).table || 'unknown'));
+  if (!decision.allowed) {
+    const outcome = decision.reason === 'suspended' ? 'suspended' : 'forbidden';
+    await audit(outcome, 'delete:' + String((readBody(req) || {}).table || 'unknown'));
     res.status(403).json({ error: 'Forbidden' });
     return;
   }

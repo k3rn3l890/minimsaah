@@ -1642,3 +1642,182 @@ describe('reduced-motion CSS placement guard', () => {
     assert.ok(strip.includes('@keyframes sponsor-scroll'), 'keyframes defined');
   });
 });
+
+// ---- 21. Phase 1: the staff access decision (pure function, exhaustive) ----
+describe('phase 1 staff access decision', () => {
+  let staffDecision;
+  before(async () => {
+    ({ staffDecision } = await import('../api/lib/staffAccess.js'));
+  });
+
+  const STAFF = ['OWNER', 'EDITOR', 'JOURNALIST', 'VIDEOGRAPHER'];
+  const profile = (role, status) => ({ role, status });
+
+  it('allows every staff role on its own door allowlist', () => {
+    for (const role of STAFF) {
+      const d = staffDecision(profile(role, 'ACTIVE'), STAFF);
+      assert.equal(d.allowed, true, role);
+      assert.equal(d.reason, 'ok');
+    }
+  });
+
+  it('OWNER and EDITOR pass the delete-door allowlist', () => {
+    assert.equal(staffDecision(profile('OWNER', 'ACTIVE'), ['OWNER', 'EDITOR']).allowed, true);
+    assert.equal(staffDecision(profile('EDITOR', 'ACTIVE'), ['OWNER', 'EDITOR']).allowed, true);
+  });
+
+  it('JOURNALIST and VIDEOGRAPHER are refused on the delete door', () => {
+    assert.equal(staffDecision(profile('JOURNALIST', 'ACTIVE'), ['OWNER', 'EDITOR']).reason, 'role');
+    assert.equal(staffDecision(profile('VIDEOGRAPHER', 'ACTIVE'), ['OWNER', 'EDITOR']).reason, 'role');
+  });
+
+  it('missing or broken profiles fail closed', () => {
+    assert.equal(staffDecision(null, STAFF).reason, 'no-profile');
+    assert.equal(staffDecision(undefined, STAFF).reason, 'no-profile');
+    assert.equal(staffDecision('nope', STAFF).reason, 'no-profile');
+    assert.equal(staffDecision([1, 2], STAFF).reason, 'no-profile');
+  });
+
+  it('blank or broken status fails closed (only explicit ACTIVE passes)', () => {
+    assert.equal(staffDecision(profile('OWNER', ''), STAFF).reason, 'no-status');
+    assert.equal(staffDecision(profile('OWNER', null), STAFF).reason, 'no-status');
+    assert.equal(staffDecision(profile('OWNER', undefined), STAFF).reason, 'no-status');
+    assert.equal(staffDecision(profile('OWNER', 5), STAFF).reason, 'no-status');
+  });
+
+  it('suspended and inactive accounts are refused', () => {
+    assert.equal(staffDecision(profile('OWNER', 'SUSPENDED'), STAFF).reason, 'suspended');
+    assert.equal(staffDecision(profile('EDITOR', 'INACTIVE'), STAFF).reason, 'suspended');
+    assert.equal(staffDecision(profile('OWNER', 'SUSPENDED'), STAFF).allowed, false);
+  });
+
+  it('blank or non-string roles are refused', () => {
+    assert.equal(staffDecision(profile('', 'ACTIVE'), STAFF).reason, 'no-role');
+    assert.equal(staffDecision(profile(null, 'ACTIVE'), STAFF).reason, 'no-role');
+    assert.equal(staffDecision(profile({}, 'ACTIVE'), STAFF).reason, 'no-role');
+    assert.equal(staffDecision(profile(5, 'ACTIVE'), STAFF).reason, 'no-role');
+  });
+
+  it('SUBSCRIBER and unknown roles are refused', () => {
+    assert.equal(staffDecision(profile('SUBSCRIBER', 'ACTIVE'), STAFF).reason, 'role');
+    assert.equal(staffDecision(profile('SUPERADMIN', 'ACTIVE'), STAFF).reason, 'role');
+  });
+
+  it('role matching is exact (no case or space forgiveness)', () => {
+    assert.equal(staffDecision(profile('owner', 'ACTIVE'), STAFF).reason, 'role');
+    assert.equal(staffDecision(profile(' OWNER', 'ACTIVE'), STAFF).reason, 'role');
+  });
+
+  it('non-array allowlists deny everything (fail closed)', () => {
+    assert.equal(staffDecision(profile('OWNER', 'ACTIVE'), undefined).allowed, false);
+    assert.equal(staffDecision(profile('OWNER', 'ACTIVE'), null).allowed, false);
+    assert.equal(staffDecision(profile('OWNER', 'ACTIVE'), 'OWNER').allowed, false);
+  });
+
+  it('a self-written metadata claim inside the profile object never helps', () => {
+    const p = { role: 'EDITOR', status: 'ACTIVE', user_metadata: { role: 'OWNER' } };
+    assert.equal(staffDecision(p, STAFF).allowed, true); // real role used
+    const q = { role: 'JOURNALIST', status: 'ACTIVE', user_metadata: { role: 'OWNER' } };
+    assert.equal(staffDecision(q, ['OWNER', 'EDITOR']).allowed, false); // and only it
+  });
+});
+
+// ---- 22. Phase 1 static guards: doors + SQL stay fail-closed forever ----
+describe('phase 1 doors and SQL guards', () => {
+  const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+  const DELETE = read('api/admin/delete.js');
+  const UPLOAD = read('api/upload-approve.js');
+  const RLS = read('supabase/rls.sql');
+  const AUDIT = read('supabase/audit.sql');
+  const P1 = read('supabase/phase1_hardening.sql');
+
+  function helperBlock(sql, name) {
+    const start = sql.indexOf('create or replace function public.' + name + '()');
+    if (start === -1) return '';
+    const end = sql.indexOf('$$;', start);
+    return end === -1 ? '' : sql.slice(start, end + 3);
+  }
+
+  it('delete door: DB profile only, no metadata fallback, no swallow-read', () => {
+    assert.ok(!DELETE.includes('user.user_metadata'), 'metadata fallback must be gone');
+    assert.ok(!DELETE.includes('.single('), 'profile read must not be .single() (swallows 0 rows)');
+    assert.ok(DELETE.includes('staffDecision'), 'shared decision in use');
+    assert.ok(DELETE.includes('maybeSingle'), 'missing row must be visible, not an exception');
+    assert.ok(DELETE.includes("../lib/staffAccess.js"), 'imports the shared module');
+    assert.ok(DELETE.includes("'no-status'") || DELETE.includes("decision.reason === 'suspended'"), 'suspension has its own audit outcome');
+  });
+
+  it('upload door: DB profile only, no metadata fallback, no swallow-read', () => {
+    assert.ok(!UPLOAD.includes('user.user_metadata'), 'metadata fallback must be gone');
+    assert.ok(!UPLOAD.includes('.single('), 'profile read must not be .single()');
+    assert.ok(UPLOAD.includes('staffDecision'), 'shared decision in use');
+    assert.ok(UPLOAD.includes('maybeSingle'), 'missing row must be visible');
+    assert.ok(UPLOAD.includes("./lib/staffAccess.js"), 'imports the shared module');
+    assert.ok(UPLOAD.includes("'JOURNALIST'") && UPLOAD.includes("'VIDEOGRAPHER'"), 'all four staff roles allowed on this door');
+  });
+
+  it('staffAccess is a pure function: no network, no clients', () => {
+    const src = read('api/lib/staffAccess.js');
+    assert.ok(!src.includes('@supabase/supabase-js'), 'no client import');
+    assert.ok(!src.includes('fetch('), 'no network');
+    assert.ok(src.includes('export function staffDecision'), 'exports the decision');
+  });
+
+  it('rls.sql helpers read the database, require ACTIVE, are definer+pinned', () => {
+    for (const name of ['is_staff', 'is_owner_editor']) {
+      const b = helperBlock(RLS, name);
+      assert.ok(b, name + ' exists');
+      assert.ok(b.includes('security definer'), name + ' is SECURITY DEFINER');
+      assert.ok(b.includes('set search_path = public'), name + ' pins search_path');
+      assert.ok(b.includes('from public.users'), name + ' reads the database row');
+      assert.ok(b.includes('auth.uid()::text'), name + ' keys on the verified session id');
+      assert.ok(b.includes("u.status::text = 'ACTIVE'"), name + ' requires ACTIVE status');
+      assert.ok(!b.includes('user_metadata'), name + ' never reads metadata');
+    }
+  });
+
+  it('rls.sql: zero user_metadata accessors anywhere', () => {
+    assert.ok(!/auth\.jwt\(\)\s*->\s*'user_metadata'/.test(RLS), 'no policy may trust self-writable metadata');
+    assert.ok(!RLS.includes("'user_metadata' ->> 'role'"), 'old accessor gone');
+  });
+
+  it('rls.sql: role lock OWNER check comes from the database row', () => {
+    assert.ok(
+      RLS.includes("where u.id = auth.uid()::text and u.role::text = 'OWNER' and u.status::text = 'ACTIVE'"),
+      'lock_user_role must consult the DB row'
+    );
+  });
+
+  it('rls.sql: all four content inserts are bound to the author', () => {
+    const re = /create policy "staff_insert" on public\.(articles|videos|documentaries|events) for insert\s*with check \(public\.is_staff\(\) and author_id = \(auth\.uid\(\)\)::text\);/g;
+    const tables = [...RLS.matchAll(re)].map((m) => m[1]);
+    assert.deepEqual(tables.sort(), ['articles', 'documentaries', 'events', 'videos']);
+  });
+
+  it('rls.sql: author_id immutability trigger covers all four tables', () => {
+    assert.ok(RLS.includes('create or replace function public.protect_author_id()'), 'trigger function defined');
+    const re = /create trigger protect_author_id before update on public\.(articles|videos|documentaries|events)/g;
+    const tables = [...RLS.matchAll(re)].map((m) => m[1]);
+    assert.deepEqual(tables.sort(), ['articles', 'documentaries', 'events', 'videos']);
+  });
+
+  it('audit.sql: audit reads are boss-only', () => {
+    assert.ok(
+      /create policy "staff_read_audit" on public\.admin_audit for select using \(public\.is_owner_editor\(\)\);/.test(AUDIT),
+      'read policy must use is_owner_editor'
+    );
+    assert.ok(!/staff_read_audit" on public\.admin_audit for select using \(public\.is_staff\(\)\)/.test(AUDIT), 'old all-staff read gone');
+  });
+
+  it('phase1_hardening.sql: delta carries the whole fix, backfill stays conservative', () => {
+    const b = helperBlock(P1, 'is_staff');
+    assert.ok(b.includes('security definer') && b.includes('from public.users'), 'delta helper reads the DB');
+    assert.ok(P1.includes('SUBSCRIBER'), 'backfill must never auto-promote (SUBSCRIBER default)');
+    const re = /create trigger protect_author_id before update on public\.(articles|videos|documentaries|events)/g;
+    assert.equal([...P1.matchAll(re)].length, 4, 'all four triggers in the delta');
+    const rei = /with check \(public\.is_staff\(\) and author_id = \(auth\.uid\(\)\)::text\);/g;
+    assert.equal([...P1.matchAll(rei)].length, 4, 'all four bound inserts in the delta');
+    assert.ok(P1.includes("select using (public.is_owner_editor())"), 'boss-only audit read in the delta');
+    assert.ok(P1.includes("u.role::text = 'OWNER' and u.status::text = 'ACTIVE'"), 'DB-row OWNER check in the delta');
+  });
+});

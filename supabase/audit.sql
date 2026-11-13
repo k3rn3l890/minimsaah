@@ -1,5 +1,5 @@
 -- MINIMSAAH — admin audit log (A09: security logging)
--- Run in Supabase Dashboard → SQL Editor AFTER rls.sql (uses public.is_staff()).
+-- Run in Supabase Dashboard → SQL Editor AFTER rls.sql (uses public.is_owner_editor()).
 -- Design: append-only. NOBODY writes directly (no anon/authenticated INSERT
 -- policy); all writes go through log_admin_event() which enforces an
 -- event allowlist, field caps, and a global per-minute throttle so the
@@ -20,7 +20,9 @@ create table if not exists public.admin_audit (
 alter table public.admin_audit enable row level security;
 
 drop policy if exists "staff_read_audit" on public.admin_audit;
-create policy "staff_read_audit" on public.admin_audit for select using (public.is_staff());
+-- Boss-only: audit rows carry caller IPs and failed-login emails. Journalists
+-- and videographers must not read them (matches the staff runbook).
+create policy "staff_read_audit" on public.admin_audit for select using (public.is_owner_editor());
 
 -- Throttle support: the /api/log-event durable check counts the last minute,
 -- and /api/admin/delete counts the last day per user. Both need indexes.

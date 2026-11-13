@@ -14,6 +14,7 @@
  * (note: Vercel's 4.5 MB body cap rules out proxying 50 MB videos today).
  */
 import { createClient } from '@supabase/supabase-js';
+import { staffDecision } from './lib/staffAccess.js';
 
 // Caps mirror admin/js/admin.js EXACTLY (drift is a test failure):
 // IMAGE_EXTS, IMAGE_MAX_BYTES, LIBRARY_VIDEO_EXTS, LIBRARY_DOC_EXTS,
@@ -112,20 +113,17 @@ export default async function handler(req, res) {
     res.status(401).json({ error: 'Invalid token' });
     return;
   }
-  // JWT metadata is the fast path; the DB profile is truth (catches stale
-  // tokens after a role change / suspend). Uploads allow all staff roles.
-  let role = user.user_metadata && user.user_metadata.role;
-  let active = true;
+  // The DB profile is the ONLY truth (catches stale tokens after a role
+  // change / suspend). Fail closed: profile read error, missing row,
+  // blank role, or any non-ACTIVE status all refuse the approval.
+  let decision = { allowed: false, role: '', reason: 'error' };
   try {
-    const { data: profile } = await supaAdmin
+    const { data: profile, error: pErr } = await supaAdmin
       .from('users')
       .select('role,status')
       .eq('id', user.id)
-      .single();
-    if (profile) {
-      if (profile.role) role = profile.role;
-      if (profile.status && profile.status !== 'ACTIVE') active = false;
-    }
+      .maybeSingle();
+    decision = staffDecision(pErr ? null : profile, ['OWNER', 'EDITOR', 'JOURNALIST', 'VIDEOGRAPHER']);
   } catch (e) {}
   async function audit(outcome, detail) {
     try {
@@ -137,7 +135,7 @@ export default async function handler(req, res) {
       });
     } catch (e) {}
   }
-  if (!['OWNER', 'EDITOR', 'JOURNALIST', 'VIDEOGRAPHER'].includes(role) || !active) {
+  if (!decision.allowed) {
     await audit('rejected', 'upload:unauthorized');
     res.status(403).json({ error: 'Forbidden' });
     return;

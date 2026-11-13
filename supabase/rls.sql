@@ -1,6 +1,8 @@
 -- MINIMSAAH — Supabase RLS for beta (Pages + Supabase direct)
 -- Run in Supabase Dashboard → SQL Editor. Single project holds DB+Storage.
--- Roles stored in auth.users.user_metadata.role: OWNER, EDITOR, JOURNALIST, VIDEOGRAPHER, SUBSCRIBER
+-- Roles: OWNER, EDITOR, JOURNALIST, VIDEOGRAPHER, SUBSCRIBER - stored ONLY in
+-- public.users.role. The role inside auth.users.user_metadata is display data
+-- and self-writable by any account (auth.updateUser), so no policy reads it.
 
 -- 1. Enable RLS
 alter table public.users enable row level security;
@@ -14,15 +16,40 @@ alter table public.sessions enable row level security;
 -- sessions: deny-all via PostgREST (no policies). Direct Postgres (Prisma/local
 -- dev) bypasses RLS so backend register/login/refresh/logout keep working.
 
--- 2. Helper: is staff (owner/editor/journalist/videographer)
+-- 2. Helpers: is staff / is owner-editor - the DATABASE is the only truth.
+-- SECURITY DEFINER so they can read public.users regardless of the caller's
+-- own row visibility; search_path pinned. auth.uid() is the verified session
+-- id from the JWT. status must be ACTIVE, so suspension bites immediately.
 create or replace function public.is_staff()
-returns boolean language sql stable as $$
-  select coalesce((auth.jwt() -> 'user_metadata' ->> 'role') in ('OWNER','EDITOR','JOURNALIST','VIDEOGRAPHER'), false);
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.users u
+    where u.id = auth.uid()::text
+      and u.role::text in ('OWNER', 'EDITOR', 'JOURNALIST', 'VIDEOGRAPHER')
+      and u.status::text = 'ACTIVE'
+  );
 $$;
 
 create or replace function public.is_owner_editor()
-returns boolean language sql stable as $$
-  select coalesce((auth.jwt() -> 'user_metadata' ->> 'role') in ('OWNER','EDITOR'), false);
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.users u
+    where u.id = auth.uid()::text
+      and u.role::text in ('OWNER', 'EDITOR')
+      and u.status::text = 'ACTIVE'
+  );
 $$;
 
 -- 3. Public read: PUBLISHED only
@@ -58,25 +85,30 @@ create policy "staff_read_all" on public.tickers for select using (public.is_sta
 
 -- 4. Writes: staff via anon key (fast path for beta)
 drop policy if exists "staff_insert" on public.articles;
-create policy "staff_insert" on public.articles for insert with check (public.is_staff());
+-- Attribution bound at the database: staff can only create rows they own.
+create policy "staff_insert" on public.articles for insert
+with check (public.is_staff() and author_id = (auth.uid())::text);
 
 drop policy if exists "staff_update" on public.articles;
 create policy "staff_update" on public.articles for update using (public.is_staff()) with check (public.is_staff());
 
 drop policy if exists "staff_insert" on public.videos;
-create policy "staff_insert" on public.videos for insert with check (public.is_staff());
+create policy "staff_insert" on public.videos for insert
+with check (public.is_staff() and author_id = (auth.uid())::text);
 
 drop policy if exists "staff_update" on public.videos;
 create policy "staff_update" on public.videos for update using (public.is_staff()) with check (public.is_staff());
 
 drop policy if exists "staff_insert" on public.documentaries;
-create policy "staff_insert" on public.documentaries for insert with check (public.is_staff());
+create policy "staff_insert" on public.documentaries for insert
+with check (public.is_staff() and author_id = (auth.uid())::text);
 
 drop policy if exists "staff_update" on public.documentaries;
 create policy "staff_update" on public.documentaries for update using (public.is_staff()) with check (public.is_staff());
 
 drop policy if exists "staff_insert" on public.events;
-create policy "staff_insert" on public.events for insert with check (public.is_staff());
+create policy "staff_insert" on public.events for insert
+with check (public.is_staff() and author_id = (auth.uid())::text);
 
 drop policy if exists "staff_update" on public.events;
 create policy "staff_update" on public.events for update using (public.is_staff()) with check (public.is_staff());
@@ -133,7 +165,8 @@ create policy "own_profile_update" on public.users for update to authenticated u
 -- paths is nonexistent in-app (role changes go through service_role
 -- auth-migrate/Functions, which bypass RLS but NOT triggers). Fires only
 -- when role actually changes, so status-only updates (e.g. suspend) pass
--- through untouched. Allows service_role + OWNER JWT, nobody else.
+-- through untouched. Allows service_role + an ACTIVE OWNER row in the
+-- database, nobody else (a self-written metadata claim does not count).
 -- Self-status lock: a user may not change their OWN status (would allow
 -- self-unsuspend); OWNER suspending OTHERS still passes (OLD.id is not self).
 -- Direct-DB writes (NULL JWT: Prisma local dev, SQL editor, pg_dump restore)
@@ -144,12 +177,18 @@ begin
   if auth.jwt() is null then return NEW; end if;
   if NEW.role is distinct from OLD.role then
     if coalesce(auth.jwt() ->> 'role', '') = 'service_role' then return NEW; end if;
-    if coalesce(auth.jwt() -> 'user_metadata' ->> 'role', '') = 'OWNER' then return NEW; end if;
+    if exists (
+      select 1 from public.users u
+      where u.id = auth.uid()::text and u.role::text = 'OWNER' and u.status::text = 'ACTIVE'
+    ) then return NEW; end if;
     raise exception 'role changes restricted';
   end if;
   if NEW.status is distinct from OLD.status and OLD.id::text = (auth.uid())::text then
     if coalesce(auth.jwt() ->> 'role', '') = 'service_role' then return NEW; end if;
-    if coalesce(auth.jwt() -> 'user_metadata' ->> 'role', '') = 'OWNER' then return NEW; end if;
+    if exists (
+      select 1 from public.users u
+      where u.id = auth.uid()::text and u.role::text = 'OWNER' and u.status::text = 'ACTIVE'
+    ) then return NEW; end if;
     raise exception 'status changes restricted';
   end if;
   return NEW;
@@ -192,6 +231,37 @@ for each row execute function public.handle_updated_at();
 drop trigger if exists set_updated_at on public.site_settings;
 create trigger set_updated_at before update on public.site_settings
 for each row execute function public.handle_updated_at();
+
+-- 6c. Author attribution is immutable for per-user JWTs. Editors can edit
+-- each other's content; they cannot silently re-attribute it to someone
+-- else. No per-user JWT (service doors, SQL editor, migrations) passes.
+create or replace function public.protect_author_id()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.author_id is distinct from old.author_id then
+    if auth.uid() is null then return new; end if;
+    raise exception 'author_id is immutable';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists protect_author_id on public.articles;
+create trigger protect_author_id before update on public.articles
+for each row execute function public.protect_author_id();
+drop trigger if exists protect_author_id on public.videos;
+create trigger protect_author_id before update on public.videos
+for each row execute function public.protect_author_id();
+drop trigger if exists protect_author_id on public.documentaries;
+create trigger protect_author_id before update on public.documentaries
+for each row execute function public.protect_author_id();
+drop trigger if exists protect_author_id on public.events;
+create trigger protect_author_id before update on public.events
+for each row execute function public.protect_author_id();
 
 -- 7. View count RPC (called ONLY by the /api/view server door via
 -- service_role, which stamps per-IP caps browsers cannot forge).
