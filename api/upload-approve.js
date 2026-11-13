@@ -132,6 +132,9 @@ export default async function handler(req, res) {
         email: user.email || null,
         success: outcome === 'approved',
         detail: String(detail).slice(0, 500),
+        // Server-stamped identity, same provenance scheme as the delete door.
+        actor_id: user.id,
+        source: 'verified',
       });
     } catch (e) {}
   }

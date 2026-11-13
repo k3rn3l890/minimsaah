@@ -1827,3 +1827,133 @@ describe('phase 1 doors and SQL guards', () => {
     assert.ok(!P1.includes('a.user_metadata'), 'a.user_metadata does not exist on the auth.users table');
   });
 });
+
+// ---- 23. Phase 2: audit identity resolution (pure function, exhaustive) ----
+describe('phase 2 audit identity', () => {
+  let auditIdentity, eventRequiresVerifiedToken;
+  before(async () => {
+    ({ auditIdentity, eventRequiresVerifiedToken } = await import('../api/lib/auditIdentity.js'));
+  });
+
+  it('only login_success requires a verified token', () => {
+    assert.equal(eventRequiresVerifiedToken('login_success'), true);
+    for (const ev of ['login_failed', 'login_denied', 'guard_denied', 'upload_rejected',
+      'delete_blocked', 'limit_hit', 'input_blocked', 'site_error']) {
+      assert.equal(eventRequiresVerifiedToken(ev), false, ev);
+    }
+    assert.equal(eventRequiresVerifiedToken('nope'), false);
+  });
+
+  it('a verified token binds the row to the real account', () => {
+    const d = auditIdentity('login_failed', { id: 'uid-1', email: 'real@site.com' }, 'fake@attacker.com');
+    assert.equal(d.ok, true);
+    assert.equal(d.email, 'real@site.com');
+    assert.equal(d.source, 'verified');
+    assert.equal(d.actorId, 'uid-1');
+  });
+
+  it('the posted email is ignored when the token is verified', () => {
+    const d = auditIdentity('delete_blocked', { id: 'uid-2', email: 'boss@site.com' }, 'victim@site.com');
+    assert.equal(d.email, 'boss@site.com');
+    assert.equal(d.source, 'verified');
+  });
+
+  it('login_success without a token is refused', () => {
+    assert.equal(auditIdentity('login_success', null, 'any@x.com').ok, false);
+    assert.equal(auditIdentity('login_success', undefined, 'any@x.com').ok, false);
+    assert.equal(auditIdentity('login_success', 'junk', 'any@x.com').ok, false);
+    assert.equal(auditIdentity('login_success', [], 'any@x.com').ok, false);
+  });
+
+  it('login_success without an account email is refused', () => {
+    assert.equal(auditIdentity('login_success', { id: 'u' }, '').ok, false);
+    assert.equal(auditIdentity('login_success', { id: 'u', email: 5 }, '').ok, false);
+    assert.equal(auditIdentity('login_success', { id: 'u', email: '' }, '').ok, false);
+  });
+
+  it('no token keeps the posted email but marks the row client (untrusted)', () => {
+    const d = auditIdentity('site_error', null, 'visitor@x.com');
+    assert.equal(d.ok, true);
+    assert.equal(d.email, 'visitor@x.com');
+    assert.equal(d.source, 'client');
+    assert.equal(d.actorId, null);
+  });
+
+  it('no token + no email records an anonymous client row', () => {
+    const d = auditIdentity('limit_hit', null, '');
+    assert.equal(d.ok, true);
+    assert.equal(d.email, null);
+    assert.equal(d.source, 'client');
+  });
+
+  it('broken user objects fail safe (never treated as verified)', () => {
+    assert.equal(auditIdentity('site_error', 5, 'a@b.com').source, 'client');
+    assert.equal(auditIdentity('site_error', [], 'a@b.com').source, 'client');
+    assert.equal(auditIdentity('site_error', 'junk', 'a@b.com').source, 'client');
+    assert.equal(auditIdentity('site_error', { email: 'x@y.com' }, 'a@b.com').source, 'client');
+  });
+
+  it('verified user with odd email still records the actor id', () => {
+    const d = auditIdentity('guard_denied', { id: 'uid-9' }, 'x@y.com');
+    assert.equal(d.ok, true);
+    assert.equal(d.actorId, 'uid-9');
+    assert.equal(d.email, null);
+    assert.equal(d.source, 'verified');
+  });
+});
+
+// ---- 24. Phase 2 static guards: forgery-proof cap, labelled rows ----
+describe('phase 2 doors and SQL guards', () => {
+  const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+  const DEL = read('api/admin/delete.js');
+  const LOG = read('api/log-event.js');
+  const UP = read('api/upload-approve.js');
+  const ADMINJS = read('admin/js/admin.js');
+  const LOGIN = read('admin/login.html');
+  const AUDIT = read('supabase/audit.sql');
+  const P2 = read('supabase/phase2_audit_integrity.sql');
+
+  it('delete door: the durable cap counts only verified success rows', () => {
+    assert.ok(DEL.includes(".eq('actor_id', user.id)"), 'cap keyed on actor_id');
+    assert.ok(DEL.includes(".eq('success', true)"), 'cap counts successes only');
+    assert.ok(!DEL.includes(".eq('email'"), 'cap must not count by email (forgeable)');
+    assert.ok(DEL.includes('actor_id: user.id'), 'door rows carry actor_id');
+    assert.ok(DEL.includes("source: 'verified'"), 'door rows are labelled verified');
+  });
+
+  it('log door: identity binding + login_success gate', () => {
+    assert.ok(LOG.includes("'login_success'"), 'event added to the allowlist');
+    assert.ok(LOG.includes('auditIdentity('), 'shared identity resolver in use');
+    assert.ok(LOG.includes('status(403)'), 'unverified login_success is refused');
+    assert.ok(LOG.includes('actor_id: identity.actorId'), 'rows carry actor identity');
+    assert.ok(LOG.includes('source: identity.source'), 'rows carry provenance');
+  });
+
+  it('upload door: rows are stamped with verified identity', () => {
+    assert.ok(UP.includes('actor_id: user.id'));
+    assert.ok(UP.includes("source: 'verified'"));
+  });
+
+  it('admin client: audit calls ride the live session token', () => {
+    assert.ok(ADMINJS.includes("headers['Authorization'] = authHeader"), 'token attached to the door call');
+    assert.ok(ADMINJS.includes('auth.getSession'), 'token read from the live session');
+  });
+
+  it('login page: successful sign-ins are audited', () => {
+    assert.ok(LOGIN.includes("audit('login_success', email, true)"));
+  });
+
+  it('audit.sql + delta: identity columns exist, RPC stays client-only', () => {
+    assert.ok(AUDIT.includes('actor_id text'), 'canonical table has actor_id');
+    assert.ok(AUDIT.includes('source text'), 'canonical table has source');
+    assert.ok(AUDIT.includes('admin_audit_actor_created_idx'), 'cap index in canonical');
+    assert.ok(AUDIT.includes("nullif(p_detail, ''), 'client'"), 'canonical RPC labels rows client');
+    assert.ok(P2.includes('add column if not exists actor_id'), 'delta adds actor_id');
+    assert.ok(P2.includes('add column if not exists source'), 'delta adds source');
+    assert.ok(P2.includes('admin_audit_actor_created_idx'), 'delta adds the cap index');
+    assert.ok(P2.includes("'client'"), 'delta RPC labels rows client');
+    assert.ok(!P2.includes('login_success'), 'RPC must never accept login_success (no caller to verify)');
+    assert.ok(P2.includes('cron.schedule'), 'retention scheduled');
+    assert.ok(P2.includes("interval '30 days'"), 'retention window is 30 days');
+  });
+});

@@ -98,10 +98,10 @@
   async function signOutQuiet(){ try { await window.SupabaseDB.client().auth.signOut(); } catch (e) {} }
   // Best-effort audit (never blocks login; audit table may not exist yet).
   // Server door first so the row carries the caller address; direct writer as fallback.
-  function audit(event, email){
+  function audit(event, email, success){
     try{
       if (window.Admin && window.Admin.auditRemote) {
-        window.Admin.auditRemote(event, email || '');
+        window.Admin.auditRemote(event, email || '', success === true);
       } else if (window.SupabaseDB && window.SupabaseDB.isEnabled()) {
         window.SupabaseDB.client().rpc('log_admin_event', { p_event: event, p_email: email || '' }).then(null, function(){});
       }
@@ -289,7 +289,11 @@
         } catch (e) {}
         Admin.setUser({ id: u.id, email: u.email, firstName: fn, lastName: ln, role: role });
         clearTries(email);
-        location.href='/admin/index.html';
+        // Audit the real sign-in. The fresh session token rides along so
+        // the door can verify it and bind the row to the account. Never
+        // blocks the redirect; the tiny delay just lets the call start.
+        audit('login_success', email, true);
+        setTimeout(function(){ location.href='/admin/index.html'; }, 400);
         return;
       }
       var data=await Admin.request('/auth/login', { method:'POST', body: JSON.stringify({ email: email, password: password }) });

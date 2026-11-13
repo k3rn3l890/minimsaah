@@ -83,6 +83,11 @@ export default async function handler(req, res) {
         email: user.email || null,
         success: outcome === 'deleted',
         detail: String(detail || outcome).slice(0, 500),
+        // Server-stamped identity: only this door sets actor_id, so the
+        // durable cap below can never be poisoned by forged /api/log-event
+        // rows (their actor_id stays NULL for unverified callers).
+        actor_id: user.id,
+        source: 'verified',
       });
     } catch (e) {}
   }
@@ -120,13 +125,20 @@ export default async function handler(req, res) {
     res.status(429).json({ error: 'Too many deletes. Wait a bit.' });
     return;
   }
-  // Durable cross-instance cap: count today's delete audit rows for this user.
+  // Durable cross-instance cap: count SUCCESSFUL deletes by this exact
+  // account id in the last 24 hours. Only rows this door wrote can match:
+  // actor_id is stamped server-side here, while /api/log-event rows from
+  // callers without a verified token carry a NULL actor_id - so forged
+  // "delete:" rows (any email, any detail text) count for nothing.
+  // Failed attempts are not counted either: only real deletes consume
+  // the daily budget.
   try {
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { count } = await supaAdmin
       .from('admin_audit')
       .select('id', { count: 'exact', head: true })
-      .eq('email', user.email || '')
+      .eq('actor_id', user.id)
+      .eq('success', true)
       .gte('created_at', since)
       .like('detail', 'delete:%');
     if (typeof count === 'number' && count >= 50) {

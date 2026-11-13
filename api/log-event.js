@@ -3,10 +3,14 @@
  * Sole live audit door (host is Vercel; Cloudflare twin retired Phase 3).
  *
  * Stamps the caller address (IP) that browser code can never know.
- * No login needed. Event allow-list, field caps, per-minute global cap
- * + per-address cap (memory fast-path + durable DB check). Fixed words only.
+ * Optional Bearer token: when a session token rides along it is verified
+ * and the row is bound to that real account (source 'verified'); without
+ * one the row is visitor telemetry (source 'client'). login_success is
+ * accepted ONLY with a verified token. Event allow-list, field caps,
+ * per-minute global cap + per-address cap. Fixed words only.
  */
 import { createClient } from '@supabase/supabase-js';
+import { auditIdentity } from './lib/auditIdentity.js';
 
 const ALLOWED_EVENTS = [
   'login_failed',
@@ -17,6 +21,8 @@ const ALLOWED_EVENTS = [
   'limit_hit',
   'input_blocked',
   'site_error',
+  // Verified-token-only: records real sign-ins (email bound to the JWT).
+  'login_success',
 ];
 
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,253}\.[^\s@]{2,}$/;
@@ -79,13 +85,37 @@ export default async function handler(req, res) {
     res.status(400).json({ error: 'Bad request' });
     return;
   }
-  if (email !== '' && !EMAIL_RE.test(email)) {
+  // Identity first, before any rate budget is consumed. A presented
+  // Bearer token is verified against Supabase Auth; when it is valid the
+  // row is bound to that account (the posted email is ignored), so a
+  // caller can never sign somebody else's name. login_success - real
+  // sign-ins only - is refused without a verified token.
+  let verifiedUser = null;
+  const auth = String((req.headers || {})['authorization']
+    || (req.headers || {})['Authorization'] || '');
+  if (auth.startsWith('Bearer ') && env.SUPABASE_ANON_KEY) {
+    try {
+      const supaUser = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+        global: { headers: { Authorization: auth } },
+      });
+      const { data: ud, error: uErr } = await supaUser.auth.getUser();
+      if (!uErr && ud && ud.user) verifiedUser = ud.user;
+    } catch (e) {}
+  }
+  const identity = auditIdentity(event, verifiedUser, email);
+  if (!identity.ok) {
+    res.status(403).json({ error: 'Forbidden' });
+    return;
+  }
+  // Shape checks police only what the caller posted: a verified email
+  // comes from the auth server and is trusted as-is.
+  if (identity.source === 'client' && email !== '' && !EMAIL_RE.test(email)) {
     res.status(400).json({ error: 'Bad request' });
     return;
   }
   // Reject control characters that break dashboard review / log parsing.
   // eslint-disable-next-line no-control-regex
-  if (/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(email + detail)) {
+  if (/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test((identity.email || '') + detail)) {
     res.status(400).json({ error: 'Bad request' });
     return;
   }
@@ -116,10 +146,12 @@ export default async function handler(req, res) {
   } catch (e) {}
   const { error } = await supaAdmin.from('admin_audit').insert({
     event: event,
-    email: email === '' ? null : email,
+    email: identity.email,
     success: success,
     detail: detail === '' ? null : detail,
     ip: ip === '' ? null : ip,
+    actor_id: identity.actorId,
+    source: identity.source,
   });
   // Fixed words only — raw database words never leave the server.
   if (error) {

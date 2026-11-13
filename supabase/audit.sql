@@ -14,7 +14,11 @@ create table if not exists public.admin_audit (
   event text not null,
   email text,
   success boolean not null default false,
-  detail text
+  detail text,
+  -- Server-stamped identity (Phase 2): actor_id = verified account id,
+  -- source = 'verified' (JWT-checked) or 'client' (untrusted telemetry).
+  actor_id text,
+  source text
 );
 
 alter table public.admin_audit enable row level security;
@@ -25,9 +29,11 @@ drop policy if exists "staff_read_audit" on public.admin_audit;
 create policy "staff_read_audit" on public.admin_audit for select using (public.is_owner_editor());
 
 -- Throttle support: the /api/log-event durable check counts the last minute,
--- and /api/admin/delete counts the last day per user. Both need indexes.
+-- and /api/admin/delete counts the last day per verified actor. All three
+-- need indexes.
 create index if not exists admin_audit_created_at_idx on public.admin_audit(created_at desc);
 create index if not exists admin_audit_email_created_idx on public.admin_audit(email, created_at desc);
+create index if not exists admin_audit_actor_created_idx on public.admin_audit(actor_id, created_at desc);
 
 -- Throttled, allowlisted writer. SECURITY DEFINER so anon callers can log
 -- (e.g. failed logins have no session) without direct table access.
@@ -47,8 +53,8 @@ begin
   if (select count(*) from public.admin_audit where created_at > now() - interval '1 minute') >= 60 then
     raise exception 'throttled';
   end if;
-  insert into public.admin_audit (event, email, success, detail)
-  values (p_event, nullif(p_email, ''), p_success, nullif(p_detail, ''));
+  insert into public.admin_audit (event, email, success, detail, source)
+  values (p_event, nullif(p_email, ''), p_success, nullif(p_detail, ''), 'client');
 end;
 $$;
 
@@ -73,6 +79,13 @@ $$;
 -- PUBLIC included: default grants cover everyone unless revoked.
 revoke execute on function public.increment_view(text, text) from public, anon, authenticated;
 
--- Retention (requires pg_cron; leave commented if unavailable):
--- select cron.schedule('audit-retention', '0 3 * * *',
---   $$ delete from public.admin_audit where created_at < now() - interval '30 days' $$);
+-- Retention (Phase 2: active). Requires pg_cron; if unavailable, enable it
+-- in Dashboard > Database > Extensions and re-run these three statements:
+create extension if not exists pg_cron;
+do $$ begin
+  if exists (select 1 from cron.job where jobname = 'audit-retention') then
+    perform cron.unschedule((select jobid from cron.job where jobname = 'audit-retention' limit 1));
+  end if;
+end $$;
+select cron.schedule('audit-retention', '17 3 * * *',
+  $job$ delete from public.admin_audit where created_at < now() - interval '30 days' $job$);

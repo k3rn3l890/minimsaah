@@ -508,8 +508,9 @@
   }
 
   // Best-effort audit with caller address. Tries the server door first
-  // (it stamps the real address); falls back to the direct database
-  // writer (no address). Never throws, never blocks the caller.
+  // (it stamps the real address and, when the session token rides along,
+  // binds the row to the real account email); falls back to the direct
+  // database writer (no address). Never throws, never blocks the caller.
   function auditRemote(event, email, success, detail) {
     try {
       var payload = {
@@ -518,24 +519,41 @@
         success: success === true,
         detail: String(detail || '').slice(0, 500),
       };
-      var p = null;
+      function sendDoor(authHeader) {
+        try {
+          var ctl = null;
+          if (typeof AbortController !== 'undefined') {
+            ctl = new AbortController();
+            setTimeout(function () { try { ctl.abort(); } catch (e) {} }, 6000);
+          }
+          var headers = { 'Content-Type': 'application/json' };
+          if (authHeader) headers['Authorization'] = authHeader;
+          return fetch('/api/log-event', {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(payload),
+            signal: ctl ? ctl.signal : undefined,
+          }).then(function (res) {
+            if (!res.ok) throw new Error('door ' + res.status);
+            return true;
+          });
+        } catch (e) { return null; }
+      }
+      // Attach the live session token when one exists so the door can
+      // verify the caller and bind the row to the real account email.
+      var tokenP = null;
       try {
-        var ctl = null;
-        if (typeof AbortController !== 'undefined') {
-          ctl = new AbortController();
-          setTimeout(function () { try { ctl.abort(); } catch (e) {} }, 6000);
+        if (window.SupabaseDB && window.SupabaseDB.isEnabled()) {
+          var c = window.SupabaseDB.client();
+          if (c && c.auth && typeof c.auth.getSession === 'function') {
+            tokenP = c.auth.getSession().then(function (r) {
+              var s = r && r.data && r.data.session;
+              return s && s.access_token ? 'Bearer ' + s.access_token : '';
+            }).catch(function () { return ''; });
+          }
         }
-        p = fetch('/api/log-event', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          signal: ctl ? ctl.signal : undefined,
-        }).then(function (res) {
-          if (!res.ok) throw new Error('door ' + res.status);
-          return true;
-        });
-      } catch (e) { p = null; }
-      Promise.resolve(p).then(
+      } catch (e) { tokenP = null; }
+      Promise.resolve(tokenP).then(function (t) { return sendDoor(t || ''); }).then(
         function (ok) {
           if (ok) return;
           throw new Error('door unavailable');
